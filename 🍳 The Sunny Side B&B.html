@@ -1,0 +1,1120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🍳 The Sunny Side B&B</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Fredoka+One&display=swap');
+
+  :root {
+    --cream: #FFF8F0;
+    --warm: #F5E6D3;
+    --wood: #C8956C;
+    --wood-dark: #9B6B47;
+    --floor: #E8D5B7;
+    --floor2: #DFC9A8;
+    --wall: #F7F0E8;
+    --wall2: #EFE6D8;
+    --green: #7BC67E;
+    --green2: #5AA85D;
+    --pink: #F4A5B0;
+    --blue: #7BB8D4;
+    --yellow: #F9D262;
+    --orange: #F4874B;
+    --purple: #C49FD4;
+    --red: #E87070;
+    --shadow: rgba(120,80,40,0.18);
+    --ui-bg: rgba(255,248,240,0.97);
+    --ui-border: #D4A875;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #2C1810;
+    font-family: 'Nunito', sans-serif;
+    overflow: hidden;
+    user-select: none;
+    width: 100vw; height: 100vh;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  #game-container {
+    width: 900px; height: 620px;
+    position: relative;
+    overflow: hidden;
+    border-radius: 18px;
+    box-shadow: 0 0 60px rgba(0,0,0,0.7);
+  }
+
+  /* ── CANVAS ── */
+  #game-canvas {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+  }
+
+  /* ── HUD ── */
+  #hud {
+    position: absolute; top: 0; left: 0; right: 0;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 16px 0;
+    pointer-events: none; z-index: 20;
+  }
+  #score-box {
+    background: var(--ui-bg);
+    border: 2.5px solid var(--ui-border);
+    border-radius: 50px;
+    padding: 5px 16px;
+    font-family: 'Fredoka One', sans-serif;
+    font-size: 17px;
+    color: #7A4A1E;
+    box-shadow: 0 3px 10px var(--shadow);
+  }
+  #guest-counter {
+    background: var(--ui-bg);
+    border: 2.5px solid var(--ui-border);
+    border-radius: 50px;
+    padding: 5px 16px;
+    font-family: 'Fredoka One', sans-serif;
+    font-size: 17px;
+    color: #7A4A1E;
+    box-shadow: 0 3px 10px var(--shadow);
+  }
+  #held-item-display {
+    background: var(--ui-bg);
+    border: 2.5px solid var(--ui-border);
+    border-radius: 50px;
+    padding: 5px 16px;
+    font-family: 'Fredoka One', sans-serif;
+    font-size: 15px;
+    color: #7A4A1E;
+    box-shadow: 0 3px 10px var(--shadow);
+    min-width: 130px; text-align: center;
+  }
+
+  /* ── INTERACTION MENU ── */
+  #interaction-menu {
+    position: absolute;
+    background: var(--ui-bg);
+    border: 3px solid var(--ui-border);
+    border-radius: 18px;
+    padding: 10px 8px;
+    min-width: 150px;
+    box-shadow: 0 8px 30px var(--shadow);
+    z-index: 30;
+    display: none;
+    flex-direction: column; gap: 6px;
+    pointer-events: all;
+  }
+  #interaction-menu.visible { display: flex; }
+  #menu-title {
+    font-family: 'Fredoka One', sans-serif;
+    font-size: 15px;
+    color: #9B6B47;
+    text-align: center;
+    padding-bottom: 4px;
+    border-bottom: 2px dashed var(--ui-border);
+    margin-bottom: 2px;
+  }
+  .menu-btn {
+    background: var(--warm);
+    border: 2px solid var(--ui-border);
+    border-radius: 12px;
+    padding: 7px 14px;
+    font-family: 'Nunito', sans-serif;
+    font-weight: 800;
+    font-size: 14px;
+    color: #7A4A1E;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.1s;
+    text-align: center;
+  }
+  .menu-btn:hover { background: #F9C886; transform: scale(1.04); }
+  #menu-close {
+    background: transparent;
+    border: none;
+    font-size: 12px;
+    color: #B08050;
+    cursor: pointer;
+    text-align: center;
+    font-family: 'Nunito', sans-serif;
+    font-weight: 700;
+    margin-top: 2px;
+  }
+
+  /* ── DIALOGUE BOX ── */
+  #dialogue-box {
+    position: absolute;
+    bottom: 14px; left: 50%; transform: translateX(-50%);
+    width: 560px;
+    background: var(--ui-bg);
+    border: 3px solid var(--ui-border);
+    border-radius: 20px;
+    padding: 14px 20px 12px;
+    box-shadow: 0 8px 30px var(--shadow);
+    z-index: 30;
+    display: none;
+    pointer-events: all;
+    cursor: pointer;
+  }
+  #dialogue-box.visible { display: block; }
+  #dialogue-speaker {
+    font-family: 'Fredoka One', sans-serif;
+    font-size: 16px;
+    color: var(--wood-dark);
+    margin-bottom: 4px;
+  }
+  #dialogue-text {
+    font-size: 15px;
+    color: #5C3D1E;
+    line-height: 1.5;
+    font-weight: 600;
+  }
+  #dialogue-hint {
+    font-size: 11px;
+    color: #B08050;
+    margin-top: 6px;
+    font-style: italic;
+  }
+
+  /* ── INSPECT BOX ── */
+  #inspect-box {
+    position: absolute;
+    bottom: 14px; left: 50%; transform: translateX(-50%);
+    width: 420px;
+    background: var(--ui-bg);
+    border: 3px solid var(--ui-border);
+    border-radius: 20px;
+    padding: 14px 20px 12px;
+    box-shadow: 0 8px 30px var(--shadow);
+    z-index: 30;
+    display: none;
+    pointer-events: all;
+    cursor: pointer;
+  }
+  #inspect-box.visible { display: block; }
+  #inspect-name {
+    font-family: 'Fredoka One', sans-serif;
+    font-size: 17px; color: var(--wood-dark); margin-bottom: 4px;
+  }
+  #inspect-desc {
+    font-size: 14px; color: #5C3D1E; line-height: 1.5; font-weight: 600;
+  }
+
+  /* ── WIN / LOSS OVERLAY ── */
+  #overlay {
+    position: absolute; inset: 0;
+    background: rgba(44,24,16,0.85);
+    z-index: 50;
+    display: none; flex-direction: column;
+    align-items: center; justify-content: center;
+    border-radius: 18px;
+  }
+  #overlay.visible { display: flex; }
+  #overlay-title {
+    font-family: 'Fredoka One', sans-serif;
+    font-size: 48px;
+    color: var(--yellow);
+    text-shadow: 0 4px 20px rgba(249,210,98,0.5);
+    margin-bottom: 10px;
+  }
+  #overlay-sub {
+    font-size: 20px;
+    color: var(--cream);
+    font-weight: 700;
+    margin-bottom: 24px;
+  }
+  #overlay-score {
+    font-family: 'Fredoka One', sans-serif;
+    font-size: 28px;
+    color: var(--orange);
+    margin-bottom: 28px;
+  }
+  #restart-btn {
+    background: var(--yellow);
+    border: 3px solid var(--wood-dark);
+    border-radius: 50px;
+    padding: 12px 36px;
+    font-family: 'Fredoka One', sans-serif;
+    font-size: 22px;
+    color: #7A4A1E;
+    cursor: pointer;
+    transition: transform 0.15s;
+  }
+  #restart-btn:hover { transform: scale(1.07); }
+
+  /* ── PLUS SIGN FLOATING ── */
+  .float-plus {
+    position: absolute;
+    font-family: 'Fredoka One', sans-serif;
+    font-size: 32px;
+    color: var(--green);
+    pointer-events: none;
+    z-index: 40;
+    animation: floatUp 1.4s ease-out forwards;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
+  @keyframes floatUp {
+    0% { opacity: 1; transform: translateY(0) scale(1); }
+    60% { opacity: 1; transform: translateY(-40px) scale(1.2); }
+    100% { opacity: 0; transform: translateY(-70px) scale(0.8); }
+  }
+  .float-x {
+    position: absolute;
+    font-family: 'Fredoka One', sans-serif;
+    font-size: 32px;
+    color: var(--red);
+    pointer-events: none;
+    z-index: 40;
+    animation: floatUp 1.2s ease-out forwards;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
+
+  /* ── CONTROLS HINT ── */
+  #controls-hint {
+    position: absolute;
+    bottom: 14px; right: 14px;
+    background: rgba(255,248,240,0.88);
+    border: 2px solid var(--ui-border);
+    border-radius: 14px;
+    padding: 8px 12px;
+    font-size: 11px;
+    color: #9B6B47;
+    font-weight: 700;
+    line-height: 1.7;
+    z-index: 20;
+    pointer-events: none;
+  }
+
+  /* ── NOTIFICATION TOAST ── */
+  #toast {
+    position: absolute;
+    top: 60px; left: 50%; transform: translateX(-50%);
+    background: #7BC67E;
+    color: white;
+    font-family: 'Fredoka One', sans-serif;
+    font-size: 16px;
+    border-radius: 50px;
+    padding: 8px 22px;
+    z-index: 40;
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+    white-space: nowrap;
+  }
+  #toast.show { opacity: 1; }
+  #toast.bad { background: #E87070; }
+
+</style>
+</head>
+<body>
+<div id="game-container">
+  <canvas id="game-canvas" width="900" height="620"></canvas>
+
+  <!-- HUD -->
+  <div id="hud">
+    <div id="score-box">⭐ Score: <span id="score-val">0</span></div>
+    <div id="held-item-display">🧺 Holding: <span id="held-name">nothing</span></div>
+    <div id="guest-counter">Guests: <span id="guest-val">0</span>/10</div>
+  </div>
+
+  <!-- Interaction Menu -->
+  <div id="interaction-menu">
+    <div id="menu-title">💬</div>
+    <button class="menu-btn" id="menu-action1"></button>
+    <button class="menu-btn" id="menu-action2"></button>
+    <button id="menu-close" onclick="closeMenu()">✕ close</button>
+  </div>
+
+  <!-- Dialogue -->
+  <div id="dialogue-box" onclick="closeDialogue()">
+    <div id="dialogue-speaker"></div>
+    <div id="dialogue-text"></div>
+    <div id="dialogue-hint">Click to close</div>
+  </div>
+
+  <!-- Inspect -->
+  <div id="inspect-box" onclick="closeInspect()">
+    <div id="inspect-name"></div>
+    <div id="inspect-desc"></div>
+    <div class="dialogue-hint" style="font-size:11px;color:#B08050;margin-top:6px;font-style:italic;">Click to close</div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast"></div>
+
+  <!-- Controls -->
+  <div id="controls-hint">WASD Move<br>🖱 Left Click to Interact</div>
+
+  <!-- Win Overlay -->
+  <div id="overlay">
+    <div id="overlay-title">☀️ Breakfast Done!</div>
+    <div id="overlay-sub">You served all 10 guests!</div>
+    <div id="overlay-score">Perfect Meals: <span id="final-score">0</span>/10</div>
+    <button id="restart-btn" onclick="restartGame()">Play Again 🍳</button>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════
+//  GAME DATA
+// ══════════════════════════════════════════════
+
+const BREAKFAST_ITEMS = [
+  { id:'granola',    name:'Granola Bowl',    emoji:'🥣', color:'#D4A84B',
+    desc:'A crunchy bowl of oat granola with honey clusters. Perfect crunch in every bite!',
+    keywords:['crunch','crunchy','crispy'] },
+  { id:'pancakes',   name:'Fluffy Pancakes', emoji:'🥞', color:'#F4C987',
+    desc:'Tall, golden, fluffy pancakes stacked high. Soft and pillowy on the inside.',
+    keywords:['fluffy','soft','sweet','stack'] },
+  { id:'eggs',       name:'Scrambled Eggs',  emoji:'🍳', color:'#F9E26A',
+    desc:'Creamy scrambled eggs cooked to perfection. Warm and protein-packed.',
+    keywords:['eggs','protein','warm','savory'] },
+  { id:'fruit',      name:'Fresh Fruit Bowl',emoji:'🍓', color:'#F4A5B0',
+    desc:'A colorful bowl of fresh seasonal fruits — strawberries, melon, and more.',
+    keywords:['fruit','fresh','light','healthy','colorful'] },
+  { id:'toast',      name:'Avocado Toast',   emoji:'🥑', color:'#7BC67E',
+    desc:'Thick sourdough toast topped with creamy smashed avocado and a pinch of sea salt.',
+    keywords:['toast','avocado','green','hip','trendy'] },
+  { id:'oatmeal',    name:'Warm Oatmeal',    emoji:'🍲', color:'#D4B896',
+    desc:'Creamy oatmeal with brown sugar and cinnamon. Cozy and warming.',
+    keywords:['cozy','warm','oat','comfort','cinnamon'] },
+  { id:'waffle',     name:'Belgian Waffle',  emoji:'🧇', color:'#E8C87C',
+    desc:'A crisp golden waffle with maple syrup and a dusting of powdered sugar.',
+    keywords:['waffle','maple','syrup','golden','square'] },
+  { id:'yogurt',     name:'Yogurt Parfait',  emoji:'🥛', color:'#BCD4F0',
+    desc:'Layers of creamy yogurt, berries, and granola in a tall glass.',
+    keywords:['yogurt','layer','creamy','parfait'] },
+  { id:'bagel',      name:'Bagel & Cream Cheese', emoji:'🥯', color:'#E0C9A6',
+    desc:'A toasted bagel with thick cream cheese. Classic New York deli style.',
+    keywords:['bagel','cream','cheese','new york','classic'] },
+  { id:'muffin',     name:'Blueberry Muffin',emoji:'🧁', color:'#9BBDE8',
+    desc:'A giant blueberry muffin with a golden top and jammy blueberry pockets.',
+    keywords:['muffin','blueberry','baked','sweet','blue'] },
+];
+
+const GUESTS = [
+  { name:'Maple',  color:'#F4A5B0', hat:'#E87070', item:'granola',
+    hints:["\"Ooh, I just LOVE that satisfying CRUNCH in the morning! Nothing better!\"",
+           "\"My teeth need a workout before noon, if you know what I mean! 😄\""] },
+  { name:'Theo',   color:'#7BB8D4', hat:'#4A90B8', item:'pancakes',
+    hints:["\"I want something so FLUFFY it practically floats off the plate!\"",
+           "\"Nice and SOFT, like a breakfast cloud... that's the dream! ☁️\""] },
+  { name:'Rosie',  color:'#C49FD4', hat:'#9B6BD4', item:'eggs',
+    hints:["\"Just give me something PROTEIN-packed and WARM, I have a big hike today!\"",
+           "\"Something savory and eggy would really hit the spot this morning!\""] },
+  { name:'Finn',   color:'#7BC67E', hat:'#4A9B4E', item:'fruit',
+    hints:["\"I'm watching what I eat — something LIGHT and FRESH and HEALTHY please!\"",
+           "\"All those pretty COLORS make me so happy! A rainbow on a plate! 🌈\""] },
+  { name:'Cleo',   color:'#F9D262', hat:'#D4A820', item:'toast',
+    hints:["\"I've been really into that trendy GREEN thing everyone's eating lately...\"",
+           "\"I want something AVOCADO-y on thick toasted bread, very hip, you know?\""] },
+  { name:'Bruno',  color:'#E8C87C', hat:'#C8956C', item:'oatmeal',
+    hints:["\"It's a chilly morning... I want something that warms me from the inside! 🧣\"",
+           "\"CINNAMON and COMFORT, that's all I ask. Something COZY like a hug!\""] },
+  { name:'Hana',   color:'#F4C987', hat:'#E87040', item:'waffle',
+    hints:["\"I want those little SQUARE pockets filled with MAPLE SYRUP please!\"",
+           "\"Something golden and crispy that I can pour syrup all over! 🍁\""] },
+  { name:'Leo',    color:'#BCD4F0', hat:'#6A9FD4', item:'yogurt',
+    hints:["\"Give me something with beautiful LAYERS... creamy layers! I love a PARFAIT!\"",
+           "\"Creamy, cold, and layered — that's my ideal morning treat! 🥛\""] },
+  { name:'Nora',   color:'#E0C9A6', hat:'#9B7B5A', item:'bagel',
+    hints:["\"I want a CLASSIC — nothing fancy. A real New York deli CLASSIC please!\"",
+           "\"Thick CREAM CHEESE on a toasted round bread... you know what I mean!\""] },
+  { name:'Pip',    color:'#9BBDE8', hat:'#5A8DC8', item:'muffin',
+    hints:["\"Something with little blue jammy pockets baked right in... BAKED goods!\"",
+           "\"I could go for something BLUEBERRY-flavored and sweet! 🫐\""] },
+];
+
+// ══════════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════════
+const canvas = document.getElementById('game-canvas');
+const ctx = canvas.getContext('2d');
+const W = canvas.width, H = canvas.height;
+
+// Layout
+const FLOOR_Y = 200;   // top of floor
+const BUFFET_Y = 130;  // buffet table top — low enough for player to reach
+const TABLE_ROWS = [
+  { y: 320 }, { y: 410 }, { y: 490 }
+];
+const TABLE_COLS = [180, 430, 680];
+
+// Buffet item positions — player walks up to y~210 and buffet interact zone is at BUFFET_Y+60
+const BUFFET_SLOTS = BREAKFAST_ITEMS.map((_, i) => ({
+  x: 50 + i * 82,
+  y: BUFFET_Y + 30,   // interaction hotspot y (player compares against this)
+}));
+
+// Guest seat positions
+const SEATS = [];
+for (let r = 0; r < TABLE_ROWS.length; r++) {
+  for (let c = 0; c < TABLE_COLS.length; c++) {
+    SEATS.push({ x: TABLE_COLS[c], y: TABLE_ROWS[r].y, occupied: false });
+  }
+}
+
+let player = { x: 450, y: 400, dir: 0, frame: 0, frameTimer: 0 };
+let held = null; // item id or null
+let guestsServed = 0;
+let score = 0;
+let guestQueue = [...GUESTS];
+let activeGuests = []; // { guestDef, seatIdx, state:'seated'/'leaving', hintIdx, talkCount, leaveTimer }
+let menuOpen = false;
+let menuTarget = null; // { type:'guest'|'food', ref }
+let dialogueOpen = false;
+let inspectOpen = false;
+let gameOver = false;
+let nextGuestTimer = 0;
+let keys = {};
+
+function restartGame() {
+  player = { x: 450, y: 400, dir: 0, frame: 0, frameTimer: 0 };
+  held = null;
+  guestsServed = 0;
+  score = 0;
+  guestQueue = [...GUESTS];
+  activeGuests = [];
+  menuOpen = false;
+  menuTarget = null;
+  dialogueOpen = false;
+  inspectOpen = false;
+  gameOver = false;
+  nextGuestTimer = 80;
+  document.getElementById('overlay').classList.remove('visible');
+  document.getElementById('interaction-menu').classList.remove('visible');
+  document.getElementById('dialogue-box').classList.remove('visible');
+  document.getElementById('inspect-box').classList.remove('visible');
+  updateHUD();
+  loop();
+}
+
+// ══════════════════════════════════════════════
+//  INPUT
+// ══════════════════════════════════════════════
+document.addEventListener('keydown', e => {
+  keys[e.key.toLowerCase()] = true;
+  if (e.key === 'Escape') { closeMenu(); closeDialogue(); closeInspect(); }
+});
+document.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
+
+canvas.addEventListener('mousedown', e => {
+  if (e.button !== 0) return;
+  if (dialogueOpen || inspectOpen || gameOver) return;
+  const rect = canvas.getBoundingClientRect();
+  const mx = (e.clientX - rect.left) * (W / rect.width);
+  const my = (e.clientY - rect.top) * (H / rect.height);
+
+  // Check proximity to interactable objects
+  tryOpenMenu(mx, my);
+});
+
+// ══════════════════════════════════════════════
+//  PROXIMITY & MENU
+// ══════════════════════════════════════════════
+const INTERACT_RADIUS = 68;
+
+function tryOpenMenu(mx, my) {
+  // Check guests
+  for (let g of activeGuests) {
+    if (g.state !== 'seated') continue;
+    const seat = SEATS[g.seatIdx];
+    const dx = mx - seat.x, dy = my - seat.y;
+    if (Math.sqrt(dx*dx + dy*dy) < 55) {
+      const pdx = player.x - seat.x, pdy = player.y - seat.y;
+      if (Math.sqrt(pdx*pdx + pdy*pdy) < 120) {
+        openGuestMenu(g, mx, my); return;
+      }
+    }
+  }
+  // Check buffet items — click anywhere in the buffet zone near the item column
+  for (let i = 0; i < BREAKFAST_ITEMS.length; i++) {
+    const slot = BUFFET_SLOTS[i];
+    const dx = mx - slot.x, dy = my - slot.y;
+    if (Math.abs(dx) < 40 && Math.abs(dy) < 50) {
+      const pdx = player.x - slot.x, pdy = player.y - slot.y;
+      if (Math.sqrt(pdx*pdx + pdy*pdy) < 120) {
+        openFoodMenu(BREAKFAST_ITEMS[i], i, mx, my); return;
+      }
+    }
+  }
+}
+
+function openGuestMenu(g, mx, my) {
+  menuTarget = { type: 'guest', ref: g };
+  const menu = document.getElementById('interaction-menu');
+  const a1 = document.getElementById('menu-action1');
+  const a2 = document.getElementById('menu-action2');
+  document.getElementById('menu-title').textContent = `💬 ${g.guestDef.name}`;
+  a1.textContent = '🗣 Talk';
+  a2.textContent = '🍽 Give';
+  a1.onclick = () => { doTalk(g); closeMenu(); };
+  a2.onclick = () => { doGive(g); closeMenu(); };
+  positionMenu(menu, mx, my);
+  menu.classList.add('visible');
+  menuOpen = true;
+}
+
+function openFoodMenu(item, idx, mx, my) {
+  menuTarget = { type: 'food', item, idx };
+  const menu = document.getElementById('interaction-menu');
+  const a1 = document.getElementById('menu-action1');
+  const a2 = document.getElementById('menu-action2');
+  document.getElementById('menu-title').textContent = `${item.emoji} ${item.name}`;
+  a1.textContent = '🔍 Inspect';
+  a2.textContent = `🧺 Take`;
+  a1.onclick = () => { doInspect(item); closeMenu(); };
+  a2.onclick = () => { doTake(item); closeMenu(); };
+  positionMenu(menu, mx, my);
+  menu.classList.add('visible');
+  menuOpen = true;
+}
+
+function positionMenu(menu, mx, my) {
+  const gc = document.getElementById('game-container');
+  const scale = gc.offsetWidth / W;
+  let px = mx * scale, py = my * scale;
+  if (px + 170 > gc.offsetWidth) px -= 160;
+  if (py + 160 > gc.offsetHeight) py -= 140;
+  menu.style.left = px + 'px';
+  menu.style.top = py + 'px';
+}
+
+function closeMenu() {
+  document.getElementById('interaction-menu').classList.remove('visible');
+  menuOpen = false;
+  menuTarget = null;
+}
+
+// ══════════════════════════════════════════════
+//  ACTIONS
+// ══════════════════════════════════════════════
+function doTalk(g) {
+  const hint = g.guestDef.hints[g.talkCount % g.guestDef.hints.length];
+  g.talkCount++;
+  showDialogue(g.guestDef.name, hint);
+}
+
+function doGive(g) {
+  if (!held) {
+    showToast('You\'re not holding anything!', true);
+    return;
+  }
+  const correct = held === g.guestDef.item;
+  const seat = SEATS[g.seatIdx];
+  if (correct) {
+    score++;
+    showFloatEmoji('✨+✨', seat.x, seat.y - 20, true);
+    showToast(`${g.guestDef.name} loved it! ⭐`, false);
+  } else {
+    showFloatEmoji('✕', seat.x, seat.y - 20, false);
+    showToast(`${g.guestDef.name} didn't want that...`, true);
+  }
+  held = null;
+  guestsServed++;
+  g.state = 'leaving';
+  g.leaveTimer = 60;
+  updateHUD();
+  checkGameOver();
+}
+
+function doInspect(item) {
+  document.getElementById('inspect-name').textContent = `${item.emoji} ${item.name}`;
+  document.getElementById('inspect-desc').textContent = item.desc;
+  document.getElementById('inspect-box').classList.add('visible');
+  inspectOpen = true;
+}
+
+function doTake(item) {
+  held = item.id;
+  showToast(`Picked up ${item.emoji} ${item.name}!`, false);
+  updateHUD();
+}
+
+function closeDialogue() {
+  document.getElementById('dialogue-box').classList.remove('visible');
+  dialogueOpen = false;
+}
+function closeInspect() {
+  document.getElementById('inspect-box').classList.remove('visible');
+  inspectOpen = false;
+}
+
+function showDialogue(speaker, text) {
+  document.getElementById('dialogue-speaker').textContent = `${speaker} says:`;
+  document.getElementById('dialogue-text').textContent = text;
+  document.getElementById('dialogue-box').classList.add('visible');
+  dialogueOpen = true;
+}
+
+function showFloatEmoji(text, x, y, good) {
+  const gc = document.getElementById('game-container');
+  const scale = gc.offsetWidth / W;
+  const el = document.createElement('div');
+  el.className = good ? 'float-plus' : 'float-x';
+  el.textContent = good ? '✨ ✓' : '✕';
+  el.style.left = (x * scale - 20) + 'px';
+  el.style.top = (y * scale - 30) + 'px';
+  gc.appendChild(el);
+  setTimeout(() => el.remove(), 1500);
+}
+
+let toastTimer = null;
+function showToast(msg, bad) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = bad ? 'bad show' : 'show';
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+function updateHUD() {
+  document.getElementById('score-val').textContent = score;
+  document.getElementById('guest-val').textContent = guestsServed;
+  const item = held ? BREAKFAST_ITEMS.find(b => b.id === held) : null;
+  document.getElementById('held-name').textContent = item ? `${item.emoji} ${item.name}` : 'nothing';
+}
+
+function checkGameOver() {
+  if (guestsServed >= 10 && activeGuests.filter(g=>g.state==='seated').length === 0 && guestQueue.length === 0) {
+    setTimeout(() => {
+      document.getElementById('final-score').textContent = score;
+      document.getElementById('overlay').classList.add('visible');
+      gameOver = true;
+    }, 2000);
+  }
+}
+
+// ══════════════════════════════════════════════
+//  GUEST SPAWNING
+// ══════════════════════════════════════════════
+function spawnGuest() {
+  if (guestQueue.length === 0) return;
+  const freeSeat = SEATS.findIndex(s => !s.occupied);
+  if (freeSeat === -1) return;
+  SEATS[freeSeat].occupied = true;
+  const guestDef = guestQueue.shift();
+  activeGuests.push({
+    guestDef,
+    seatIdx: freeSeat,
+    state: 'seated',
+    talkCount: 0,
+    leaveTimer: 0,
+  });
+}
+
+// ══════════════════════════════════════════════
+//  RENDERING
+// ══════════════════════════════════════════════
+
+// Isometric helpers
+function isoX(x, y) { return x; }
+function isoY(x, y) { return y; }
+
+// Color palette for floor tiles
+function drawFloor() {
+  const TILE_W = 45, TILE_H = 28;
+  const cols = Math.ceil(W / TILE_W) + 2;
+  const rows = 16;
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const tx = c * TILE_W - (r % 2 === 0 ? 0 : TILE_W/2);
+      const ty = FLOOR_Y + r * TILE_H;
+      const alt = (r + c) % 2 === 0;
+      ctx.fillStyle = alt ? '#EDD9BA' : '#E4CF9E';
+      ctx.beginPath();
+      ctx.moveTo(tx, ty + TILE_H/2);
+      ctx.lineTo(tx + TILE_W/2, ty);
+      ctx.lineTo(tx + TILE_W, ty + TILE_H/2);
+      ctx.lineTo(tx + TILE_W/2, ty + TILE_H);
+      ctx.closePath();
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(200,170,120,0.25)';
+      ctx.lineWidth = 0.5;
+      ctx.stroke();
+    }
+  }
+}
+
+function drawWall() {
+  // Back wall
+  ctx.fillStyle = '#F2E8D8';
+  ctx.fillRect(0, 0, W, FLOOR_Y);
+  // Wainscoting
+  ctx.fillStyle = '#E0CDAE';
+  ctx.fillRect(0, FLOOR_Y - 24, W, 24);
+  // Chair rail
+  ctx.fillStyle = '#C8A870';
+  ctx.fillRect(0, FLOOR_Y - 28, W, 5);
+  // Wall stripe
+  for (let x = 0; x < W; x += 60) {
+    ctx.fillStyle = 'rgba(200,170,120,0.08)';
+    ctx.fillRect(x, 0, 30, FLOOR_Y - 28);
+  }
+  // Windows
+  drawWindow(620, 18, 140, 110);
+  drawWindow(120, 18, 140, 110);
+}
+
+function drawWindow(x, y, w, h) {
+  // Window frame
+  ctx.fillStyle = '#D4B888';
+  ctx.fillRect(x-4, y-4, w+8, h+8);
+  ctx.fillStyle = '#C0E8F8';
+  ctx.fillRect(x, y, w, h);
+  // Sky/clouds
+  ctx.fillStyle = '#A8D8F0';
+  ctx.fillRect(x, y, w, h/2);
+  ctx.fillStyle = '#FFFFFF';
+  ctx.beginPath(); ctx.ellipse(x+30, y+15, 22, 10, 0, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(x+65, y+20, 15, 7, 0, 0, Math.PI*2); ctx.fill();
+  // Curtains
+  ctx.fillStyle = '#F4A5B0';
+  ctx.beginPath();
+  ctx.moveTo(x, y-4); ctx.lineTo(x+22, y); ctx.lineTo(x, y+h+4);
+  ctx.closePath(); ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(x+w, y-4); ctx.lineTo(x+w-22, y); ctx.lineTo(x+w, y+h+4);
+  ctx.closePath(); ctx.fill();
+  // Sill
+  ctx.fillStyle = '#C8A870';
+  ctx.fillRect(x-6, y+h, w+12, 6);
+  // Cross
+  ctx.strokeStyle = '#D4B888'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(x+w/2, y); ctx.lineTo(x+w/2, y+h); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(x, y+h/2); ctx.lineTo(x+w, y+h/2); ctx.stroke();
+}
+
+function drawBuffet() {
+  const BY = BUFFET_Y;
+  // Table front face
+  ctx.fillStyle = '#A0734A';
+  ctx.fillRect(10, BY + 30, W - 20, 38);
+  // Table top surface
+  const grad = ctx.createLinearGradient(0, BY, 0, BY + 32);
+  grad.addColorStop(0, '#C8956C');
+  grad.addColorStop(1, '#B07848');
+  ctx.fillStyle = grad;
+  ctx.fillRect(10, BY, W - 20, 32);
+  // Front edge highlight
+  ctx.fillStyle = '#D4A878';
+  ctx.fillRect(10, BY, W - 20, 5);
+  // Draw each food item sitting on top of the table
+  for (let i = 0; i < BREAKFAST_ITEMS.length; i++) {
+    const item = BREAKFAST_ITEMS[i];
+    const slot = BUFFET_SLOTS[i];
+    const sx = slot.x;
+    const sy = BY - 6; // items sit on top of the table surface
+
+    // Tray/platform — solid cream color
+    ctx.fillStyle = '#FFF3E0';
+    ctx.beginPath();
+    ctx.roundRect(sx - 28, sy - 6, 56, 40, 8);
+    ctx.fill();
+    ctx.strokeStyle = '#E0C090';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.roundRect(sx - 28, sy - 6, 56, 40, 8);
+    ctx.stroke();
+
+    // Emoji
+    ctx.font = '24px serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(item.emoji, sx, sy + 16);
+
+    // Name label
+    ctx.font = 'bold 8px Nunito';
+    ctx.fillStyle = '#5C3D1E';
+    ctx.fillText(item.name.split(' ')[0], sx, sy + 30);
+    ctx.textAlign = 'left';
+
+    // Yellow highlight ring when player is nearby
+    const pdx = player.x - sx, pdy = player.y - slot.y;
+    if (Math.sqrt(pdx*pdx + pdy*pdy) < 120) {
+      ctx.strokeStyle = '#F9D262';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.roundRect(sx - 28, sy - 6, 56, 40, 8);
+      ctx.stroke();
+    }
+  }
+}
+
+function drawTable(x, y) {
+  // Shadow
+  ctx.fillStyle = 'rgba(100,60,20,0.15)';
+  ctx.beginPath();
+  ctx.ellipse(x, y + 10, 55, 14, 0, 0, Math.PI*2);
+  ctx.fill();
+  // Legs
+  ctx.fillStyle = '#9B6B47';
+  for (let lx of [x-35, x+35]) {
+    ctx.fillRect(lx-4, y, 8, 28);
+  }
+  // Table top
+  const g = ctx.createLinearGradient(x-50, y-16, x-50, y+4);
+  g.addColorStop(0, '#DCBA8A');
+  g.addColorStop(1, '#C8A070');
+  ctx.fillStyle = g;
+  ctx.beginPath();
+  ctx.ellipse(x, y-8, 55, 16, 0, 0, Math.PI*2);
+  ctx.fill();
+  // Tablecloth
+  ctx.fillStyle = 'rgba(255,255,255,0.55)';
+  ctx.beginPath();
+  ctx.ellipse(x, y-9, 46, 13, 0, 0, Math.PI*2);
+  ctx.fill();
+  // Flower vase
+  ctx.font = '14px serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('🌷', x, y - 8);
+  ctx.textAlign = 'left';
+}
+
+function drawChair(x, y, hasGuest) {
+  // Chair back
+  ctx.fillStyle = hasGuest ? '#C8956C' : '#D4A878';
+  ctx.beginPath();
+  ctx.roundRect(x - 14, y - 28, 28, 24, 5);
+  ctx.fill();
+  ctx.fillStyle = hasGuest ? '#E8C090' : '#EDD4A8';
+  ctx.beginPath();
+  ctx.roundRect(x - 12, y - 26, 24, 12, 4);
+  ctx.fill();
+  // Seat
+  ctx.fillStyle = '#C8956C';
+  ctx.beginPath();
+  ctx.ellipse(x, y, 18, 8, 0, 0, Math.PI*2);
+  ctx.fill();
+}
+
+function drawGuest(g) {
+  const seat = SEATS[g.seatIdx];
+  const gd = g.guestDef;
+  const x = seat.x, y = seat.y - 35;
+
+  // Body
+  ctx.fillStyle = gd.color;
+  ctx.beginPath();
+  ctx.roundRect(x - 14, y - 20, 28, 32, 10);
+  ctx.fill();
+
+  // Head
+  ctx.fillStyle = '#FDDCB0';
+  ctx.beginPath();
+  ctx.arc(x, y - 26, 14, 0, Math.PI*2);
+  ctx.fill();
+
+  // Hat
+  ctx.fillStyle = gd.hat;
+  ctx.beginPath();
+  ctx.ellipse(x, y - 37, 16, 5, 0, 0, Math.PI*2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.roundRect(x - 11, y - 52, 22, 18, 5);
+  ctx.fill();
+
+  // Eyes
+  ctx.fillStyle = '#5C3D1E';
+  ctx.beginPath(); ctx.arc(x-5, y-27, 2.5, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(x+5, y-27, 2.5, 0, Math.PI*2); ctx.fill();
+
+  // Smile
+  ctx.strokeStyle = '#5C3D1E'; ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.arc(x, y-24, 5, 0.2, Math.PI-0.2);
+  ctx.stroke();
+
+  // Name tag
+  ctx.fillStyle = 'rgba(255,248,240,0.92)';
+  ctx.beginPath();
+  ctx.roundRect(x - 20, y + 14, 40, 14, 5);
+  ctx.fill();
+  ctx.fillStyle = '#7A4A1E';
+  ctx.font = 'bold 9px Nunito';
+  ctx.textAlign = 'center';
+  ctx.fillText(gd.name, x, y + 24);
+  ctx.textAlign = 'left';
+
+  // Highlight if near
+  const pdx = player.x - seat.x, pdy = player.y - seat.y;
+  if (Math.sqrt(pdx*pdx + pdy*pdy) < INTERACT_RADIUS + 20 && g.state === 'seated') {
+    ctx.strokeStyle = '#F9D262';
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.arc(x, y - 26, 17, 0, Math.PI*2);
+    ctx.stroke();
+  }
+}
+
+function drawPlayer() {
+  const x = player.x, y = player.y;
+  const bob = Math.sin(player.frame * 0.3) * 2;
+
+  // Shadow
+  ctx.fillStyle = 'rgba(100,60,20,0.2)';
+  ctx.beginPath();
+  ctx.ellipse(x, y + 6, 16, 6, 0, 0, Math.PI*2);
+  ctx.fill();
+
+  // Body (apron/uniform)
+  ctx.fillStyle = '#7BB8D4';
+  ctx.beginPath();
+  ctx.roundRect(x - 12, y - 22 + bob, 24, 28, 8);
+  ctx.fill();
+
+  // Apron
+  ctx.fillStyle = 'rgba(255,255,255,0.7)';
+  ctx.beginPath();
+  ctx.roundRect(x - 7, y - 18 + bob, 14, 22, 5);
+  ctx.fill();
+
+  // Head
+  ctx.fillStyle = '#FDDCB0';
+  ctx.beginPath();
+  ctx.arc(x, y - 28 + bob, 13, 0, Math.PI*2);
+  ctx.fill();
+
+  // Chef hat
+  ctx.fillStyle = '#FFFFFF';
+  ctx.beginPath();
+  ctx.ellipse(x, y - 38 + bob, 14, 5, 0, 0, Math.PI*2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.roundRect(x - 10, y - 52 + bob, 20, 17, 4);
+  ctx.fill();
+
+  // Eyes
+  ctx.fillStyle = '#5C3D1E';
+  ctx.beginPath(); ctx.arc(x-4, y-29+bob, 2, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(x+4, y-29+bob, 2, 0, Math.PI*2); ctx.fill();
+
+  // Arms
+  ctx.fillStyle = '#7BB8D4';
+  ctx.beginPath(); ctx.roundRect(x-20, y-18+bob, 9, 18, 5); ctx.fill();
+  ctx.beginPath(); ctx.roundRect(x+11, y-18+bob, 9, 18, 5); ctx.fill();
+
+  // Held item
+  if (held) {
+    const item = BREAKFAST_ITEMS.find(b => b.id === held);
+    ctx.font = '18px serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(item.emoji, x + 18, y - 10 + bob);
+    ctx.textAlign = 'left';
+  }
+}
+
+function drawDecorations() {
+  // Plants in corners
+  ctx.font = '36px serif';
+  ctx.fillText('🪴', 12, H - 16);
+  ctx.fillText('🪴', W - 58, H - 16);
+
+}
+
+// ══════════════════════════════════════════════
+//  GAME LOOP
+// ══════════════════════════════════════════════
+function update(dt) {
+  if (gameOver || dialogueOpen || inspectOpen || menuOpen) return;
+
+  // Player movement
+  const spd = 2.8;
+  let moved = false;
+  if (keys['w'] || keys['arrowup'])    { player.y -= spd; moved = true; player.dir = 0; }
+  if (keys['s'] || keys['arrowdown'])  { player.y += spd; moved = true; player.dir = 2; }
+  if (keys['a'] || keys['arrowleft'])  { player.x -= spd; moved = true; player.dir = 3; }
+  if (keys['d'] || keys['arrowright']) { player.x += spd; moved = true; player.dir = 1; }
+  player.x = Math.max(20, Math.min(W-20, player.x));
+  player.y = Math.max(BUFFET_Y + 50, Math.min(H-20, player.y));
+
+  if (moved) {
+    player.frameTimer++;
+    if (player.frameTimer > 3) { player.frame++; player.frameTimer = 0; }
+  }
+
+  // Guest spawning
+  if (guestQueue.length > 0 && activeGuests.filter(g=>g.state==='seated').length < 6) {
+    nextGuestTimer--;
+    if (nextGuestTimer <= 0) {
+      spawnGuest();
+      nextGuestTimer = 90 + Math.random() * 60;
+    }
+  }
+
+  // Guest leaving animation
+  for (let i = activeGuests.length-1; i >= 0; i--) {
+    const g = activeGuests[i];
+    if (g.state === 'leaving') {
+      g.leaveTimer--;
+      if (g.leaveTimer <= 0) {
+        SEATS[g.seatIdx].occupied = false;
+        activeGuests.splice(i, 1);
+        if (guestsServed >= 10 && guestQueue.length === 0 && activeGuests.length === 0) {
+          setTimeout(() => {
+            document.getElementById('final-score').textContent = score;
+            document.getElementById('overlay').classList.add('visible');
+            gameOver = true;
+          }, 800);
+        }
+      }
+    }
+  }
+}
+
+function render() {
+  ctx.clearRect(0, 0, W, H);
+
+  drawWall();
+  // Draw a subtle interaction zone strip in front of the buffet
+  const buffetZoneY = BUFFET_Y + 68;
+  ctx.fillStyle = 'rgba(249,210,98,0.10)';
+  ctx.fillRect(0, buffetZoneY, W, 60);
+  drawFloor();
+  drawBuffet();
+  drawDecorations();
+
+  // Tables and chairs (back to front for depth)
+  const allObjects = [];
+
+  for (let r = 0; r < TABLE_ROWS.length; r++) {
+    for (let c = 0; c < TABLE_COLS.length; c++) {
+      const seatIdx = r * TABLE_COLS.length + c;
+      const tx = TABLE_COLS[c], ty = TABLE_ROWS[r].y;
+      allObjects.push({ type:'table', x:tx, y:ty, seatIdx });
+    }
+  }
+
+  // Sort objects by y for depth
+  allObjects.sort((a,b) => a.y - b.y);
+
+  for (const obj of allObjects) {
+    const seatIdx = obj.seatIdx;
+    const guest = activeGuests.find(g => g.seatIdx === seatIdx && g.state === 'seated');
+    drawChair(obj.x, obj.y, !!guest);
+    drawTable(obj.x, obj.y);
+    if (guest) drawGuest(guest);
+  }
+
+  drawPlayer();
+}
+
+let lastTime = 0;
+function loop(ts = 0) {
+  const dt = ts - lastTime; lastTime = ts;
+  update(dt);
+  render();
+  if (!gameOver) requestAnimationFrame(loop);
+}
+
+// ── START ──
+nextGuestTimer = 80;
+// Spawn 3 initial guests
+spawnGuest(); spawnGuest(); spawnGuest();
+updateHUD();
+loop();
+</script>
+</body>
+</html>
