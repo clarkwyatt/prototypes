@@ -1,0 +1,1804 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🍳 The Sunny Side B&B</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Fredoka+One&display=swap');
+
+  :root {
+    --cream: #FFF8F0;
+    --warm: #F5E6D3;
+    --wood: #C8956C;
+    --wood-dark: #9B6B47;
+    --floor: #E8D5B7;
+    --floor2: #DFC9A8;
+    --wall: #F7F0E8;
+    --wall2: #EFE6D8;
+    --green: #7BC67E;
+    --green2: #5AA85D;
+    --pink: #F4A5B0;
+    --blue: #7BB8D4;
+    --yellow: #F9D262;
+    --orange: #F4874B;
+    --purple: #C49FD4;
+    --red: #E87070;
+    --shadow: rgba(120,80,40,0.18);
+    --ui-bg: rgba(255,248,240,0.97);
+    --ui-border: #D4A875;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #2C1810;
+    font-family: 'Nunito', sans-serif;
+    overflow: hidden;
+    user-select: none;
+    width: 100vw; height: 100vh;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  #game-container {
+    width: 900px; height: 620px;
+    position: relative;
+    overflow: hidden;
+    border-radius: 18px;
+    box-shadow: 0 0 60px rgba(0,0,0,0.7);
+  }
+
+  /* ── CANVAS ── */
+  #game-canvas {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+  }
+
+  /* ── HUD ── */
+  #hud {
+    position: absolute; top: 0; left: 0; right: 0;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 16px 0;
+    pointer-events: none; z-index: 20;
+  }
+  #score-box {
+    background: var(--ui-bg);
+    border: 2.5px solid var(--ui-border);
+    border-radius: 50px;
+    padding: 5px 16px;
+    font-family: 'Fredoka One', sans-serif;
+    font-size: 17px;
+    color: #7A4A1E;
+    box-shadow: 0 3px 10px var(--shadow);
+  }
+  #guest-counter {
+    background: var(--ui-bg);
+    border: 2.5px solid var(--ui-border);
+    border-radius: 50px;
+    padding: 5px 16px;
+    font-family: 'Fredoka One', sans-serif;
+    font-size: 17px;
+    color: #7A4A1E;
+    box-shadow: 0 3px 10px var(--shadow);
+  }
+  #held-item-display {
+    background: var(--ui-bg);
+    border: 2.5px solid var(--ui-border);
+    border-radius: 50px;
+    padding: 5px 16px;
+    font-family: 'Fredoka One', sans-serif;
+    font-size: 15px;
+    color: #7A4A1E;
+    box-shadow: 0 3px 10px var(--shadow);
+    min-width: 130px; text-align: center;
+  }
+
+  /* ── INTERACTION MENU ── */
+  #interaction-menu {
+    position: absolute;
+    background: var(--ui-bg);
+    border: 3px solid var(--ui-border);
+    border-radius: 18px;
+    padding: 10px 8px;
+    min-width: 150px;
+    box-shadow: 0 8px 30px var(--shadow);
+    z-index: 30;
+    display: none;
+    flex-direction: column; gap: 6px;
+    pointer-events: all;
+  }
+  #interaction-menu.visible { display: flex; }
+  #menu-title {
+    font-family: 'Fredoka One', sans-serif;
+    font-size: 15px;
+    color: #9B6B47;
+    text-align: center;
+    padding-bottom: 4px;
+    border-bottom: 2px dashed var(--ui-border);
+    margin-bottom: 2px;
+  }
+  .menu-btn {
+    background: var(--warm);
+    border: 2px solid var(--ui-border);
+    border-radius: 12px;
+    padding: 7px 14px;
+    font-family: 'Nunito', sans-serif;
+    font-weight: 800;
+    font-size: 14px;
+    color: #7A4A1E;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.1s;
+    text-align: center;
+  }
+  .menu-btn:hover { background: #F9C886; transform: scale(1.04); }
+  #menu-close {
+    background: transparent;
+    border: none;
+    font-size: 12px;
+    color: #B08050;
+    cursor: pointer;
+    text-align: center;
+    font-family: 'Nunito', sans-serif;
+    font-weight: 700;
+    margin-top: 2px;
+  }
+
+  /* ── DIALOGUE BOX ── */
+  #dialogue-box {
+    position: absolute;
+    bottom: 14px; left: 50%; transform: translateX(-50%);
+    width: 560px;
+    background: var(--ui-bg);
+    border: 3px solid var(--ui-border);
+    border-radius: 20px;
+    padding: 14px 20px 12px;
+    box-shadow: 0 8px 30px var(--shadow);
+    z-index: 30;
+    display: none;
+    pointer-events: all;
+    cursor: pointer;
+  }
+  #dialogue-box.visible { display: block; }
+  #dialogue-speaker {
+    font-family: 'Fredoka One', sans-serif;
+    font-size: 16px;
+    color: var(--wood-dark);
+    margin-bottom: 4px;
+  }
+  #dialogue-text {
+    font-size: 15px;
+    color: #5C3D1E;
+    line-height: 1.5;
+    font-weight: 600;
+  }
+  #dialogue-hint {
+    font-size: 11px;
+    color: #B08050;
+    margin-top: 6px;
+    font-style: italic;
+  }
+
+  /* ── INSPECT BOX ── */
+  #inspect-box {
+    position: absolute;
+    bottom: 14px; left: 50%; transform: translateX(-50%);
+    width: 420px;
+    background: var(--ui-bg);
+    border: 3px solid var(--ui-border);
+    border-radius: 20px;
+    padding: 14px 20px 12px;
+    box-shadow: 0 8px 30px var(--shadow);
+    z-index: 30;
+    display: none;
+    pointer-events: all;
+    cursor: pointer;
+  }
+  #inspect-box.visible { display: block; }
+  #inspect-name {
+    font-family: 'Fredoka One', sans-serif;
+    font-size: 17px; color: var(--wood-dark); margin-bottom: 4px;
+  }
+  #inspect-desc {
+    font-size: 14px; color: #5C3D1E; line-height: 1.5; font-weight: 600;
+  }
+
+  /* ── WIN / LOSS OVERLAY ── */
+  #overlay {
+    position: absolute; inset: 0;
+    background: rgba(44,24,16,0.85);
+    z-index: 50;
+    display: none; flex-direction: column;
+    align-items: center; justify-content: center;
+    border-radius: 18px;
+  }
+  #overlay.visible { display: flex; }
+  #overlay-title {
+    font-family: 'Fredoka One', sans-serif;
+    font-size: 48px;
+    color: var(--yellow);
+    text-shadow: 0 4px 20px rgba(249,210,98,0.5);
+    margin-bottom: 10px;
+  }
+  #overlay-sub {
+    font-size: 20px;
+    color: var(--cream);
+    font-weight: 700;
+    margin-bottom: 24px;
+  }
+  #overlay-score {
+    font-family: 'Fredoka One', sans-serif;
+    font-size: 28px;
+    color: var(--orange);
+    margin-bottom: 28px;
+  }
+  #restart-btn {
+    background: var(--yellow);
+    border: 3px solid var(--wood-dark);
+    border-radius: 50px;
+    padding: 12px 36px;
+    font-family: 'Fredoka One', sans-serif;
+    font-size: 22px;
+    color: #7A4A1E;
+    cursor: pointer;
+    transition: transform 0.15s;
+  }
+  #restart-btn:hover { transform: scale(1.07); }
+  #start-btn:hover { transform: scale(1.07); }
+
+  /* ── PLUS SIGN FLOATING ── */
+  .float-plus {
+    position: absolute;
+    font-family: 'Fredoka One', sans-serif;
+    font-size: 32px;
+    color: var(--green);
+    pointer-events: none;
+    z-index: 40;
+    animation: floatUp 1.4s ease-out forwards;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
+  @keyframes floatUp {
+    0% { opacity: 1; transform: translateY(0) scale(1); }
+    60% { opacity: 1; transform: translateY(-40px) scale(1.2); }
+    100% { opacity: 0; transform: translateY(-70px) scale(0.8); }
+  }
+  .float-x {
+    position: absolute;
+    font-family: 'Fredoka One', sans-serif;
+    font-size: 32px;
+    color: var(--red);
+    pointer-events: none;
+    z-index: 40;
+    animation: floatUp 1.2s ease-out forwards;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
+
+  /* ── CONTROLS HINT ── */
+  #controls-hint {
+    position: absolute;
+    bottom: 14px; right: 14px;
+    background: rgba(255,248,240,0.88);
+    border: 2px solid var(--ui-border);
+    border-radius: 14px;
+    padding: 8px 12px;
+    font-size: 11px;
+    color: #9B6B47;
+    font-weight: 700;
+    line-height: 1.7;
+    z-index: 20;
+    pointer-events: none;
+  }
+
+  /* ── NOTIFICATION TOAST ── */
+  #toast {
+    position: absolute;
+    top: 60px; left: 50%; transform: translateX(-50%);
+    background: #7BC67E;
+    color: white;
+    font-family: 'Fredoka One', sans-serif;
+    font-size: 16px;
+    border-radius: 50px;
+    padding: 8px 22px;
+    z-index: 40;
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+    white-space: nowrap;
+  }
+  #toast.show { opacity: 1; }
+  #toast.bad { background: #E87070; }
+
+</style>
+</head>
+<body>
+<div id="game-container">
+  <canvas id="game-canvas" width="900" height="620"></canvas>
+
+  <!-- HUD -->
+  <div id="hud">
+    <div id="score-box">💵 Cash: $<span id="score-val">0.00</span></div>
+    <div id="held-item-display">🧺 Holding: <span id="held-name">nothing</span></div>
+    <div id="guest-counter">Guests: <span id="guest-val">0</span>/10</div>
+  </div>
+
+  <!-- Interaction Menu -->
+  <div id="interaction-menu">
+    <div id="menu-title">💬</div>
+    <button class="menu-btn" id="menu-action1"></button>
+    <button class="menu-btn" id="menu-action2"></button>
+    <button id="menu-close" onclick="closeMenu()">✕ close</button>
+  </div>
+
+  <!-- Dialogue -->
+  <div id="dialogue-box" onclick="closeDialogue()">
+    <div id="dialogue-speaker"></div>
+    <div id="dialogue-text"></div>
+    <div id="dialogue-hint">Click to close</div>
+  </div>
+
+  <!-- Inspect -->
+  <div id="inspect-box" onclick="closeInspect()">
+    <div id="inspect-name"></div>
+    <div id="inspect-desc"></div>
+    <div class="dialogue-hint" style="font-size:11px;color:#B08050;margin-top:6px;font-style:italic;">Click to close</div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast"></div>
+
+  <!-- Controls -->
+  <div id="controls-hint">WASD Move<br>🖱 Left Click to Interact</div>
+
+  <!-- Start Screen -->
+  <div id="start-overlay" class="visible" style="position:absolute;inset:0;background:rgba(44,24,16,0.88);z-index:50;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:18px;">
+    <div style="font-family:'Fredoka One',sans-serif;font-size:52px;color:#F9D262;text-shadow:0 4px 24px rgba(249,210,98,0.5);margin-bottom:8px;">☀️ Sunny Side B&B</div>
+    <div style="font-size:17px;color:#F5E6D3;font-weight:700;margin-bottom:36px;letter-spacing:0.03em;">A Cozy-style Adventure</div>
+    <button id="start-btn" onclick="startGame()" style="background:#F9D262;border:3px solid #9B6B47;border-radius:50px;padding:14px 42px;font-family:'Fredoka One',sans-serif;font-size:24px;color:#7A4A1E;cursor:pointer;transition:transform 0.15s;box-shadow:0 4px 18px rgba(249,210,98,0.35);">Start Breakfast 🍳</button>
+    <div style="margin-top:24px;display:flex;flex-direction:column;gap:10px;text-align:left;">
+      <div style="font-size:15px;color:rgba(245,230,211,0.85);font-weight:700;">💬 Chat with guests for clues</div>
+      <div style="font-size:15px;color:rgba(245,230,211,0.85);font-weight:700;">🍽 Grab the right dish</div>
+      <div style="font-size:15px;color:rgba(245,230,211,0.85);font-weight:700;">⚡ Serve fast for bigger tips!</div>
+    </div>
+  </div>
+
+  <!-- Win Overlay -->
+  <div id="overlay">
+    <div id="overlay-title">☀️ Breakfast Done!</div>
+    <div id="overlay-sub">You served all 10 guests!</div>
+    <div id="overlay-score">Cash Earned: $<span id="final-score">0.00</span></div>
+    <button id="restart-btn" onclick="restartGame()">Play Again 🍳</button>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════
+//  GAME DATA
+// ══════════════════════════════════════════════
+
+const BREAKFAST_ITEMS = [
+  { id:'granola',  name:'Granola Bowl',       emoji:'🥣', color:'#D4A84B',
+    desc:'A bowl of oat granola with honey clusters and toasted seeds.',
+    keywords:['crunch','crispy','oat'] },
+  { id:'pancakes', name:'Pancakes',            emoji:'🥞', color:'#F4C987',
+    desc:'Golden pancakes stacked high, served with a pat of butter.',
+    keywords:['fluffy','soft','stack','butter'] },
+  { id:'eggs',     name:'Scrambled Eggs',      emoji:'🍳', color:'#F9E26A',
+    desc:'Creamy scrambled eggs cooked low and slow to perfection.',
+    keywords:['eggs','protein','savory'] },
+  { id:'fruit',    name:'Fruit Bowl',          emoji:'🍓', color:'#F4A5B0',
+    desc:'A bowl of seasonal fruits — strawberries, melon, kiwi, and more.',
+    keywords:['fruit','fresh','light','healthy'] },
+  { id:'toast',    name:'Avocado Toast',       emoji:'🥑', color:'#7BC67E',
+    desc:'Thick sourdough toast topped with smashed avocado and sea salt.',
+    keywords:['avocado','toast','sourdough'] },
+  { id:'oatmeal',  name:'Oatmeal',             emoji:'🍲', color:'#D4B896',
+    desc:'A bowl of oatmeal with brown sugar, cinnamon, and cream.',
+    keywords:['oat','cinnamon','comfort'] },
+  { id:'waffle',   name:'Belgian Waffle',      emoji:'🧇', color:'#E8C87C',
+    desc:'A golden waffle with deep pockets, maple syrup on the side.',
+    keywords:['waffle','maple','syrup'] },
+  { id:'yogurt',   name:'Yogurt Parfait',      emoji:'🥛', color:'#BCD4F0',
+    desc:'Layers of yogurt, mixed berries, and granola in a tall glass.',
+    keywords:['yogurt','layer','parfait'] },
+  { id:'bagel',    name:'Bagel & Cream Cheese',emoji:'🥯', color:'#E0C9A6',
+    desc:'A toasted bagel with a thick schmear of cream cheese.',
+    keywords:['bagel','cream','cheese'] },
+  { id:'muffin',   name:'Blueberry Muffin',   emoji:'🧁', color:'#9BBDE8',
+    desc:'A domed muffin bursting with blueberries and a sugary top.',
+    keywords:['muffin','blueberry','baked'] },
+];
+
+const GUESTS = [
+  { name:'Maple',  animal:'bear',    color:'#F4A5B0', belly:'#FDDCB0', hat:'#E87070', item:'granola',
+    hints:["\"My dentist says I grind my teeth at night... maybe breakfast can help with that! 😬\"",
+           "\"I hiked a trail called Honey Oat Ridge once. Best day of my life, honestly.\""] },
+  { name:'Theo',   animal:'cat',    color:'#7BB8D4', belly:'#D8EEF8', hat:'#4A90B8', item:'pancakes',
+    hints:["\"I once fell asleep on a cloud. Or maybe it was a pillow. Either way, I want THAT for breakfast.\"",
+           "\"My mum used to make a tower of these every Sunday. Butter melting down the sides... 🥺\""] },
+  { name:'Rosie',  animal:'pig',    color:'#F4C0C8', belly:'#FDDCDC', hat:'#D4607A', item:'eggs',
+    hints:["\"I've got a 10-mile hike after this. Something that'll stick to my ribs, please!\"",
+           "\"The hen in my village back home... she'd be very proud of what I'm about to order.\""] },
+  { name:'Finn',   animal:'frog',   color:'#7BC67E', belly:'#C8F0C0', hat:'#4A9B4E', item:'fruit',
+    hints:["\"I live by a pond surrounded by berry bushes. Every morning I just... reach out and grab breakfast. 🐸\"",
+           "\"I want something that still looks like it came from nature. Not cooked, not baked. Just as it was.\""] },
+  { name:'Cleo',   animal:'duck',   color:'#F9D262', belly:'#FFF5CC', hat:'#D4A820', item:'toast',
+    hints:["\"I follow seventeen food accounts. They're all obsessed with the same thing right now. 🙄\"",
+           "\"It's that thing... green, creamy, very of-the-moment. On bread. You know what I mean.\""] },
+  { name:'Bruno',  animal:'bear',   color:'#C8956C', belly:'#F0D8B8', hat:'#8B5E3C', item:'oatmeal',
+    hints:["\"It's brass-monkey weather out there. I need something that makes me feel like I'm by a fireplace.\"",
+           "\"Grandpa Bruno's secret ingredient was a spice that smells like autumn and goes in apple pie. 🤫\""] },
+  { name:'Hana',   animal:'rabbit', color:'#F4C0E8', belly:'#FDEEF8', hat:'#D470B8', item:'waffle',
+    hints:["\"I want something with little square indentations. Like a grid. Perfect for pooling syrup. 🍁\"",
+           "\"I visited Brussels once. Had the most incredible breakfast. Never forgot it.\""] },
+  { name:'Leo',    animal:'lion',   color:'#E8C050', belly:'#FFF0B0', hat:'#C89020', item:'yogurt',
+    hints:["\"I'm a visual creature. I want to SEE the layers before I dig in. Architecture, but edible.\"",
+           "\"Cold. Layered. Slightly tangy. Served in a tall glass with berries peeking through. 🦁\""] },
+  { name:'Nora',   animal:'dog',    color:'#D4B896', belly:'#F5E8D8', hat:'#8B6B4A', item:'bagel',
+    hints:["\"I lived in New York for seven years. There's one breakfast I can't find anywhere else... until now?\"",
+           "\"Round. With a hole. Spread something white and creamy on it. You know the one.\""] },
+  { name:'Pip',    animal:'squirrel',color:'#9BBDE8', belly:'#D8EAF8', hat:'#5A8DC8', item:'muffin',
+    hints:["\"I stash little things away for later. Tiny treasures. That's kind of what I want — little pockets of flavour hidden inside. 🫐\"",
+           "\"Something baked. Domed on top. I'd tell you more but then it'd be too easy!\""] },
+];
+
+// ══════════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════════
+const canvas = document.getElementById('game-canvas');
+const ctx = canvas.getContext('2d');
+const W = canvas.width, H = canvas.height;
+
+// Layout
+const FLOOR_Y = 200;   // top of floor
+const BUFFET_Y = 130;  // buffet table top — low enough for player to reach
+const TABLE_ROWS = [
+  { y: 320 }, { y: 410 }, { y: 490 }
+];
+const TABLE_COLS = [180, 430, 680];
+
+// Buffet item positions — player walks up to y~210 and buffet interact zone is at BUFFET_Y+60
+const BUFFET_SLOTS = BREAKFAST_ITEMS.map((_, i) => ({
+  x: 50 + i * 82,
+  y: BUFFET_Y + 30,   // interaction hotspot y (player compares against this)
+}));
+
+// Guest seat positions
+const SEATS = [];
+for (let r = 0; r < TABLE_ROWS.length; r++) {
+  for (let c = 0; c < TABLE_COLS.length; c++) {
+    SEATS.push({ x: TABLE_COLS[c], y: TABLE_ROWS[r].y, occupied: false });
+  }
+}
+
+let player = { x: 450, y: 400, dir: 0, frame: 0, frameTimer: 0 };
+let held = null;
+let guestsServed = 0;
+let cash = 0; // total cash earned (float)
+let guestQueue = [...GUESTS];
+let activeGuests = [];
+let menuOpen = false;
+let menuTarget = null;
+let dialogueOpen = false;
+let inspectOpen = false;
+let gameOver = false;
+let nextGuestTimer = 0;
+let keys = {};
+
+const PATIENCE_FRAMES = 60 * 40; // 40 seconds at 60fps to drain fully
+
+function getSpawnInterval() {
+  const spawned = 10 - guestQueue.length;
+  if (spawned < 2) return 60 * 8;  // first 2 guests: 8s
+  if (spawned < 4) return 60 * 6;  // next 2 guests: 6s
+  return 60 * 4;                    // all remaining: 4s
+}
+
+function startGame() {
+  document.getElementById('start-overlay').style.display = 'none';
+  nextGuestTimer = 1; // spawn first guest almost immediately
+  updateHUD();
+  loop();
+}
+
+function restartGame() {
+  player = { x: 450, y: 400, dir: 0, frame: 0, frameTimer: 0 };
+  held = null;
+  guestsServed = 0;
+  cash = 0;
+  guestQueue = [...GUESTS];
+  activeGuests = [];
+  menuOpen = false;
+  menuTarget = null;
+  dialogueOpen = false;
+  inspectOpen = false;
+  gameOver = false;
+  nextGuestTimer = 1;
+  document.getElementById('overlay').classList.remove('visible');
+  document.getElementById('interaction-menu').classList.remove('visible');
+  document.getElementById('dialogue-box').classList.remove('visible');
+  document.getElementById('inspect-box').classList.remove('visible');
+  updateHUD();
+  loop();
+}
+
+// ══════════════════════════════════════════════
+//  INPUT
+// ══════════════════════════════════════════════
+document.addEventListener('keydown', e => {
+  keys[e.key.toLowerCase()] = true;
+  if (e.key === 'Escape') { closeMenu(); closeDialogue(); closeInspect(); }
+});
+document.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
+
+canvas.addEventListener('mousedown', e => {
+  if (e.button !== 0) return;
+  if (gameOver) return;
+  if (dialogueOpen) { closeDialogue(); return; }
+  if (inspectOpen)  { closeInspect();  return; }
+  const rect = canvas.getBoundingClientRect();
+  const mx = (e.clientX - rect.left) * (W / rect.width);
+  const my = (e.clientY - rect.top) * (H / rect.height);
+
+  // Check proximity to interactable objects
+  tryOpenMenu(mx, my);
+});
+
+// Also allow clicking the game container background to close boxes
+document.getElementById('game-container').addEventListener('mousedown', e => {
+  if (e.target === document.getElementById('game-canvas')) return; // handled above
+  if (dialogueOpen) { closeDialogue(); return; }
+  if (inspectOpen)  { closeInspect();  return; }
+});
+
+// ══════════════════════════════════════════════
+//  PROXIMITY & MENU
+// ══════════════════════════════════════════════
+const INTERACT_RADIUS = 68;
+
+function tryOpenMenu(mx, my) {
+  // Check guests
+  for (let g of activeGuests) {
+    if (g.state !== 'seated') continue;
+    const seat = SEATS[g.seatIdx];
+    const dx = mx - seat.x, dy = my - seat.y;
+    if (Math.sqrt(dx*dx + dy*dy) < 55) {
+      const pdx = player.x - seat.x, pdy = player.y - seat.y;
+      if (Math.sqrt(pdx*pdx + pdy*pdy) < 120) {
+        openGuestMenu(g, mx, my); return;
+      }
+    }
+  }
+  // Check buffet items — click anywhere in the buffet zone near the item column
+  for (let i = 0; i < BREAKFAST_ITEMS.length; i++) {
+    const slot = BUFFET_SLOTS[i];
+    const dx = mx - slot.x, dy = my - slot.y;
+    if (Math.abs(dx) < 40 && Math.abs(dy) < 50) {
+      const pdx = player.x - slot.x, pdy = player.y - slot.y;
+      if (Math.sqrt(pdx*pdx + pdy*pdy) < 120) {
+        openFoodMenu(BREAKFAST_ITEMS[i], i, mx, my); return;
+      }
+    }
+  }
+}
+
+function openGuestMenu(g, mx, my) {
+  menuTarget = { type: 'guest', ref: g };
+  const menu = document.getElementById('interaction-menu');
+  const a1 = document.getElementById('menu-action1');
+  const a2 = document.getElementById('menu-action2');
+  document.getElementById('menu-title').textContent = `💬 ${g.guestDef.name}`;
+  a1.textContent = '🗣 Talk';
+  a2.textContent = '🍽 Give';
+  a1.onclick = () => { doTalk(g); closeMenu(); };
+  a2.onclick = () => { doGive(g); closeMenu(); };
+  positionMenu(menu, mx, my);
+  menu.classList.add('visible');
+  menuOpen = true;
+}
+
+function openFoodMenu(item, idx, mx, my) {
+  menuTarget = { type: 'food', item, idx };
+  const menu = document.getElementById('interaction-menu');
+  const a1 = document.getElementById('menu-action1');
+  const a2 = document.getElementById('menu-action2');
+  document.getElementById('menu-title').textContent = `${item.emoji} ${item.name}`;
+  a1.textContent = '🔍 Inspect';
+  a2.textContent = `🧺 Take`;
+  a1.onclick = () => { doInspect(item); closeMenu(); };
+  a2.onclick = () => { doTake(item); closeMenu(); };
+  positionMenu(menu, mx, my);
+  menu.classList.add('visible');
+  menuOpen = true;
+}
+
+function positionMenu(menu, mx, my) {
+  const gc = document.getElementById('game-container');
+  const scale = gc.offsetWidth / W;
+  let px = mx * scale, py = my * scale;
+  if (px + 170 > gc.offsetWidth) px -= 160;
+  if (py + 160 > gc.offsetHeight) py -= 140;
+  menu.style.left = px + 'px';
+  menu.style.top = py + 'px';
+}
+
+function closeMenu() {
+  document.getElementById('interaction-menu').classList.remove('visible');
+  menuOpen = false;
+  menuTarget = null;
+}
+
+// ══════════════════════════════════════════════
+//  ACTIONS
+// ══════════════════════════════════════════════
+function doTalk(g) {
+  const hint = g.guestDef.hints[g.talkCount % g.guestDef.hints.length];
+  g.talkCount++;
+  showDialogue(g.guestDef.name, hint);
+}
+
+function doGive(g) {
+  if (!held) {
+    showToast('You\'re not holding anything!', true);
+    return;
+  }
+  const correct = held === g.guestDef.item;
+  const seat = SEATS[g.seatIdx];
+  if (correct) {
+    const patienceFraction = Math.max(0, g.patience / PATIENCE_FRAMES);
+    const earned = Math.round(patienceFraction * 1000) / 100; // $0.00–$10.00
+    cash = Math.round((cash + earned) * 100) / 100;
+    showFloatEmoji(`$${earned.toFixed(2)}`, seat.x, seat.y - 20, true);
+    showToast(`${g.guestDef.name} loved it! +$${earned.toFixed(2)} 💵`, false);
+  } else {
+    showFloatEmoji('✕', seat.x, seat.y - 20, false);
+    showToast(`${g.guestDef.name} didn't want that... $0.00`, true);
+  }
+  held = null;
+  guestsServed++;
+  g.state = 'leaving';
+  g.leaveTimer = 60;
+  updateHUD();
+  checkGameOver();
+}
+
+function doInspect(item) {
+  document.getElementById('inspect-name').textContent = `${item.emoji} ${item.name}`;
+  document.getElementById('inspect-desc').textContent = item.desc;
+  document.getElementById('inspect-box').classList.add('visible');
+  inspectOpen = true;
+}
+
+function doTake(item) {
+  held = item.id;
+  showToast(`Picked up ${item.emoji} ${item.name}!`, false);
+  updateHUD();
+}
+
+function closeDialogue() {
+  document.getElementById('dialogue-box').classList.remove('visible');
+  dialogueOpen = false;
+}
+function closeInspect() {
+  document.getElementById('inspect-box').classList.remove('visible');
+  inspectOpen = false;
+}
+
+function showDialogue(speaker, text) {
+  document.getElementById('dialogue-speaker').textContent = `${speaker} says:`;
+  document.getElementById('dialogue-text').textContent = text;
+  document.getElementById('dialogue-box').classList.add('visible');
+  dialogueOpen = true;
+}
+
+function showFloatEmoji(text, x, y, good) {
+  const gc = document.getElementById('game-container');
+  const scale = gc.offsetWidth / W;
+  const el = document.createElement('div');
+  el.className = good ? 'float-plus' : 'float-x';
+  el.textContent = good ? '✨ ✓' : '✕';
+  el.style.left = (x * scale - 20) + 'px';
+  el.style.top = (y * scale - 30) + 'px';
+  gc.appendChild(el);
+  setTimeout(() => el.remove(), 1500);
+}
+
+let toastTimer = null;
+function showToast(msg, bad) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = bad ? 'bad show' : 'show';
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+function updateHUD() {
+  document.getElementById('score-val').textContent = cash.toFixed(2);
+  document.getElementById('guest-val').textContent = guestsServed;
+  const item = held ? BREAKFAST_ITEMS.find(b => b.id === held) : null;
+  document.getElementById('held-name').textContent = item ? `${item.emoji} ${item.name}` : 'nothing';
+}
+
+function checkGameOver() {
+  if (guestsServed >= 10 && activeGuests.filter(g=>g.state==='seated').length === 0 && guestQueue.length === 0) {
+    setTimeout(() => {
+      document.getElementById('final-score').textContent = cash.toFixed(2);
+      document.getElementById('overlay').classList.add('visible');
+      gameOver = true;
+    }, 2000);
+  }
+}
+
+// ══════════════════════════════════════════════
+//  GUEST SPAWNING
+// ══════════════════════════════════════════════
+function spawnGuest() {
+  if (guestQueue.length === 0) return;
+  const freeSeat = SEATS.findIndex(s => !s.occupied);
+  if (freeSeat === -1) return;
+  SEATS[freeSeat].occupied = true;
+  const guestDef = guestQueue.shift();
+  activeGuests.push({
+    guestDef,
+    seatIdx: freeSeat,
+    state: 'seated',
+    talkCount: 0,
+    leaveTimer: 0,
+    patience: PATIENCE_FRAMES, // counts down each frame
+  });
+}
+
+// ══════════════════════════════════════════════
+//  RENDERING
+// ══════════════════════════════════════════════
+
+// Isometric helpers
+function isoX(x, y) { return x; }
+function isoY(x, y) { return y; }
+
+// Color palette for floor tiles
+function drawFloor() {
+  const PLANK_H = 28;
+  const rows = Math.ceil((H - FLOOR_Y) / PLANK_H) + 1;
+  const PLANK_COLORS = ['#C8A870', '#BF9E64', '#C4A46A', '#BA9860', '#CDB078'];
+
+  for (let r = 0; r < rows; r++) {
+    const ty = FLOOR_Y + r * PLANK_H;
+    const offset = (r % 2 === 0) ? 0 : 120;
+    const col = PLANK_COLORS[r % PLANK_COLORS.length];
+
+    // Plank base
+    ctx.fillStyle = col;
+    ctx.fillRect(0, ty, W, PLANK_H);
+
+    // Subtle grain lines
+    ctx.strokeStyle = 'rgba(100,60,20,0.07)';
+    ctx.lineWidth = 1;
+    for (let g = 0; g < 4; g++) {
+      const gy = ty + 6 + g * 6;
+      ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(W, gy); ctx.stroke();
+    }
+
+    // Plank seams (vertical joints, staggered)
+    ctx.strokeStyle = 'rgba(90,55,18,0.18)';
+    ctx.lineWidth = 1.5;
+    const seamSpacing = 180;
+    for (let sx = (offset % seamSpacing); sx < W; sx += seamSpacing) {
+      ctx.beginPath(); ctx.moveTo(sx, ty); ctx.lineTo(sx, ty + PLANK_H); ctx.stroke();
+    }
+
+    // Top edge highlight
+    ctx.fillStyle = 'rgba(255,220,150,0.18)';
+    ctx.fillRect(0, ty, W, 3);
+
+    // Bottom edge shadow
+    ctx.fillStyle = 'rgba(80,45,10,0.13)';
+    ctx.fillRect(0, ty + PLANK_H - 3, W, 3);
+  }
+}
+
+function drawWall() {
+  // Back wall
+  ctx.fillStyle = '#F2E8D8';
+  ctx.fillRect(0, 0, W, FLOOR_Y);
+  // Wainscoting
+  ctx.fillStyle = '#E0CDAE';
+  ctx.fillRect(0, FLOOR_Y - 24, W, 24);
+  // Chair rail
+  ctx.fillStyle = '#C8A870';
+  ctx.fillRect(0, FLOOR_Y - 28, W, 5);
+  // Wall stripe
+  for (let x = 0; x < W; x += 60) {
+    ctx.fillStyle = 'rgba(200,170,120,0.08)';
+    ctx.fillRect(x, 0, 30, FLOOR_Y - 28);
+  }
+  // Windows
+  drawWindow(620, 18, 140, 110);
+  drawWindow(120, 18, 140, 110);
+}
+
+function drawWindow(x, y, w, h) {
+  // Outer frame with shadow
+  ctx.fillStyle = 'rgba(80,50,20,0.18)';
+  ctx.fillRect(x-2, y+4, w+8, h+8);
+  // Frame
+  ctx.fillStyle = '#E8D0A0';
+  ctx.fillRect(x-6, y-6, w+12, h+12);
+  ctx.fillStyle = '#D4B870';
+  ctx.fillRect(x-4, y-4, w+8, h+8);
+
+  // Sky gradient
+  const skyGrad = ctx.createLinearGradient(x, y, x, y+h*0.55);
+  skyGrad.addColorStop(0, '#87CEEB');
+  skyGrad.addColorStop(1, '#C8E8F8');
+  ctx.fillStyle = skyGrad;
+  ctx.fillRect(x, y, w, h);
+
+  // Sun
+  ctx.fillStyle = '#FFE066';
+  ctx.beginPath(); ctx.arc(x+w-22, y+18, 13, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = 'rgba(255,240,100,0.3)';
+  ctx.beginPath(); ctx.arc(x+w-22, y+18, 20, 0, Math.PI*2); ctx.fill();
+
+  // Fluffy clouds
+  function cloud(cx, cy, s) {
+    ctx.fillStyle = 'rgba(255,255,255,0.95)';
+    ctx.beginPath(); ctx.ellipse(cx, cy, s*1.4, s*0.7, 0, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(cx-s*0.7, cy+s*0.2, s*0.8, s*0.6, 0, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(cx+s*0.7, cy+s*0.2, s*0.9, s*0.6, 0, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(cx-s*0.3, cy-s*0.3, s*0.9, s*0.65, 0, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(cx+s*0.4, cy-s*0.2, s*0.8, s*0.6, 0, 0, Math.PI*2); ctx.fill();
+  }
+  cloud(x+28, y+22, 10);
+  cloud(x+82, y+14, 8);
+
+  // Ground / lawn
+  const grassGrad = ctx.createLinearGradient(x, y+h*0.52, x, y+h);
+  grassGrad.addColorStop(0, '#5DBB63');
+  grassGrad.addColorStop(1, '#3D9440');
+  ctx.fillStyle = grassGrad;
+  ctx.fillRect(x, y+h*0.52, w, h*0.48);
+
+  // Rolling hills in background
+  ctx.fillStyle = '#6DC870';
+  ctx.beginPath();
+  ctx.moveTo(x, y+h*0.62);
+  ctx.bezierCurveTo(x+w*0.2, y+h*0.48, x+w*0.4, y+h*0.56, x+w*0.55, y+h*0.52);
+  ctx.bezierCurveTo(x+w*0.7, y+h*0.48, x+w*0.85, y+h*0.58, x+w, y+h*0.55);
+  ctx.lineTo(x+w, y+h*0.62); ctx.lineTo(x, y+h*0.62);
+  ctx.closePath(); ctx.fill();
+
+  // Flower garden bed
+  function flower(fx, fy, petalColor) {
+    ctx.fillStyle = '#3D8C40';
+    ctx.fillRect(fx-1, fy, 2, 8);
+    // Petals
+    ctx.fillStyle = petalColor;
+    for (let a = 0; a < Math.PI*2; a += Math.PI/3) {
+      ctx.beginPath();
+      ctx.ellipse(fx + Math.cos(a)*4, fy + Math.sin(a)*4, 3, 2, a, 0, Math.PI*2);
+      ctx.fill();
+    }
+    ctx.fillStyle = '#F9E040';
+    ctx.beginPath(); ctx.arc(fx, fy, 2.5, 0, Math.PI*2); ctx.fill();
+  }
+  const flowerColors = ['#FF7EB3','#FF6B6B','#FFB347','#DDA0DD','#FF85A1','#FFC0CB'];
+  const flowerCount = 7;
+  for (let i = 0; i < flowerCount; i++) {
+    flower(x + 8 + i * (w-12)/flowerCount, y+h*0.72 - (i%2)*5, flowerColors[i % flowerColors.length]);
+  }
+
+  // Picket fence
+  ctx.fillStyle = '#F5F0E0';
+  for (let fx = x+2; fx < x+w-4; fx += 12) {
+    ctx.beginPath();
+    ctx.roundRect(fx, y+h*0.76, 8, 18, [3,3,0,0]);
+    ctx.fill();
+    ctx.strokeStyle = '#D4C890'; ctx.lineWidth = 0.8;
+    ctx.stroke();
+  }
+  // Fence rails
+  ctx.fillStyle = '#EDE8D0';
+  ctx.fillRect(x+2, y+h*0.78, w-4, 3);
+  ctx.fillRect(x+2, y+h*0.84, w-4, 3);
+
+  // Bushes
+  function bush(bx, by, r, col) {
+    ctx.fillStyle = col;
+    ctx.beginPath(); ctx.arc(bx, by, r, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(bx-r*0.6, by+r*0.3, r*0.75, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(bx+r*0.6, by+r*0.3, r*0.75, 0, Math.PI*2); ctx.fill();
+  }
+  bush(x+15, y+h*0.88, 9, '#2E8B40');
+  bush(x+w-15, y+h*0.88, 9, '#3A9E4A');
+  bush(x+w*0.5, y+h*0.91, 7, '#48A855');
+
+  // Window cross divider
+  ctx.strokeStyle = '#D4B870'; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(x+w/2, y); ctx.lineTo(x+w/2, y+h); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(x, y+h/2); ctx.lineTo(x+w, y+h/2); ctx.stroke();
+
+  // Inner frame bevel
+  ctx.strokeStyle = 'rgba(255,240,200,0.6)'; ctx.lineWidth = 1.5;
+  ctx.strokeRect(x+1, y+1, w-2, h-2);
+
+  // Windowsill with potted plant
+  ctx.fillStyle = '#C8A060';
+  ctx.fillRect(x-8, y+h, w+16, 7);
+  ctx.fillStyle = '#B89050';
+  ctx.fillRect(x-8, y+h, w+16, 3);
+  // Pot on sill
+  ctx.fillStyle = '#C87040';
+  ctx.beginPath(); ctx.roundRect(x+w/2-8, y+h-14, 16, 14, [2,2,4,4]); ctx.fill();
+  ctx.fillStyle = '#5DBB63';
+  ctx.font = '14px serif'; ctx.textAlign = 'center';
+  ctx.fillText('🌿', x+w/2, y+h-2);
+  ctx.textAlign = 'left';
+
+  // Curtains — layered & frilly
+  const curtainL = ctx.createLinearGradient(x-6, 0, x+28, 0);
+  curtainL.addColorStop(0, '#F08090');
+  curtainL.addColorStop(1, 'rgba(240,160,180,0.0)');
+  ctx.fillStyle = curtainL;
+  ctx.beginPath();
+  ctx.moveTo(x-6, y-6);
+  ctx.bezierCurveTo(x+30, y+10, x+20, y+h*0.4, x+4, y+h+6);
+  ctx.lineTo(x-6, y+h+6);
+  ctx.closePath(); ctx.fill();
+
+  const curtainR = ctx.createLinearGradient(x+w+6, 0, x+w-28, 0);
+  curtainR.addColorStop(0, '#F08090');
+  curtainR.addColorStop(1, 'rgba(240,160,180,0.0)');
+  ctx.fillStyle = curtainR;
+  ctx.beginPath();
+  ctx.moveTo(x+w+6, y-6);
+  ctx.bezierCurveTo(x+w-30, y+10, x+w-20, y+h*0.4, x+w-4, y+h+6);
+  ctx.lineTo(x+w+6, y+h+6);
+  ctx.closePath(); ctx.fill();
+
+  // Curtain tie-backs
+  ctx.fillStyle = '#E8C040';
+  ctx.beginPath(); ctx.arc(x+4, y+h*0.42, 4, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(x+w-4, y+h*0.42, 4, 0, Math.PI*2); ctx.fill();
+
+  // Curtain rod
+  ctx.strokeStyle = '#B09050'; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(x-10, y-7); ctx.lineTo(x+w+10, y-7); ctx.stroke();
+  ctx.fillStyle = '#C8A860';
+  ctx.beginPath(); ctx.arc(x-10, y-7, 4, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(x+w+10, y-7, 4, 0, Math.PI*2); ctx.fill();
+}
+
+function drawBuffet() {
+  const BY = BUFFET_Y;
+  // Table front face
+  ctx.fillStyle = '#A0734A';
+  ctx.fillRect(10, BY + 30, W - 20, 38);
+  // Table top surface
+  const grad = ctx.createLinearGradient(0, BY, 0, BY + 32);
+  grad.addColorStop(0, '#C8956C');
+  grad.addColorStop(1, '#B07848');
+  ctx.fillStyle = grad;
+  ctx.fillRect(10, BY, W - 20, 32);
+  // Front edge highlight
+  ctx.fillStyle = '#D4A878';
+  ctx.fillRect(10, BY, W - 20, 5);
+  // Draw each food item sitting on top of the table
+  for (let i = 0; i < BREAKFAST_ITEMS.length; i++) {
+    const item = BREAKFAST_ITEMS[i];
+    const slot = BUFFET_SLOTS[i];
+    const sx = slot.x;
+    const sy = BY - 6; // items sit on top of the table surface
+
+    // Tray/platform — solid cream color
+    ctx.fillStyle = '#FFF3E0';
+    ctx.beginPath();
+    ctx.roundRect(sx - 28, sy - 6, 56, 40, 8);
+    ctx.fill();
+    ctx.strokeStyle = '#E0C090';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.roundRect(sx - 28, sy - 6, 56, 40, 8);
+    ctx.stroke();
+
+    // Emoji
+    ctx.font = '24px serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(item.emoji, sx, sy + 16);
+
+    // Name label
+    ctx.font = 'bold 8px Nunito';
+    ctx.fillStyle = '#5C3D1E';
+    ctx.fillText(item.name.split(' ')[0], sx, sy + 30);
+    ctx.textAlign = 'left';
+
+    // Yellow highlight ring when player is nearby
+    const pdx = player.x - sx, pdy = player.y - slot.y;
+    if (Math.sqrt(pdx*pdx + pdy*pdy) < 120) {
+      ctx.strokeStyle = '#F9D262';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.roundRect(sx - 28, sy - 6, 56, 40, 8);
+      ctx.stroke();
+    }
+  }
+}
+
+function drawTable(x, y) {
+  // Shadow
+  ctx.fillStyle = 'rgba(100,60,20,0.15)';
+  ctx.beginPath();
+  ctx.ellipse(x, y + 10, 55, 14, 0, 0, Math.PI*2);
+  ctx.fill();
+  // Legs
+  ctx.fillStyle = '#9B6B47';
+  for (let lx of [x-35, x+35]) {
+    ctx.fillRect(lx-4, y, 8, 28);
+  }
+  // Table top
+  const g = ctx.createLinearGradient(x-50, y-16, x-50, y+4);
+  g.addColorStop(0, '#DCBA8A');
+  g.addColorStop(1, '#C8A070');
+  ctx.fillStyle = g;
+  ctx.beginPath();
+  ctx.ellipse(x, y-8, 55, 16, 0, 0, Math.PI*2);
+  ctx.fill();
+  // Tablecloth
+  ctx.fillStyle = 'rgba(255,255,255,0.55)';
+  ctx.beginPath();
+  ctx.ellipse(x, y-9, 46, 13, 0, 0, Math.PI*2);
+  ctx.fill();
+  // Flower vase
+  ctx.font = '14px serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('🌷', x, y - 8);
+  ctx.textAlign = 'left';
+}
+
+function drawChair(x, y, hasGuest) {
+  // Chair back
+  ctx.fillStyle = hasGuest ? '#C8956C' : '#D4A878';
+  ctx.beginPath();
+  ctx.roundRect(x - 14, y - 28, 28, 24, 5);
+  ctx.fill();
+  ctx.fillStyle = hasGuest ? '#E8C090' : '#EDD4A8';
+  ctx.beginPath();
+  ctx.roundRect(x - 12, y - 26, 24, 12, 4);
+  ctx.fill();
+  // Seat
+  ctx.fillStyle = '#C8956C';
+  ctx.beginPath();
+  ctx.ellipse(x, y, 18, 8, 0, 0, Math.PI*2);
+  ctx.fill();
+}
+
+function drawAnimalHead(type, x, y, color, belly) {
+  switch(type) {
+    case 'bear': {
+      // Round bear ears
+      ctx.fillStyle = color;
+      ctx.beginPath(); ctx.arc(x-11, y-38, 8, 0, Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(x+11, y-38, 8, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = belly;
+      ctx.beginPath(); ctx.arc(x-11, y-38, 4, 0, Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(x+11, y-38, 4, 0, Math.PI*2); ctx.fill();
+      // Head
+      ctx.fillStyle = color;
+      ctx.beginPath(); ctx.arc(x, y-26, 16, 0, Math.PI*2); ctx.fill();
+      // Snout
+      ctx.fillStyle = belly;
+      ctx.beginPath(); ctx.ellipse(x, y-21, 8, 6, 0, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = '#A0604A';
+      ctx.beginPath(); ctx.ellipse(x, y-22, 3, 2, 0, 0, Math.PI*2); ctx.fill();
+      break;
+    }
+    case 'cat': {
+      // Pointy cat ears
+      ctx.fillStyle = color;
+      ctx.beginPath(); ctx.moveTo(x-14, y-38); ctx.lineTo(x-6, y-50); ctx.lineTo(x-2, y-38); ctx.closePath(); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(x+14, y-38); ctx.lineTo(x+6, y-50); ctx.lineTo(x+2, y-38); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = belly;
+      ctx.beginPath(); ctx.moveTo(x-11, y-40); ctx.lineTo(x-6, y-48); ctx.lineTo(x-4, y-40); ctx.closePath(); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(x+11, y-40); ctx.lineTo(x+6, y-48); ctx.lineTo(x+4, y-40); ctx.closePath(); ctx.fill();
+      // Head
+      ctx.fillStyle = color;
+      ctx.beginPath(); ctx.arc(x, y-26, 15, 0, Math.PI*2); ctx.fill();
+      // Muzzle
+      ctx.fillStyle = belly;
+      ctx.beginPath(); ctx.ellipse(x, y-22, 7, 5, 0, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = '#D4708A';
+      ctx.beginPath(); ctx.arc(x, y-22, 2, 0, Math.PI*2); ctx.fill();
+      // Whiskers
+      ctx.strokeStyle = 'rgba(80,40,20,0.4)'; ctx.lineWidth = 0.8;
+      ctx.beginPath(); ctx.moveTo(x-14, y-22); ctx.lineTo(x-7, y-21); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(x+14, y-22); ctx.lineTo(x+7, y-21); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(x-13, y-20); ctx.lineTo(x-7, y-20); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(x+13, y-20); ctx.lineTo(x+7, y-20); ctx.stroke();
+      break;
+    }
+    case 'pig': {
+      // Round pig ears
+      ctx.fillStyle = color;
+      ctx.beginPath(); ctx.ellipse(x-13, y-39, 7, 9, -0.3, 0, Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(x+13, y-39, 7, 9, 0.3, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = belly;
+      ctx.beginPath(); ctx.ellipse(x-13, y-39, 4, 5, -0.3, 0, Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(x+13, y-39, 4, 5, 0.3, 0, Math.PI*2); ctx.fill();
+      // Head
+      ctx.fillStyle = color;
+      ctx.beginPath(); ctx.arc(x, y-26, 16, 0, Math.PI*2); ctx.fill();
+      // Snout
+      ctx.fillStyle = belly;
+      ctx.beginPath(); ctx.ellipse(x, y-20, 9, 7, 0, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = '#C06070';
+      ctx.beginPath(); ctx.ellipse(x-3, y-20, 2, 2.5, 0, 0, Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(x+3, y-20, 2, 2.5, 0, 0, Math.PI*2); ctx.fill();
+      break;
+    }
+    case 'frog': {
+      // Eye bumps on top of head
+      ctx.fillStyle = color;
+      ctx.beginPath(); ctx.arc(x-9, y-40, 7, 0, Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(x+9, y-40, 7, 0, Math.PI*2); ctx.fill();
+      // Head (wide)
+      ctx.beginPath(); ctx.ellipse(x, y-26, 17, 14, 0, 0, Math.PI*2); ctx.fill();
+      // Belly patch
+      ctx.fillStyle = belly;
+      ctx.beginPath(); ctx.ellipse(x, y-24, 10, 9, 0, 0, Math.PI*2); ctx.fill();
+      // Eyes on bumps
+      ctx.fillStyle = '#FFFDE0';
+      ctx.beginPath(); ctx.arc(x-9, y-40, 4, 0, Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(x+9, y-40, 4, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = '#2A5C2A';
+      ctx.beginPath(); ctx.arc(x-9, y-40, 2, 0, Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(x+9, y-40, 2, 0, Math.PI*2); ctx.fill();
+      // Wide smile
+      ctx.strokeStyle = '#3A7A3A'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(x, y-22, 8, 0.1, Math.PI-0.1); ctx.stroke();
+      return; // skip standard eyes/smile
+    }
+    case 'duck': {
+      // Tuft on head
+      ctx.fillStyle = color;
+      ctx.beginPath(); ctx.ellipse(x, y-44, 5, 8, 0, 0, Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(x-5, y-42, 4, 6, -0.4, 0, Math.PI*2); ctx.fill();
+      // Head
+      ctx.beginPath(); ctx.arc(x, y-27, 14, 0, Math.PI*2); ctx.fill();
+      // Bill
+      ctx.fillStyle = '#E8A030';
+      ctx.beginPath(); ctx.ellipse(x+12, y-24, 8, 5, 0.3, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = '#D08020';
+      ctx.beginPath(); ctx.moveTo(x+6, y-22); ctx.lineTo(x+20, y-24); ctx.lineTo(x+6, y-26); ctx.closePath(); ctx.fill();
+      break;
+    }
+    case 'rabbit': {
+      // Tall rabbit ears
+      ctx.fillStyle = color;
+      ctx.beginPath(); ctx.ellipse(x-8, y-50, 5, 14, -0.15, 0, Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(x+8, y-50, 5, 14, 0.15, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = '#F0A0C0';
+      ctx.beginPath(); ctx.ellipse(x-8, y-50, 2.5, 10, -0.15, 0, Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(x+8, y-50, 2.5, 10, 0.15, 0, Math.PI*2); ctx.fill();
+      // Head
+      ctx.fillStyle = color;
+      ctx.beginPath(); ctx.arc(x, y-26, 15, 0, Math.PI*2); ctx.fill();
+      // Nose
+      ctx.fillStyle = '#F090B0';
+      ctx.beginPath(); ctx.arc(x, y-21, 2.5, 0, Math.PI*2); ctx.fill();
+      // Teeth
+      ctx.fillStyle = '#FFFFFF';
+      ctx.beginPath(); ctx.roundRect(x-4, y-19, 3.5, 5, 1); ctx.fill();
+      ctx.beginPath(); ctx.roundRect(x+0.5, y-19, 3.5, 5, 1); ctx.fill();
+      break;
+    }
+    case 'lion': {
+      // Mane
+      ctx.fillStyle = '#D4901A';
+      ctx.beginPath(); ctx.arc(x, y-26, 21, 0, Math.PI*2); ctx.fill();
+      // Round ears
+      ctx.fillStyle = '#E8A830';
+      ctx.beginPath(); ctx.arc(x-15, y-40, 7, 0, Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(x+15, y-40, 7, 0, Math.PI*2); ctx.fill();
+      // Head
+      ctx.fillStyle = '#F0C050';
+      ctx.beginPath(); ctx.arc(x, y-26, 15, 0, Math.PI*2); ctx.fill();
+      // Snout
+      ctx.fillStyle = belly;
+      ctx.beginPath(); ctx.ellipse(x, y-21, 8, 6, 0, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = '#C07030';
+      ctx.beginPath(); ctx.ellipse(x, y-22, 3, 2, 0, 0, Math.PI*2); ctx.fill();
+      // Whiskers
+      ctx.strokeStyle = 'rgba(80,40,10,0.4)'; ctx.lineWidth = 0.8;
+      ctx.beginPath(); ctx.moveTo(x-16, y-21); ctx.lineTo(x-8, y-21); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(x+16, y-21); ctx.lineTo(x+8, y-21); ctx.stroke();
+      break;
+    }
+    case 'dog': {
+      // Floppy ears
+      ctx.fillStyle = color;
+      ctx.beginPath(); ctx.ellipse(x-16, y-32, 7, 12, -0.2, 0, Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(x+16, y-32, 7, 12, 0.2, 0, Math.PI*2); ctx.fill();
+      // Head
+      ctx.beginPath(); ctx.arc(x, y-27, 15, 0, Math.PI*2); ctx.fill();
+      // Snout
+      ctx.fillStyle = belly;
+      ctx.beginPath(); ctx.ellipse(x, y-22, 8, 6, 0, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = '#8B4A3A';
+      ctx.beginPath(); ctx.ellipse(x, y-23, 4, 3, 0, 0, Math.PI*2); ctx.fill();
+      // Spots
+      ctx.fillStyle = 'rgba(100,60,30,0.2)';
+      ctx.beginPath(); ctx.arc(x+8, y-32, 4, 0, Math.PI*2); ctx.fill();
+      break;
+    }
+    case 'squirrel': {
+      // Big fluffy tail behind (drawn first)
+      ctx.fillStyle = color;
+      ctx.beginPath(); ctx.ellipse(x+18, y-15, 10, 18, 0.5, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = belly;
+      ctx.beginPath(); ctx.ellipse(x+18, y-15, 6, 13, 0.5, 0, Math.PI*2); ctx.fill();
+      // Round ears
+      ctx.fillStyle = color;
+      ctx.beginPath(); ctx.arc(x-10, y-39, 7, 0, Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(x+10, y-39, 7, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = belly;
+      ctx.beginPath(); ctx.arc(x-10, y-39, 3.5, 0, Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(x+10, y-39, 3.5, 0, Math.PI*2); ctx.fill();
+      // Head
+      ctx.fillStyle = color;
+      ctx.beginPath(); ctx.arc(x, y-27, 14, 0, Math.PI*2); ctx.fill();
+      // Chubby cheeks
+      ctx.fillStyle = belly;
+      ctx.beginPath(); ctx.ellipse(x-10, y-25, 6, 5, 0, 0, Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(x+10, y-25, 6, 5, 0, 0, Math.PI*2); ctx.fill();
+      // Nose
+      ctx.fillStyle = '#A06040';
+      ctx.beginPath(); ctx.arc(x, y-25, 2, 0, Math.PI*2); ctx.fill();
+      break;
+    }
+  }
+
+  // Standard eyes (skipped for frog which draws its own)
+  if (type !== 'frog' && type !== 'duck') {
+    ctx.fillStyle = '#2A1A0A';
+    ctx.beginPath(); ctx.arc(x-5, y-28, 2.5, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(x+5, y-28, 2.5, 0, Math.PI*2); ctx.fill();
+    // Eye shine
+    ctx.fillStyle = 'rgba(255,255,255,0.8)';
+    ctx.beginPath(); ctx.arc(x-4, y-29, 1, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(x+6, y-29, 1, 0, Math.PI*2); ctx.fill();
+  }
+  if (type === 'duck') {
+    ctx.fillStyle = '#2A1A0A';
+    ctx.beginPath(); ctx.arc(x-4, y-29, 2.5, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.8)';
+    ctx.beginPath(); ctx.arc(x-3, y-30, 1, 0, Math.PI*2); ctx.fill();
+  }
+
+  // Standard smile (for most animals)
+  if (type !== 'frog' && type !== 'cat' && type !== 'rabbit') {
+    ctx.strokeStyle = 'rgba(60,30,10,0.5)'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.arc(x, y-22, 4, 0.2, Math.PI-0.2); ctx.stroke();
+  }
+}
+
+function drawGuest(g) {
+  const seat = SEATS[g.seatIdx];
+  const gd = g.guestDef;
+  const x = seat.x, y = seat.y - 35;
+
+  // Shadow
+  ctx.fillStyle = 'rgba(100,60,20,0.15)';
+  ctx.beginPath(); ctx.ellipse(x, seat.y - 10, 18, 6, 0, 0, Math.PI*2); ctx.fill();
+
+  // Body
+  ctx.fillStyle = gd.color;
+  ctx.beginPath();
+  ctx.roundRect(x - 14, y - 18, 28, 30, 10);
+  ctx.fill();
+
+  // Belly patch on body
+  ctx.fillStyle = gd.belly;
+  ctx.beginPath();
+  ctx.ellipse(x, y - 6, 8, 10, 0, 0, Math.PI*2);
+  ctx.fill();
+
+  // Draw animal head
+  drawAnimalHead(gd.animal, x, y, gd.color, gd.belly);
+
+  // Name tag
+  ctx.fillStyle = 'rgba(255,248,240,0.95)';
+  ctx.beginPath();
+  ctx.roundRect(x - 22, y + 14, 44, 15, 6);
+  ctx.fill();
+  ctx.strokeStyle = gd.hat;
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.roundRect(x - 22, y + 14, 44, 15, 6);
+  ctx.stroke();
+  ctx.fillStyle = '#5C3010';
+  ctx.font = 'bold 9px Nunito';
+  ctx.textAlign = 'center';
+  ctx.fillText(gd.name, x, y + 25);
+  ctx.textAlign = 'left';
+
+  // Patience meter above head
+  if (g.state === 'seated') {
+    const barW = 48, barH = 7;
+    const bx = x - barW/2, by = y - 74;
+    const fraction = g.patience / PATIENCE_FRAMES;
+    // Background track
+    ctx.fillStyle = 'rgba(0,0,0,0.25)';
+    ctx.beginPath(); ctx.roundRect(bx-1, by-1, barW+2, barH+2, 4); ctx.fill();
+    // Empty portion
+    ctx.fillStyle = '#E87070';
+    ctx.beginPath(); ctx.roundRect(bx, by, barW, barH, 3); ctx.fill();
+    // Full portion (green → yellow → red as it drains)
+    const barColor = fraction > 0.5 ? '#5DBB63' : fraction > 0.25 ? '#F9D262' : '#E87070';
+    ctx.fillStyle = barColor;
+    ctx.beginPath(); ctx.roundRect(bx, by, barW * fraction, barH, 3); ctx.fill();
+    // Coin icon
+    ctx.font = '10px serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('💵', x, by - 2);
+    ctx.textAlign = 'left';
+  }
+
+  // Yellow highlight ring if player is nearby
+  const pdx = player.x - seat.x, pdy = player.y - seat.y;
+  if (Math.sqrt(pdx*pdx + pdy*pdy) < 120 && g.state === 'seated') {
+    ctx.strokeStyle = '#F9D262';
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.arc(x, y - 26, 20, 0, Math.PI*2);
+    ctx.stroke();
+  }
+}
+
+function drawPlayer() {
+  const x = player.x, y = player.y;
+  const moving = Object.keys(keys).some(k => ['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright'].includes(k) && keys[k]);
+  const t = player.frame;
+
+  // Walking cycle values
+  const walkCycle = moving ? Math.sin(t * 0.35) : 0;
+  const bob = moving ? Math.abs(Math.sin(t * 0.35)) * -2 : 0;
+  const sway = moving ? Math.sin(t * 0.35) * 1.5 : 0;
+
+  // Leg positions (alternating stride)
+  const legSwing = moving ? Math.sin(t * 0.35) * 8 : 0;
+  const leftLegX  = x - 6 + legSwing;
+  const rightLegX = x + 6 - legSwing;
+  const leftLegY  = y + (moving ? Math.cos(t * 0.35) * 3 : 0);
+  const rightLegY = y - (moving ? Math.cos(t * 0.35) * 3 : 0);
+
+  // Shadow
+  ctx.fillStyle = 'rgba(100,60,20,0.18)';
+  ctx.beginPath();
+  ctx.ellipse(x, y + 18, 14, 5, 0, 0, Math.PI*2);
+  ctx.fill();
+
+  // ── LEGS ──
+  // Left leg
+  ctx.fillStyle = '#5A8CC8'; // navy trousers
+  ctx.beginPath();
+  ctx.roundRect(leftLegX - 6, y - 2 + bob, 11, 20, 4);
+  ctx.fill();
+  // Left shoe
+  ctx.fillStyle = '#3A2A1A';
+  ctx.beginPath();
+  ctx.ellipse(leftLegX - 1, leftLegY + 18 + bob, 8, 5, 0.1, 0, Math.PI*2);
+  ctx.fill();
+
+  // Right leg
+  ctx.fillStyle = '#4A7AB8';
+  ctx.beginPath();
+  ctx.roundRect(rightLegX - 5, y - 2 + bob, 11, 20, 4);
+  ctx.fill();
+  // Right shoe
+  ctx.fillStyle = '#3A2A1A';
+  ctx.beginPath();
+  ctx.ellipse(rightLegX + 1, rightLegY + 18 + bob, 8, 5, -0.1, 0, Math.PI*2);
+  ctx.fill();
+
+  // ── BODY — cosy waistcoat over blouse ──
+  // Blouse (cream puff sleeves visible at sides)
+  ctx.fillStyle = '#F5ECD8';
+  ctx.beginPath();
+  ctx.roundRect(x - 15, y - 30 + bob, 30, 30, 10);
+  ctx.fill();
+
+  // Waistcoat (warm burgundy, B&B proprietor energy)
+  ctx.fillStyle = '#8B3A3A';
+  ctx.beginPath();
+  ctx.roundRect(x - 11, y - 29 + bob, 22, 28, 6);
+  ctx.fill();
+  // Waistcoat lapels
+  ctx.fillStyle = '#A04848';
+  ctx.beginPath();
+  ctx.moveTo(x, y - 29 + bob);
+  ctx.lineTo(x - 8, y - 22 + bob);
+  ctx.lineTo(x - 5, y - 29 + bob);
+  ctx.closePath(); ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(x, y - 29 + bob);
+  ctx.lineTo(x + 8, y - 22 + bob);
+  ctx.lineTo(x + 5, y - 29 + bob);
+  ctx.closePath(); ctx.fill();
+  // Waistcoat buttons
+  ctx.fillStyle = '#F9D262';
+  for (let i = 0; i < 3; i++) {
+    ctx.beginPath();
+    ctx.arc(x, y - 24 + i * 7 + bob, 1.8, 0, Math.PI*2);
+    ctx.fill();
+  }
+
+  // Apron (white, tied at front)
+  ctx.fillStyle = 'rgba(255,255,255,0.82)';
+  ctx.beginPath();
+  ctx.roundRect(x - 8, y - 20 + bob, 16, 22, 4);
+  ctx.fill();
+  // Apron pocket
+  ctx.fillStyle = 'rgba(200,200,200,0.4)';
+  ctx.beginPath();
+  ctx.roundRect(x - 5, y - 10 + bob, 10, 8, 3);
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(180,160,140,0.5)'; ctx.lineWidth = 1;
+  ctx.stroke();
+  // Apron ties at sides
+  ctx.strokeStyle = 'rgba(255,255,255,0.7)'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(x - 8, y - 14 + bob); ctx.lineTo(x - 14, y - 10 + bob); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(x + 8, y - 14 + bob); ctx.lineTo(x + 14, y - 10 + bob); ctx.stroke();
+
+  // ── ARMS — swinging with walk ──
+  const armSwing = moving ? walkCycle * 10 : 0;
+  // Left arm
+  ctx.fillStyle = '#F5ECD8';
+  ctx.save();
+  ctx.translate(x - 14, y - 24 + bob);
+  ctx.rotate((-0.3 + armSwing * 0.04) * (Math.PI/180) * 10);
+  ctx.beginPath(); ctx.roundRect(-5, 0, 10, 20, 5); ctx.fill();
+  ctx.restore();
+  // Right arm (holding item side)
+  ctx.fillStyle = '#F5ECD8';
+  ctx.save();
+  ctx.translate(x + 14, y - 24 + bob);
+  ctx.rotate((0.3 - armSwing * 0.04) * (Math.PI/180) * 10);
+  ctx.beginPath(); ctx.roundRect(-5, 0, 10, 20, 5); ctx.fill();
+  ctx.restore();
+
+  // ── HEAD ──
+  ctx.fillStyle = '#FDDCB0';
+  ctx.beginPath();
+  ctx.arc(x + sway, y - 42 + bob, 14, 0, Math.PI*2);
+  ctx.fill();
+
+  // Rosy cheeks
+  ctx.fillStyle = 'rgba(240,140,120,0.35)';
+  ctx.beginPath(); ctx.ellipse(x - 8 + sway, y - 40 + bob, 5, 3, 0, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(x + 8 + sway, y - 40 + bob, 5, 3, 0, 0, Math.PI*2); ctx.fill();
+
+  // Eyes — blink every ~180 frames
+  const blink = (t % 180 < 5);
+  ctx.fillStyle = '#3A2010';
+  if (blink) {
+    ctx.beginPath(); ctx.ellipse(x - 4 + sway, y - 43 + bob, 3, 1, 0, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(x + 4 + sway, y - 43 + bob, 3, 1, 0, 0, Math.PI*2); ctx.fill();
+  } else {
+    ctx.beginPath(); ctx.arc(x - 4 + sway, y - 43 + bob, 2.5, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(x + 4 + sway, y - 43 + bob, 2.5, 0, Math.PI*2); ctx.fill();
+    // Eye shine
+    ctx.fillStyle = 'rgba(255,255,255,0.9)';
+    ctx.beginPath(); ctx.arc(x - 3 + sway, y - 44 + bob, 1, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(x + 5 + sway, y - 44 + bob, 1, 0, Math.PI*2); ctx.fill();
+  }
+
+  // Smile
+  ctx.strokeStyle = '#7A4A1E'; ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.arc(x + sway, y - 39 + bob, 5, 0.15, Math.PI - 0.15);
+  ctx.stroke();
+
+  // ── HAIR — neat bun with a little curl ──
+  ctx.fillStyle = '#6B3A1E'; // warm chestnut
+  ctx.beginPath();
+  ctx.arc(x + sway, y - 53 + bob, 10, Math.PI, 0);
+  ctx.fill();
+  // Bun on top
+  ctx.beginPath();
+  ctx.arc(x + 4 + sway, y - 57 + bob, 7, 0, Math.PI*2);
+  ctx.fill();
+  // Hair curl
+  ctx.strokeStyle = '#5A2E10'; ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(x - 10 + sway, y - 50 + bob, 4, Math.PI*0.5, Math.PI*1.8);
+  ctx.stroke();
+  // Hair band on bun
+  ctx.strokeStyle = '#E87070'; ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  ctx.arc(x + 4 + sway, y - 57 + bob, 7, Math.PI*0.3, Math.PI*1.1);
+  ctx.stroke();
+
+  // ── HELD ITEM ──
+  if (held) {
+    const item = BREAKFAST_ITEMS.find(b => b.id === held);
+    // Little tray/plate
+    ctx.fillStyle = '#F0E8D8';
+    ctx.beginPath();
+    ctx.ellipse(x + 20, y - 18 + bob, 12, 5, 0, 0, Math.PI*2);
+    ctx.fill();
+    ctx.strokeStyle = '#D4C0A0'; ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.font = '16px serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(item.emoji, x + 20, y - 22 + bob);
+    ctx.textAlign = 'left';
+  }
+}
+
+function drawWallFrame(x, y, w, h, label, drawFn) {
+  // Drop shadow
+  ctx.fillStyle = 'rgba(80,50,20,0.18)';
+  ctx.fillRect(x+3, y+4, w, h);
+  // Outer frame
+  ctx.fillStyle = '#C8A050';
+  ctx.fillRect(x-5, y-5, w+10, h+10);
+  // Inner frame bevel
+  ctx.fillStyle = '#E8C878';
+  ctx.fillRect(x-3, y-3, w+6, h+6);
+  ctx.fillStyle = '#B08030';
+  ctx.fillRect(x-1, y-1, w+2, h+2);
+  // Canvas background
+  ctx.fillStyle = '#FFF8F0';
+  ctx.fillRect(x, y, w, h);
+  // Painting content
+  drawFn(x, y, w, h);
+  // Frame gloss
+  ctx.strokeStyle = 'rgba(255,240,180,0.4)'; ctx.lineWidth = 1;
+  ctx.strokeRect(x+1, y+1, w-2, h-2);
+  // Hanging wire
+  ctx.strokeStyle = '#A08030'; ctx.lineWidth = 1.2;
+  ctx.beginPath(); ctx.moveTo(x+w/2-12, y-5); ctx.lineTo(x+w/2, y-12); ctx.lineTo(x+w/2+12, y-5); ctx.stroke();
+}
+
+function paintSunflowers(x, y, w, h) {
+  // Sky
+  const sky = ctx.createLinearGradient(x, y, x, y+h*0.55);
+  sky.addColorStop(0,'#87CEEB'); sky.addColorStop(1,'#C8E8F8');
+  ctx.fillStyle = sky; ctx.fillRect(x, y, w, h*0.6);
+  // Ground
+  ctx.fillStyle = '#6DC870'; ctx.fillRect(x, y+h*0.55, w, h*0.45);
+  // Sunflowers
+  function sf(fx, fy, s) {
+    ctx.strokeStyle='#5A8A30'; ctx.lineWidth=s*0.18;
+    ctx.beginPath(); ctx.moveTo(fx, fy+s*1.8); ctx.lineTo(fx, fy); ctx.stroke();
+    ctx.fillStyle='#F4B800';
+    for(let a=0;a<Math.PI*2;a+=Math.PI/5){
+      ctx.beginPath(); ctx.ellipse(fx+Math.cos(a)*s*0.7, fy+Math.sin(a)*s*0.7, s*0.45, s*0.25, a, 0, Math.PI*2); ctx.fill();
+    }
+    ctx.fillStyle='#5C3010'; ctx.beginPath(); ctx.arc(fx,fy,s*0.38,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#7A4818'; ctx.beginPath(); ctx.arc(fx,fy,s*0.22,0,Math.PI*2); ctx.fill();
+  }
+  sf(x+w*0.25, y+h*0.38, 10);
+  sf(x+w*0.5,  y+h*0.32, 12);
+  sf(x+w*0.75, y+h*0.40, 9);
+  // Clouds
+  ctx.fillStyle='rgba(255,255,255,0.9)';
+  ctx.beginPath(); ctx.ellipse(x+w*0.2,y+h*0.15,14,7,0,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(x+w*0.7,y+h*0.1,10,5,0,0,Math.PI*2); ctx.fill();
+}
+
+function paintCozyHouse(x, y, w, h) {
+  // Sky
+  ctx.fillStyle='#B0D8F0'; ctx.fillRect(x,y,w,h*0.65);
+  // Stars/moon (night-ish dusk)
+  ctx.fillStyle='#FFE066'; ctx.beginPath(); ctx.arc(x+w*0.8,y+h*0.12,7,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle='rgba(255,240,100,0.2)'; ctx.beginPath(); ctx.arc(x+w*0.8,y+h*0.12,12,0,Math.PI*2); ctx.fill();
+  // Hills
+  ctx.fillStyle='#5DBB63'; ctx.beginPath(); ctx.arc(x+w*0.3,y+h*0.7,w*0.4,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle='#4EA855'; ctx.beginPath(); ctx.arc(x+w*0.75,y+h*0.72,w*0.3,0,Math.PI*2); ctx.fill();
+  // House body
+  ctx.fillStyle='#F5E8C8'; ctx.fillRect(x+w*0.28,y+h*0.42,w*0.44,h*0.38);
+  // Roof
+  ctx.fillStyle='#C85030';
+  ctx.beginPath(); ctx.moveTo(x+w*0.22,y+h*0.44); ctx.lineTo(x+w*0.5,y+h*0.18); ctx.lineTo(x+w*0.78,y+h*0.44); ctx.closePath(); ctx.fill();
+  // Door
+  ctx.fillStyle='#8B5A2B'; ctx.beginPath(); ctx.roundRect(x+w*0.44,y+h*0.6,w*0.12,h*0.2,[3,3,0,0]); ctx.fill();
+  // Windows
+  ctx.fillStyle='#C0E8F8'; ctx.fillRect(x+w*0.3,y+h*0.5,w*0.1,h*0.1); ctx.fillRect(x+w*0.6,y+h*0.5,w*0.1,h*0.1);
+  ctx.fillStyle='rgba(255,240,150,0.5)'; ctx.fillRect(x+w*0.3,y+h*0.5,w*0.1,h*0.1); ctx.fillRect(x+w*0.6,y+h*0.5,w*0.1,h*0.1);
+  // Chimney smoke
+  ctx.strokeStyle='rgba(180,180,180,0.6)'; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.moveTo(x+w*0.62,y+h*0.28); ctx.bezierCurveTo(x+w*0.65,y+h*0.18,x+w*0.68,y+h*0.1,x+w*0.64,y+h*0.04); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(x+w*0.65,y+h*0.3); ctx.bezierCurveTo(x+w*0.7,y+h*0.2,x+w*0.72,y+h*0.12,x+w*0.68,y+h*0.06); ctx.stroke();
+  ctx.fillStyle='#8B5A2B'; ctx.fillRect(x+w*0.6,y+h*0.22,w*0.07,h*0.1);
+}
+
+function paintBirds(x, y, w, h) {
+  // Soft pastel background
+  const bg = ctx.createLinearGradient(x,y,x,y+h);
+  bg.addColorStop(0,'#E8F4F8'); bg.addColorStop(1,'#D0EAD8');
+  ctx.fillStyle=bg; ctx.fillRect(x,y,w,h);
+  // Branch
+  ctx.strokeStyle='#8B6040'; ctx.lineWidth=3;
+  ctx.beginPath(); ctx.moveTo(x+5,y+h*0.7); ctx.bezierCurveTo(x+w*0.3,y+h*0.55,x+w*0.6,y+h*0.65,x+w-5,y+h*0.5); ctx.stroke();
+  // Leaves on branch
+  ctx.fillStyle='#68B86A';
+  for(let lx=0.2;lx<1;lx+=0.18){
+    ctx.beginPath(); ctx.ellipse(x+w*lx, y+h*(0.58-lx*0.04), 7, 4, -0.4, 0, Math.PI*2); ctx.fill();
+  }
+  // Birds
+  function bird(bx,by,col,dir=1) {
+    ctx.fillStyle=col;
+    // Body
+    ctx.beginPath(); ctx.ellipse(bx,by,10,7,0,0,Math.PI*2); ctx.fill();
+    // Head
+    ctx.beginPath(); ctx.arc(bx+dir*10,by-2,6,0,Math.PI*2); ctx.fill();
+    // Wing
+    ctx.fillStyle='rgba(0,0,0,0.12)';
+    ctx.beginPath(); ctx.ellipse(bx-dir*3,by-3,9,5,dir*0.4,0,Math.PI*2); ctx.fill();
+    // Beak
+    ctx.fillStyle='#E89030';
+    ctx.beginPath(); ctx.moveTo(bx+dir*15,by-2); ctx.lineTo(bx+dir*20,by-1); ctx.lineTo(bx+dir*15,by+1); ctx.closePath(); ctx.fill();
+    // Eye
+    ctx.fillStyle='#1A1A2A'; ctx.beginPath(); ctx.arc(bx+dir*11,by-3,1.5,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='white'; ctx.beginPath(); ctx.arc(bx+dir*11.5,by-3.5,0.7,0,Math.PI*2); ctx.fill();
+  }
+  bird(x+w*0.25, y+h*0.52, '#E87070');
+  bird(x+w*0.60, y+h*0.46, '#7BB8D4', -1);
+  bird(x+w*0.42, y+h*0.4,  '#C49FD4');
+  // Small butterflies
+  ctx.fillStyle='rgba(255,200,100,0.7)';
+  ctx.beginPath(); ctx.ellipse(x+w*0.8,y+h*0.25,8,5,0.5,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(x+w*0.8,y+h*0.25,8,5,-0.5,0,Math.PI*2); ctx.fill();
+}
+
+function drawDecorations() {
+  // Wall paintings — three framed artworks between the windows
+  drawWallFrame(310, 5, 88, 72, 'sunflowers', paintSunflowers);
+  drawWallFrame(490, 8, 80, 66, 'house', paintCozyHouse);
+  drawWallFrame(400, 6, 78, 60, 'birds', paintBirds);
+}
+
+// ══════════════════════════════════════════════
+//  GAME LOOP
+// ══════════════════════════════════════════════
+function update(dt) {
+  if (gameOver || dialogueOpen || inspectOpen || menuOpen) return;
+
+  // Player movement
+  const spd = 2.8;
+  let moved = false;
+  if (keys['w'] || keys['arrowup'])    { player.y -= spd; moved = true; player.dir = 0; }
+  if (keys['s'] || keys['arrowdown'])  { player.y += spd; moved = true; player.dir = 2; }
+  if (keys['a'] || keys['arrowleft'])  { player.x -= spd; moved = true; player.dir = 3; }
+  if (keys['d'] || keys['arrowright']) { player.x += spd; moved = true; player.dir = 1; }
+  player.x = Math.max(20, Math.min(W-20, player.x));
+  player.y = Math.max(BUFFET_Y + 50, Math.min(H-20, player.y));
+
+  if (moved) {
+    player.frameTimer++;
+    if (player.frameTimer > 1) { player.frame++; player.frameTimer = 0; }
+  } else {
+    player.frame = 0; // reset to idle pose when still
+  }
+
+  // Guest spawning — ramping interval (8s → 6s → 4s)
+  if (guestQueue.length > 0) {
+    nextGuestTimer--;
+    if (nextGuestTimer <= 0) {
+      spawnGuest();
+      nextGuestTimer = getSpawnInterval();
+    }
+  }
+
+  // Tick patience and auto-leave if it runs out
+  for (let g of activeGuests) {
+    if (g.state === 'seated') {
+      g.patience--;
+      if (g.patience <= 0) {
+        g.patience = 0;
+        const seat = SEATS[g.seatIdx];
+        showFloatEmoji('✕', seat.x, seat.y - 20, false);
+        showToast(`${g.guestDef.name} got tired of waiting...`, true);
+        guestsServed++;
+        g.state = 'leaving';
+        g.leaveTimer = 60;
+        updateHUD();
+        checkGameOver();
+      }
+    }
+  }
+
+  // Guest leaving animation
+  for (let i = activeGuests.length-1; i >= 0; i--) {
+    const g = activeGuests[i];
+    if (g.state === 'leaving') {
+      g.leaveTimer--;
+      if (g.leaveTimer <= 0) {
+        SEATS[g.seatIdx].occupied = false;
+        activeGuests.splice(i, 1);
+        if (guestsServed >= 10 && guestQueue.length === 0 && activeGuests.length === 0) {
+          setTimeout(() => {
+            document.getElementById('final-score').textContent = score;
+            document.getElementById('overlay').classList.add('visible');
+            gameOver = true;
+          }, 800);
+        }
+      }
+    }
+  }
+}
+
+function render() {
+  ctx.clearRect(0, 0, W, H);
+
+  drawWall();
+  drawDecorations();
+  // Draw a subtle interaction zone strip in front of the buffet
+  const buffetZoneY = BUFFET_Y + 68;
+  ctx.fillStyle = 'rgba(249,210,98,0.10)';
+  ctx.fillRect(0, buffetZoneY, W, 60);
+  drawFloor();
+  drawBuffet();
+
+  // Tables and chairs (back to front for depth)
+  const allObjects = [];
+
+  for (let r = 0; r < TABLE_ROWS.length; r++) {
+    for (let c = 0; c < TABLE_COLS.length; c++) {
+      const seatIdx = r * TABLE_COLS.length + c;
+      const tx = TABLE_COLS[c], ty = TABLE_ROWS[r].y;
+      allObjects.push({ type:'table', x:tx, y:ty, seatIdx });
+    }
+  }
+
+  // Sort objects by y for depth
+  allObjects.sort((a,b) => a.y - b.y);
+
+  for (const obj of allObjects) {
+    const seatIdx = obj.seatIdx;
+    const guest = activeGuests.find(g => g.seatIdx === seatIdx && g.state === 'seated');
+    drawChair(obj.x, obj.y, !!guest);
+    drawTable(obj.x, obj.y);
+    if (guest) drawGuest(guest);
+  }
+
+  drawPlayer();
+
+  // Corner plants drawn last so they sit in front
+  function cornerPlant(px, py, flip) {
+    const pw = 28, ph = 22;
+    ctx.fillStyle = '#C87040';
+    ctx.beginPath();
+    ctx.moveTo(px-pw/2+4,py-ph); ctx.lineTo(px+pw/2-4,py-ph);
+    ctx.lineTo(px+pw/2,py); ctx.lineTo(px-pw/2,py);
+    ctx.closePath(); ctx.fill();
+    ctx.fillStyle='#E09060'; ctx.fillRect(px-pw/2,py-ph-3,pw,5);
+    ctx.fillStyle='#5C3A18'; ctx.beginPath(); ctx.ellipse(px,py-ph,pw/2-2,4,0,0,Math.PI*2); ctx.fill();
+    const d=flip?-1:1;
+    ctx.strokeStyle='#4A8C30'; ctx.lineWidth=2.5;
+    ctx.beginPath(); ctx.moveTo(px,py-ph); ctx.bezierCurveTo(px+d*10,py-ph-20,px+d*20,py-ph-35,px+d*14,py-ph-48); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(px,py-ph); ctx.bezierCurveTo(px-d*5,py-ph-18,px-d*15,py-ph-28,px-d*8,py-ph-42); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(px,py-ph); ctx.lineTo(px,py-ph-52); ctx.stroke();
+    function leaf(lx,ly,angle,col){ctx.fillStyle=col;ctx.save();ctx.translate(lx,ly);ctx.rotate(angle);ctx.beginPath();ctx.ellipse(0,0,14,7,0,0,Math.PI*2);ctx.fill();ctx.restore();}
+    leaf(px+d*14,py-ph-48,-0.6*d,'#5DBB63');
+    leaf(px-d*8,py-ph-42,0.7*d,'#4EA855');
+    leaf(px,py-ph-52,0,'#68C870');
+    leaf(px+d*8,py-ph-30,-0.4*d,'#5DBB63');
+  }
+  cornerPlant(32, H-10, false);
+  cornerPlant(W-32, H-10, true);
+}
+
+let lastTime = 0;
+function loop(ts = 0) {
+  const dt = ts - lastTime; lastTime = ts;
+  update(dt);
+  render();
+  if (!gameOver) requestAnimationFrame(loop);
+}
+
+// ── INIT — draw first frame but wait for player to click Start ──
+updateHUD();
+render();
+</script>
+</body>
+</html>
