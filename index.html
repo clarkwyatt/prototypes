@@ -575,6 +575,7 @@
     </div>
 
     <div class="debug-section-label">📍 Jump to Phase</div>
+    <button class="debug-btn" onclick="startTablescape()">🍽 Tablescape</button>
     <button class="debug-btn" onclick="debugGoBreakfast()">🍳 Breakfast</button>
     <button class="debug-btn" onclick="debugGoReviews()">📋 Reviews</button>
     <button class="debug-btn" onclick="debugGoFarmersMarket()">🌽 Farmer's Market</button>
@@ -584,14 +585,36 @@
   </div>
 
   <!-- Start Screen -->
+  <!-- TABLESCAPE PHASE -->
+  <div id="tc-phase" style="display:none;position:absolute;inset:0;z-index:51;border-radius:18px;overflow:hidden;background:#F5ECD8;">
+    <canvas id="tc-canvas" width="900" height="620" style="position:absolute;inset:0;width:100%;height:100%;"></canvas>
+    <!-- Dragged item layer (HTML, sits above canvas) -->
+    <div id="tc-drag-layer" style="position:absolute;inset:0;pointer-events:none;z-index:10;"></div>
+    <!-- Right margin icon tray -->
+    <div id="tc-tray" style="position:absolute;top:0;right:0;width:100px;height:100%;background:rgba(180,140,90,0.18);border-left:2px solid rgba(180,140,90,0.3);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;z-index:12;"></div>
+    <!-- Victory overlay -->
+    <div id="tc-victory" style="display:none;position:absolute;inset:0;background:rgba(44,24,16,0.9);z-index:40;flex-direction:column;align-items:center;justify-content:center;border-radius:18px;">
+      <div style="font-family:'Fredoka One',sans-serif;font-size:46px;color:#F9D262;text-shadow:0 4px 24px rgba(249,210,98,0.5);margin-bottom:8px;">Table's Ready! 🍽</div>
+      <div style="font-size:17px;color:#F5E6D3;font-weight:700;margin-bottom:6px;">A perfect setting for a perfect morning.</div>
+      <div style="font-size:14px;color:rgba(245,230,211,0.65);font-weight:600;margin-bottom:28px;">Now it's time to serve the guests arriving for breakfast.</div>
+      <button onclick="startBreakfastFromTablescape()" style="background:#F9D262;border:3px solid #9B6B47;border-radius:50px;padding:14px 42px;font-family:'Fredoka One',sans-serif;font-size:24px;color:#7A4A1E;cursor:pointer;box-shadow:0 4px 18px rgba(249,210,98,0.35);margin-bottom:28px;" onmouseover="this.style.transform='scale(1.07)'" onmouseout="this.style.transform='scale(1)'">Start Breakfast 🍳</button>
+      <div style="display:flex;flex-direction:column;gap:10px;text-align:left;">
+        <div style="font-size:15px;color:rgba(245,230,211,0.85);font-weight:700;">💬 Chat with guests a couple of times — they'll drop hints about what they want</div>
+        <div style="font-size:15px;color:rgba(245,230,211,0.85);font-weight:700;">🍽 Grab the right dish from the buffet and bring it over</div>
+        <div style="font-size:15px;color:rgba(245,230,211,0.85);font-weight:700;">⚡ Serve before their patience runs out for a bigger tip!</div>
+      </div>
+    </div>
+  </div>
+
   <div id="start-overlay" class="visible" style="position:absolute;inset:0;background:rgba(44,24,16,0.88);z-index:50;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:18px;">
     <div style="font-family:'Fredoka One',sans-serif;font-size:52px;color:#F9D262;text-shadow:0 4px 24px rgba(249,210,98,0.5);margin-bottom:8px;">☀️ Sunny Side B&B</div>
-    <div style="font-size:17px;color:#F5E6D3;font-weight:700;margin-bottom:36px;letter-spacing:0.03em;">A Cozy-style Adventure</div>
-    <button id="start-btn" onclick="startGame()" style="background:#F9D262;border:3px solid #9B6B47;border-radius:50px;padding:14px 42px;font-family:'Fredoka One',sans-serif;font-size:24px;color:#7A4A1E;cursor:pointer;transition:transform 0.15s;box-shadow:0 4px 18px rgba(249,210,98,0.35);">Start Breakfast 🍳</button>
+    <div style="font-size:17px;color:#F5E6D3;font-weight:700;margin-bottom:6px;letter-spacing:0.03em;">A Cozy-style Adventure</div>
+    <div style="font-size:14px;color:rgba(245,230,211,0.65);font-weight:600;margin-bottom:28px;">First things first — the breakfast table won't set itself.</div>
+    <button id="start-btn" onclick="startTablescape()" style="background:#F9D262;border:3px solid #9B6B47;border-radius:50px;padding:14px 42px;font-family:'Fredoka One',sans-serif;font-size:24px;color:#7A4A1E;cursor:pointer;transition:transform 0.15s;box-shadow:0 4px 18px rgba(249,210,98,0.35);">Set the Table 🍽</button>
     <div style="margin-top:24px;display:flex;flex-direction:column;gap:10px;text-align:left;">
-      <div style="font-size:15px;color:rgba(245,230,211,0.85);font-weight:700;">💬 Chat with guests for clues</div>
-      <div style="font-size:15px;color:rgba(245,230,211,0.85);font-weight:700;">🍽 Grab the right dish</div>
-      <div style="font-size:15px;color:rgba(245,230,211,0.85);font-weight:700;">⚡ Serve fast for bigger tips!</div>
+      <div style="font-size:15px;color:rgba(245,230,211,0.85);font-weight:700;">🍽 Drag each item from the tray onto the table</div>
+      <div style="font-size:15px;color:rgba(245,230,211,0.85);font-weight:700;">📐 Place items in their proper position</div>
+      <div style="font-size:15px;color:rgba(245,230,211,0.85);font-weight:700;">↩️ Pick up any item to move it to a different spot</div>
     </div>
   </div>
 
@@ -1240,13 +1263,13 @@ let gameOver = false;
 let nextGuestTimer = 0;
 let keys = {};
 
-const PATIENCE_FRAMES = 60 * 40; // 40 seconds at 60fps to drain fully
+const PATIENCE_FRAMES = 60 * 60; // 60 seconds at 60fps to drain fully
 
 function getSpawnInterval() {
   const spawned = 10 - guestQueue.length;
-  if (spawned < 2) return 60 * 8;  // first 2 guests: 8s
-  if (spawned < 4) return 60 * 6;  // next 2 guests: 6s
-  return 60 * 4;                    // all remaining: 4s
+  if (spawned < 2) return 60 * 10; // first 2 guests: 10s (gentle start)
+  if (spawned < 4) return 60 * 8;  // next 2 guests: 8s
+  return 60 * 8;                    // all remaining: 8s (steady, not ramping)
 }
 
 function startGame() {
@@ -3209,6 +3232,7 @@ function hideAllPhases() {
   document.getElementById('hh-phase').style.display = 'none';
   document.getElementById('ah-phase').style.display = 'none';
   document.getElementById('score-phase').style.display = 'none';
+  document.getElementById('tc-phase').style.display = 'none';
   document.getElementById('interaction-menu').classList.remove('visible');
   document.getElementById('dialogue-box').classList.remove('visible');
   document.getElementById('inspect-box').classList.remove('visible');
@@ -8823,9 +8847,327 @@ function restartGame() {
   if (typeof upkeepState !== 'undefined') upkeepState = { cash: 0, inventory: [], sheetMusic: [], linenCount: 0, trashCount: 0, upkeepTime: 840, basementUnlocked: false, basementLit: false, crateInspected: false, bookcaseOpen: false, safeRevealed: false, safeUnlocked: false, rugPeeked: false, secretPassageFound: false, guestNotes: {}, popupItem: null, gameOver: false, location: 'hall', player: {x:450,y:420,frame:0,frameTimer:0} };
   if (typeof hhState !== 'undefined') hhState = { player:{x:450,y:420,frame:0,frameTimer:0}, connections:0, greeted:{}, chatted:{}, popupGuest:null, guestNotes:{} };
   if (typeof ahState !== 'undefined') ahState = { player:{x:450,y:420,frame:0,frameTimer:0}, location:'hall', ghostsMet:[], popupItem:null, queue:[], currentGhost:null };
-  // Show start screen
-  document.getElementById('start-overlay').style.display = 'flex';
-  Music.stop();
+  // Show tablescape to restart
+  startTablescape();
+}
+
+// ══════════════════════════════════════════════
+//  TABLESCAPE PHASE
+// ══════════════════════════════════════════════
+
+const TC_W = 900, TC_H = 620;
+const TC_TRAY_X = 800; // left edge of the tray
+// Table bounds — wider, more centred, leaving room for tray
+const TC_TABLE = { x: 100, y: 60, w: 670, h: 520 };
+
+// Target positions — proper single place setting, larger scale
+const TC_TARGETS = {
+  plate:  { x: 410, y: 340 },
+  fork:   { x: 238, y: 340 },
+  knife:  { x: 582, y: 320 },
+  spoon:  { x: 652, y: 340 },
+  glass:  { x: 570, y: 165 },
+  napkin: { x: 410, y: 340 },
+};
+
+const TC_SNAP_RADIUS = 35; // px forgiveness
+
+// Item definitions — larger sizes for a proper single-setting feel
+const TC_ITEMS = [
+  { id:'plate',  emoji:'🍽', label:'Plate',  w:170, h:170 },
+  { id:'fork',   emoji:'🍴', label:'Fork',   w:32,  h:160 },
+  { id:'knife',  emoji:'🔪', label:'Knife',  w:32,  h:160 },
+  { id:'spoon',  emoji:'🥄', label:'Spoon',  w:32,  h:148 },
+  { id:'glass',  emoji:'🥛', label:'Glass',  w:96,  h:96  },
+  { id:'napkin', emoji:'🧻', label:'Napkin', w:130, h:70  },
+];
+
+let tcCanvas, tcCtx;
+let tcState = {};
+
+function startTablescape() {
+  document.getElementById('start-overlay').style.display = 'none';
+  document.getElementById('tc-phase').style.display = 'block';
+  document.getElementById('tc-victory').style.display = 'none';
+  tcCanvas = document.getElementById('tc-canvas');
+  tcCtx = tcCanvas.getContext('2d');
+  tcState = {
+    placed: {},   // id -> { x, y, correct, angle }
+    dragging: null, // { id, mx, my, startX, startY }
+    solved: new Set(),
+  };
+  tcBuildTray();
+  tcCanvas.addEventListener('mousedown', tcMouseDown);
+  window.addEventListener('mousemove', tcMouseMove);
+  window.addEventListener('mouseup', tcMouseUp);
+  Music.play('reviews'); // calm ambient
+  tcRender();
+  requestAnimationFrame(tcLoop);
+}
+
+function startBreakfastFromTablescape() {
+  document.getElementById('tc-phase').style.display = 'none';
+  tcCanvas.removeEventListener('mousedown', tcMouseDown);
+  window.removeEventListener('mousemove', tcMouseMove);
+  window.removeEventListener('mouseup', tcMouseUp);
+  startGame();
+}
+
+// ── TRAY ──
+function tcBuildTray() {
+  const tray = document.getElementById('tc-tray');
+  tray.innerHTML = '';
+  TC_ITEMS.forEach(item => {
+    if (tcState.solved.has(item.id)) return;
+    // If item is placed on table (not in tray), don't show icon
+    if (tcState.placed[item.id]) return;
+    const btn = document.createElement('div');
+    btn.id = `tc-icon-${item.id}`;
+    btn.style.cssText = `width:56px;height:56px;background:rgba(255,248,240,0.92);border:2.5px solid #D4A875;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:grab;user-select:none;font-size:26px;box-shadow:0 3px 10px rgba(120,80,40,0.18);transition:transform 0.1s;`;
+    btn.innerHTML = `<span>${item.emoji}</span><span style="font-family:'Fredoka One',sans-serif;font-size:9px;color:#9B6B47;margin-top:1px;">${item.label}</span>`;
+    btn.addEventListener('mousedown', (e) => tcStartDragFromTray(e, item.id));
+    tray.appendChild(btn);
+  });
+}
+
+// ── DRAG FROM TRAY ──
+function tcStartDragFromTray(e, id) {
+  e.preventDefault();
+  const rect = tcCanvas.getBoundingClientRect();
+  const scaleX = TC_W / rect.width;
+  const mx = (e.clientX - rect.left) * scaleX;
+  const my = (e.clientY - rect.top) * (TC_H / rect.height);
+  tcState.dragging = { id, mx, my };
+  // Hide the icon immediately — item and icon must not coexist
+  const icon = document.getElementById(`tc-icon-${id}`);
+  if (icon) icon.style.visibility = 'hidden';
+  // Remove from placed if it was there
+  delete tcState.placed[id];
+}
+
+// ── CANVAS CLICK (pick up placed item) ──
+function tcMouseDown(e) {
+  if (tcState.dragging) return;
+  const rect = tcCanvas.getBoundingClientRect();
+  const mx = (e.clientX - rect.left) * (TC_W / rect.width);
+  const my = (e.clientY - rect.top) * (TC_H / rect.height);
+  // Check placed items in reverse draw order — topmost item gets priority
+  const drawOrder = ['plate','fork','knife','spoon','glass','napkin'];
+  const checkOrder = [...drawOrder].reverse();
+  for (const id of checkOrder) {
+    const p = tcState.placed[id];
+    if (!p) continue;
+    const item = TC_ITEMS.find(i => i.id === id);
+    if (!item) continue;
+    const pad = 18; // generous hit area
+    if (mx >= p.x - item.w/2 - pad && mx <= p.x + item.w/2 + pad &&
+        my >= p.y - item.h/2 - pad && my <= p.y + item.h/2 + pad) {
+      if (tcState.solved.has(id)) continue; // can't move solved — try next item underneath
+      tcState.dragging = { id, mx, my };
+      delete tcState.placed[id];
+      const icon = document.getElementById(`tc-icon-${id}`);
+      if (icon) icon.style.visibility = 'hidden';
+      return;
+    }
+  }
+}
+
+function tcMouseMove(e) {
+  if (!tcState.dragging) return;
+  const rect = tcCanvas.getBoundingClientRect();
+  tcState.dragging.mx = (e.clientX - rect.left) * (TC_W / rect.width);
+  tcState.dragging.my = (e.clientY - rect.top) * (TC_H / rect.height);
+}
+
+function tcMouseUp(e) {
+  if (!tcState.dragging) return;
+  const { id, mx, my } = tcState.dragging;
+  tcState.dragging = null;
+
+  // If dropped in tray area, return to tray — restore icon
+  if (mx > TC_TRAY_X) {
+    delete tcState.placed[id];
+    const icon = document.getElementById(`tc-icon-${id}`);
+    if (icon) icon.style.visibility = 'visible';
+    return;
+  }
+
+  // Check if close enough to target
+  const target = TC_TARGETS[id];
+  const dist = Math.hypot(mx - target.x, my - target.y);
+  const correct = dist < TC_SNAP_RADIUS;
+
+  // Special rule: napkin requires plate to be solved first
+  if (id === 'napkin' && !tcState.solved.has('plate')) {
+    tcState.placed[id] = { x: mx, y: my, correct: false, angle: 22 };
+    return;
+  }
+
+  if (correct) {
+    tcState.placed[id] = { x: target.x, y: target.y, correct: true, angle: 0 };
+    tcState.solved.add(id);
+    tcShowCheck(target.x, target.y);
+    if (tcState.solved.size === TC_ITEMS.length) {
+      setTimeout(() => { document.getElementById('tc-victory').style.display = 'flex'; }, 800);
+    }
+  } else {
+    tcState.placed[id] = { x: mx, y: my, correct: false, angle: 22 };
+  }
+}
+
+// ── VFX ──
+function tcShowCheck(x, y) {
+  const gc = document.getElementById('game-container');
+  const scale = gc.offsetWidth / TC_W;
+  const el = document.createElement('div');
+  el.className = 'float-plus';
+  el.textContent = '✨ ✓';
+  el.style.left = (x * scale - 20) + 'px';
+  el.style.top  = (y * scale - 60) + 'px';
+  gc.appendChild(el);
+  setTimeout(() => el.remove(), 1500);
+}
+
+// ── RENDER ──
+function tcLoop() {
+  tcRender();
+  if (document.getElementById('tc-phase').style.display !== 'none') {
+    requestAnimationFrame(tcLoop);
+  }
+}
+
+function tcRender() {
+  const c = tcCtx;
+  c.clearRect(0, 0, TC_W, TC_H);
+
+  // Background — warm linen tablecloth colour
+  c.fillStyle = '#F0E6D0';
+  c.fillRect(0, 0, TC_W, TC_H);
+
+  // Subtle linen texture — fine grid
+  c.strokeStyle = 'rgba(180,150,100,0.12)'; c.lineWidth = 1;
+  for (let gx = 0; gx < TC_W; gx += 18) { c.beginPath(); c.moveTo(gx,0); c.lineTo(gx,TC_H); c.stroke(); }
+  for (let gy = 0; gy < TC_H; gy += 18) { c.beginPath(); c.moveTo(0,gy); c.lineTo(TC_W,gy); c.stroke(); }
+
+  // Table surface (square, slightly lighter)
+  const tb = TC_TABLE;
+  c.fillStyle = '#FFFDF5';
+  c.strokeStyle = '#C8A870'; c.lineWidth = 3;
+  c.beginPath(); c.roundRect(tb.x, tb.y, tb.w, tb.h, 12); c.fill(); c.stroke();
+
+  // Subtle table shadow
+  c.fillStyle = 'rgba(140,100,50,0.06)';
+  c.beginPath(); c.roundRect(tb.x+6, tb.y+6, tb.w, tb.h, 12); c.fill();
+  c.fillStyle = '#FFFDF5';
+  c.beginPath(); c.roundRect(tb.x, tb.y, tb.w, tb.h, 12); c.fill();
+  c.strokeStyle = '#C8A870'; c.lineWidth = 3;
+  c.beginPath(); c.roundRect(tb.x, tb.y, tb.w, tb.h, 12); c.stroke();
+
+  c.setLineDash([]);
+
+  // Draw placed items (not being dragged, not solved items that are under napkin)
+  // Draw order: plate first, then others, napkin last
+  const drawOrder = ['plate','fork','knife','spoon','glass','napkin'];
+  drawOrder.forEach(id => {
+    const p = tcState.placed[id];
+    if (!p || (tcState.dragging && tcState.dragging.id === id)) return;
+    tcDrawItem(c, id, p.x, p.y, p.angle);
+  });
+
+  // Draw dragging item
+  if (tcState.dragging) {
+    const { id, mx, my } = tcState.dragging;
+    tcDrawItem(c, id, mx, my, 0);
+    // Shadow under dragging item
+    c.fillStyle = 'rgba(100,60,20,0.12)';
+    const item = TC_ITEMS.find(i => i.id === id);
+    c.beginPath(); c.ellipse(mx, my + item.h/2 + 4, item.w/2 * 0.7, 8, 0, 0, Math.PI*2); c.fill();
+  }
+
+  // Tray label
+  c.fillStyle = '#9B6B47'; c.font = 'bold 11px Nunito'; c.textAlign = 'center';
+  c.fillText('ITEMS', TC_TRAY_X + 50, 40);
+  c.textAlign = 'left';
+}
+
+function tcDrawItem(c, id, cx, cy, angle) {
+  c.save();
+  c.translate(cx, cy);
+  if (angle) c.rotate(angle * Math.PI / 180);
+
+  switch(id) {
+    case 'plate': {
+      const pw = 170, ph = 170;
+      c.fillStyle = '#FAFAF8';
+      c.strokeStyle = '#C8C0B0'; c.lineWidth = 2;
+      c.beginPath(); c.roundRect(-pw/2, -ph/2, pw, ph, 10); c.fill(); c.stroke();
+      c.strokeStyle = 'rgba(180,170,155,0.5)'; c.lineWidth = 1;
+      c.beginPath(); c.roundRect(-pw/2+12, -ph/2+12, pw-24, ph-24, 5); c.stroke();
+      c.strokeStyle = 'rgba(200,190,175,0.3)'; c.lineWidth = 1;
+      c.beginPath(); c.arc(0, 0, 36, 0, Math.PI*2); c.stroke();
+      break;
+    }
+    case 'fork': {
+      const fw = 32, fh = 160;
+      c.fillStyle = '#D8D0C0'; c.strokeStyle = '#B8B0A0'; c.lineWidth = 1;
+      c.beginPath(); c.roundRect(-fw/2+4, -fh/2+86, fw-8, fh-96, 8); c.fill(); c.stroke();
+      c.beginPath(); c.roundRect(-fw/2+8, -fh/2+62, fw-16, 30, 2); c.fill(); c.stroke();
+      for (let t = 0; t < 4; t++) {
+        const tx = -fw/2 + 3 + t * 7;
+        c.beginPath(); c.roundRect(tx, -fh/2, 5, 64, 2); c.fill(); c.stroke();
+      }
+      break;
+    }
+    case 'knife': {
+      const kw = 32, kh = 160;
+      c.fillStyle = '#D8D0C0'; c.strokeStyle = '#B8B0A0'; c.lineWidth = 1;
+      c.beginPath(); c.roundRect(-kw/2+4, -kh/2+86, kw-8, kh-96, 8); c.fill(); c.stroke();
+      c.fillStyle = '#E8E4DC';
+      c.beginPath();
+      c.moveTo(-kw/2+8, -kh/2);
+      c.lineTo(kw/2-8, -kh/2+12);
+      c.lineTo(kw/2-8, -kh/2+88);
+      c.lineTo(-kw/2+8, -kh/2+88);
+      c.closePath(); c.fill(); c.stroke();
+      break;
+    }
+    case 'spoon': {
+      const sw = 32, sh = 148;
+      c.fillStyle = '#D8D0C0'; c.strokeStyle = '#B8B0A0'; c.lineWidth = 1;
+      c.beginPath(); c.roundRect(-sw/2+6, -sh/2+72, sw-12, sh-82, 8); c.fill(); c.stroke();
+      c.beginPath(); c.roundRect(-sw/2+10, -sh/2+38, sw-20, 40, 2); c.fill(); c.stroke();
+      c.beginPath(); c.ellipse(0, -sh/2+22, sw/2-4, 24, 0, 0, Math.PI*2); c.fill(); c.stroke();
+      break;
+    }
+    case 'glass': {
+      const gw = 96, gh = 96;
+      c.fillStyle = 'rgba(210,235,255,0.55)';
+      c.strokeStyle = 'rgba(160,200,240,0.8)'; c.lineWidth = 2;
+      c.beginPath(); c.roundRect(-gw/2, -gh/2, gw, gh, 8); c.fill(); c.stroke();
+      c.strokeStyle = 'rgba(220,240,255,0.9)'; c.lineWidth = 1.5;
+      c.beginPath(); c.roundRect(-gw/2+4, -gh/2+4, gw-8, 10, 4); c.stroke();
+      c.fillStyle = 'rgba(180,220,255,0.3)';
+      c.beginPath(); c.roundRect(-gw/2+5, -gh/2+24, gw-10, gh-34, 4); c.fill();
+      break;
+    }
+    case 'napkin': {
+      const nw = 130, nh = 70;
+      const plateOk = tcState.solved.has('plate') || (tcState.placed['plate'] && tcState.placed['plate'].correct);
+      c.fillStyle = plateOk ? '#F8F4EE' : '#F0E8DC';
+      c.strokeStyle = '#D4C4A4'; c.lineWidth = 1.5;
+      c.beginPath(); c.roundRect(-nw/2, -nh/2, nw, nh, 5); c.fill(); c.stroke();
+      c.strokeStyle = 'rgba(180,160,120,0.3)'; c.lineWidth = 1;
+      c.beginPath(); c.moveTo(-nw/2+14, -nh/2); c.lineTo(-nw/2+14, nh/2); c.stroke();
+      c.beginPath(); c.moveTo(-nw/2, -nh/2+16); c.lineTo(nw/2, -nh/2+16); c.stroke();
+      c.fillStyle = 'rgba(160,130,80,0.5)';
+      c.font = 'bold 16px Nunito'; c.textAlign = 'center'; c.textBaseline = 'middle';
+      c.fillText('S', 0, 8);
+      c.textAlign = 'left'; c.textBaseline = 'alphabetic';
+      break;
+    }
+  }
+  c.restore();
+
 }
 
 </script>
