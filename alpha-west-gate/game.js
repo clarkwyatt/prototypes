@@ -48,7 +48,7 @@
 
   // Each exit is placed where the hand-drawn path meets the edge of its panel.
   const roomDoors = {
-    '13': { west: 360, north: 830 }, '12': { east: 360 },
+    '13': { west: 360, north: 830 }, '12': { east: 360, west: 360 },
     '11': { east: 360, north: 220, south: 560 }, '16': { north: 560, south: 560 },
     '21': { north: 560 }, '06': { south: 220, north: 560 },
     '01': { south: 560, east: 360 }, '02': { west: 360, east: 360 },
@@ -115,7 +115,7 @@
 
     let quest = '';
     if (!s.key && s.rodents < 5) quest = `<strong>First Quest</strong>Catch 5 rodents: ${s.rodents}/5`;
-    else if (!s.key && s.rodents >= 5) quest = '<strong>Quest</strong>Talk to Grandfather.';
+    else if (!s.gateOpen && !s.key && s.rodents >= 5) quest = '<strong>Quest</strong>Talk to Grandfather.';
     else if (s.key && !s.gateOpen) quest = '<strong>Quest</strong>Unlock the West Gate';
     else if (s.vinesStarted && !s.alchemistTalked) quest = '<strong>Quest</strong>Find a way to remove the Vines.';
     else if (s.vinesStarted && s.alchemistTalked && !s.potion && !s.thorns) {
@@ -142,23 +142,26 @@
     return button;
   }
 
-  function openModal(title, emoji, copy, buttons) {
+  function openModal(title, emoji, copy, buttons, compact = false) {
     document.querySelector('#modal-title').textContent = title;
     document.querySelector('#modal-scene').textContent = emoji;
     document.querySelector('#modal-copy').innerHTML = copy;
     const buttonArea = document.querySelector('#modal-buttons');
     buttonArea.replaceChildren();
     buttons(buttonArea);
+    document.querySelector('#modal-close').onclick = closeModal;
+    modal.classList.toggle('compact', compact);
     modal.classList.add('open');
   }
 
   function closeModal() {
     modal.classList.remove('open');
+    modal.classList.remove('compact');
     updateHud();
   }
 
   function simpleModal(title, emoji, text) {
-    openModal(title, emoji, `<p>${text}</p>`, () => makeButton('Got it!', closeModal));
+    openModal(title, emoji, `<p>${text}</p>`, () => makeButton('Got it!', closeModal), true);
   }
 
   function enterInterior(type) {
@@ -176,10 +179,10 @@
 
   function openHouseTalk() {
     if (s.rodents < 5) {
-      openModal('Grandfather', '🧓', '<p>Catch all 5 rodents downstairs and I’ll give you the West Gate key.</p>', () => makeButton('Okay', closeModal));
+      openModal('Grandfather', '🧓', '<p>Catch all 5 rodents downstairs and I’ll give you the West Gate key.</p>', () => makeButton('Okay', closeModal), true);
     } else {
       s.key = true;
-      openModal('Grandfather', '🧓', '<p>Thank you for catching the rodents. Here is the West Gate key.</p>', () => makeButton('Thanks', closeModal));
+      openModal('Grandfather', '🧓', '<p>Thank you for catching the rodents. Here is the West Gate key.</p>', () => makeButton('Thanks', closeModal), true);
       updateHud();
     }
   }
@@ -190,12 +193,12 @@
     const requested = requiredFlowers.map((id) => `${flowerNames[id]} (1 needed)`).join(', ');
     updateHud();
     if (count < 3) {
-      openModal('The Alchemist', '🧙', `<p>I can make a potion to clear the Vines. Please bring me these flowers: ${requested}.</p>`, () => makeButton('I’ll look for them', closeModal));
+      openModal('The Alchemist', '🧙', `<p>I can make a potion to clear the Vines. Please bring me these flowers: ${requested}.</p>`, () => makeButton('I’ll look for them', closeModal), true);
       return;
     }
     openModal('The Alchemist', '🧙', '<p>You found all three flowers. I’ll brew the potion for you.</p>', () => {
       makeButton('Take the potion', () => { s.potion = true; closeModal(); toast('You received a Vine Potion.'); updateHud(); });
-    });
+    }, true);
   }
 
   function showBasement() {
@@ -211,6 +214,7 @@
       s.basementEntered = true;
     }
     modal.classList.remove('open');
+    modal.classList.remove('compact');
     updateHud();
   }
 
@@ -227,17 +231,17 @@
     if (s.rodents >= 5) {
       openModal('All Rodents Caught!', '🐭', '<p>Go upstairs and speak with Grandfather.</p>', () => {
         makeButton('Go upstairs', () => { closeModal(); exitBasement(); });
-      });
+      }, true);
     } else closeModal();
   }
 
   function enterRoom(id, entrySide) {
     s.screen = id;
     const lane = roomDoors[id]?.[entrySide];
-    if (entrySide === 'west') { s.x = 36; s.y = lane ?? H / 2; }
-    if (entrySide === 'east') { s.x = W - 36; s.y = lane ?? H / 2; }
-    if (entrySide === 'north') { s.x = lane ?? W / 2; s.y = 38; }
-    if (entrySide === 'south') { s.x = lane ?? W / 2; s.y = H - 38; }
+    if (entrySide === 'west') { s.x = 46; s.y = lane ?? H / 2; }
+    if (entrySide === 'east') { s.x = W - 46; s.y = lane ?? H / 2; }
+    if (entrySide === 'north') { s.x = lane ?? W / 2; s.y = 46; }
+    if (entrySide === 'south') { s.x = lane ?? W / 2; s.y = H - 46; }
     updateHud();
     if (id === '13' && s.giantDown && !s.returned) {
       s.returned = true;
@@ -270,9 +274,9 @@
       case 'home': enterInterior('home'); break;
       case 'grandpa': enterInterior('grandpa'); break;
       case 'gate':
-        if (s.gateOpen) toast('The West Gate is open. Walk left to screen 12.');
+        if (s.gateOpen) toast('The West Gate is open.');
         else if (!s.key) simpleModal('The West Gate is locked', '🚪', 'Grandfather may have a key.');
-        else { s.key = false; s.gateOpen = true; toast('The key opens the West Gate. Walk left to screen 12.'); updateHud(); }
+        else { s.key = false; s.gateOpen = true; toast('The key opens the West Gate.'); updateHud(); }
         break;
       case 'northGate':
         if (s.giantDown) toast('The gate is open. Follow the path home.');
@@ -295,7 +299,7 @@
         if (!s.strength) openModal('The Shrine Fountain', '💧', '<p>The blue liquid sparkles in the light. Do you drink it?</p>', () => {
           makeButton('Drink', () => { s.strength = true; closeModal(); toast('You feel much stronger!'); updateHud(); });
           makeButton('Not yet', closeModal, true);
-        });
+        }, true);
         else simpleModal('The Shrine Fountain', '💧', 'You feel strong enough to push the boulders.');
         break;
       case 'boulders':
@@ -329,7 +333,7 @@
               s.giantDown = true;
               s.scene = 'outside';
               s.interior = '';
-              openModal('The Giant Is Down!', '💫', '<p>The cave exit downward opens. Follow the path through screen 08 to return to the village.</p>', () => makeButton('Leave the cave', () => { closeModal(); enterRoom('08', 'north'); }));
+              openModal('The Giant Is Down!', '💫', '<p>The cave exit opens below. Follow the path back to the village.</p>', () => makeButton('Leave the cave', () => { closeModal(); enterRoom('08', 'north'); }));
             } else fight();
           }, 850);
         });
@@ -355,11 +359,7 @@
       toast('The gate is locked from the other side.'); return false;
     }
     if (s.screen === '12' && direction === 'west' && !s.logGone) {
-      if (s.y < 300 || s.y > 420) { toast('Cross the river at the log.'); return false; }
-      s.logGone = true;
-      s.x = 430;
-      toast('You cross the river. The log drifts away.');
-      return true;
+      toast('Cross the river on the log.'); return false;
     }
     if (s.screen === '11' && direction === 'east' && s.logGone) { toast('The log is gone. The crossing is one-way.'); return false; }
     if (s.screen === '11' && direction === 'north' && !s.thorns) { toast('The thorny vines block the north path.'); return false; }
@@ -392,10 +392,11 @@
   }
 
   function drawVillageFence() {
-    // Openings line up with the West Gate and the far-side-locked North Gate.
-    fenceSegment(55,68,760,68); fenceSegment(900,68,1065,68);
-    fenceSegment(55,660,1065,660); fenceSegment(55,68,55,305); fenceSegment(55,415,55,660);
-    fenceSegment(1065,68,1065,660);
+    // The enclosure sits inside the camera frame, with a west and north gate.
+    fenceSegment(100,100,770,100); fenceSegment(890,100,1020,100);
+    fenceSegment(100,620,1020,620);
+    fenceSegment(100,100,100,305); fenceSegment(100,415,100,620);
+    fenceSegment(1020,100,1020,620);
   }
 
   function flower(x, y, color = '#f1d469') {
@@ -565,7 +566,8 @@
   }
 
   function drawBoy() {
-    ctx.save(); ctx.translate(s.x, s.y); ctx.scale(.82,.82);
+    const scale = s.scene === 'basement' ? 1.2 : s.scene === 'interior' ? 1 : .82;
+    ctx.save(); ctx.translate(s.x, s.y); ctx.scale(scale,scale);
     ctx.fillStyle = '#21362d48'; ctx.beginPath(); ctx.ellipse(0, 14, 17, 8, 0, 0, Math.PI * 2); ctx.fill();
     ctx.fillStyle = '#5b4a3b'; ctx.beginPath(); ctx.arc(0, -7, 12, 0, Math.PI * 2); ctx.fill();
     ctx.fillStyle = '#e3b77f'; ctx.beginPath(); ctx.arc(0, -6, 8, 0, Math.PI * 2); ctx.fill();
@@ -714,12 +716,83 @@
     updateHud(); requestAnimationFrame(draw);
   }
 
+  function circleHits(x, y, circles, radius = 14) {
+    return circles.some(([cx, cy, cr]) => Math.hypot(x - cx, y - cy) < cr + radius);
+  }
+
+  function pointSegmentDistance(px, py, x1, y1, x2, y2) {
+    const dx = x2 - x1, dy = y2 - y1;
+    const t = clamp(((px - x1) * dx + (py - y1) * dy) / (dx * dx + dy * dy || 1), 0, 1);
+    return Math.hypot(px - (x1 + t * dx), py - (y1 + t * dy));
+  }
+
+  function hitsSegment(x, y, segment, radius = 15) {
+    return pointSegmentDistance(x, y, ...segment) < radius;
+  }
+
+  function villageFenceBlocks(x, y) {
+    if (s.screen !== '13') return false;
+    const fence = [
+      [100,100,770,100], [890,100,1020,100], [100,620,1020,620],
+      [100,100,100,305], [100,415,100,620], [1020,100,1020,620]
+    ];
+    if (!s.giantDown) fence.push([770,100,890,100]);
+    if (!s.gateOpen) fence.push([100,305,100,415]);
+    return fence.some((line) => hitsSegment(x, y, line));
+  }
+
+  function solidCircles() {
+    const treeEdges = [];
+    const groundTrees = s.screen === '01'
+      ? [[34,54],[1082,52],[32,657],[1080,652],[340,35],[780,676]]
+      : [[34,54],[1082,52],[32,657],[1080,652],[340,35],[780,676],[1020,215],[140,510]];
+    const sceneTrees = s.screen === '06'
+      ? [[700,85],[1040,100],[1080,255],[690,300],[1030,650],[620,120]]
+      : s.screen === '01'
+        ? [[700,85],[1035,105],[1080,250],[685,270],[1005,650],[570,120]] : [];
+    for (const [x,y] of [...groundTrees,...sceneTrees]) {
+      if (x > 80 && x < W-80 && y > 80 && y < H-80) treeEdges.push([x,y,29]);
+    }
+    const fixed = {
+      '13': [[560,280,47],[850,520,48],[265,205,43],[970,195,43],[1035,360,43],[275,560,43],[635,585,43]],
+      '11': s.thorns ? [] : [[225,155,48]],
+      '21': [[250,390,58]],
+      '06': [[850,195,48],[850,315,30]],
+      '01': s.boulders ? [] : [[1000,360,47]],
+      '03': [[750,360,55]],
+      '08': []
+    };
+    const objects = fixed[s.screen] || [];
+    const gate = s.screen === '13' && !s.gateOpen ? [[100,360,30]] : [];
+    const northGate = s.screen === '13' && !s.giantDown ? [[830,100,30]] : [];
+    return [...treeEdges, ...objects, ...gate, ...northGate];
+  }
+
+  function hitsWorldObject(x, y) {
+    if (s.scene === 'outside') {
+      if (villageFenceBlocks(x, y)) return true;
+      if (circleHits(x, y, solidCircles())) return true;
+    }
+    if (s.scene === 'interior') {
+      const furniture = s.interior === 'grandpa'
+        ? [[340,185,63],[815,500,54],[560,180,35],[805,335,30]]
+        : s.interior === 'home'
+          ? [[335,225,82],[810,198,45],[392,480,57]]
+          : [[585,300,55],[820,345,30],...hutGuideCards.map((c)=>[c.x,c.y,34])];
+      if (circleHits(x,y,furniture,13)) return true;
+    }
+    if (s.scene === 'basement') {
+      if (circleHits(x,y,[[270,204,40],[846,194,38],[250,435,25],[875,320,25],[760,525,25],[560,170,32]],14)) return true;
+    }
+    return false;
+  }
+
   function transitionAtEdge(nx, ny) {
     const lanes = roomDoors[s.screen] || {};
-    if (nx < 12 && lanes.west != null && Math.abs(ny - lanes.west) < 105) return moveToRoom('west');
-    if (nx > W - 12 && lanes.east != null && Math.abs(ny - lanes.east) < 105) return moveToRoom('east');
-    if (ny < 10 && lanes.north != null && Math.abs(nx - lanes.north) < 125) return moveToRoom('north');
-    if (ny > H - 10 && lanes.south != null && Math.abs(nx - lanes.south) < 125) return moveToRoom('south');
+    if (nx <= 28 && lanes.west != null && Math.abs(ny - lanes.west) < 90) return moveToRoom('west');
+    if (nx >= W - 28 && lanes.east != null && Math.abs(ny - lanes.east) < 90) return moveToRoom('east');
+    if (ny <= 28 && lanes.north != null && Math.abs(nx - lanes.north) < 105) return moveToRoom('north');
+    if (ny >= H - 28 && lanes.south != null && Math.abs(nx - lanes.south) < 105) return moveToRoom('south');
     return false;
   }
 
@@ -733,30 +806,61 @@
     if (keys.ArrowDown || keys.s || keys.S) dy++;
     const length = Math.hypot(dx, dy) || 1; dx /= length; dy /= length;
     if (dx) s.face = dx < 0 ? 'left' : 'right';
-    const nx = s.x + dx * s.speed * dt, ny = s.y + dy * s.speed * dt;
+    const step = s.speed * dt;
+    let nx = s.x + dx * step, ny = s.y;
+
     if (s.scene === 'interior') {
-      s.x = clamp(nx, 155, 965); s.y = clamp(ny, 110, 615);
+      nx = clamp(nx, 140, 980);
+      if (!hitsWorldObject(nx,ny)) s.x = nx;
+      ny = clamp(s.y + dy * step, 95, 625);
+      if (!hitsWorldObject(s.x,ny)) s.y = ny;
       return;
     }
     if (s.scene === 'basement') {
-      s.x = clamp(nx, 215, 905); s.y = clamp(ny, 175, 545);
+      nx = clamp(nx, 185, 935);
+      if (!hitsWorldObject(nx,ny)) s.x = nx;
+      ny = clamp(s.y + dy * step, 145, 585);
+      if (!hitsWorldObject(s.x,ny)) s.y = ny;
       return;
     }
-    if (s.screen === '13' && nx < 110 && ny > 305 && ny < 425 && !s.gateOpen) { toast('The West Gate is locked.'); return; }
-    if (s.screen === '13' && ny < 100 && nx > 760 && nx < 900 && !s.giantDown) { toast('The gate is locked from the other side.'); return; }
-    const previousX = s.x;
-    if (s.screen === '12' && nx > 430 && nx < 690 && (ny < 285 || ny > 435)) return;
-    if (s.screen === '12' && s.logGone && nx < 690 && nx > 430) return;
-    if (s.screen === '11' && s.logGone && nx > W - 18 && ny > 260 && ny < 460) { toast('The log is gone. The crossing is one-way.'); return; }
-    if (s.screen === '11' && !s.thorns && ny < 95 && nx > 110 && nx < 335) { toast('The Vines block the north path.'); return; }
-    if (s.screen === '01' && !s.boulders && nx > 925 && ny > 285 && ny < 435) { toast('The boulders block the east path.'); return; }
-    s.x = clamp(nx, 8, W - 8); s.y = clamp(ny, 8, H - 8);
-    if (s.screen === '12' && !s.logGone && previousX > 430 && s.x <= 430 && s.y > 305 && s.y < 415) {
-      s.logGone = true; s.x = 430;
+
+    const minX = 28, maxX = W - 28, minY = 28, maxY = H - 28;
+    nx = clamp(nx, minX, maxX);
+    const oldX = s.x;
+    const returnAcrossVanishedLog = s.screen === '12' && s.logGone && oldX <= 430 && nx > 430;
+    if (s.screen === '13' && !s.giantDown && ny < 118 && nx > 755 && nx < 905) {
+      toast('The gate is locked from the other side.');
+    } else if (!returnAcrossVanishedLog && !(s.screen === '13' && !s.gateOpen && nx < 125 && ny > 290 && ny < 430) && !hitsWorldObject(nx,ny)) {
+      s.x = nx;
+    }
+
+    ny = clamp(s.y + dy * step, minY, maxY);
+    const riverOverlap = s.screen === '12' && s.x > 430 && s.x < 690;
+    const onLog = ny >= 342 && ny <= 378;
+    const riverBlocks = riverOverlap && !onLog;
+    const crossedAfterLog = s.screen === '12' && s.logGone && s.x <= 430 && nx > 430;
+    if (!riverBlocks && !crossedAfterLog && !(s.screen === '13' && !s.giantDown && ny < 118 && s.x > 755 && s.x < 905) && !hitsWorldObject(s.x,ny)) {
+      s.y = ny;
+    }
+
+    if (s.screen === '12' && !s.logGone && oldX > 430 && s.x <= 430 && s.y >= 342 && s.y <= 378) {
+      s.logGone = true;
       toast('You cross the river. The log drifts away.');
-      return;
     }
-    transitionAtEdge(s.x, s.y);
+    if (s.screen === '11' && s.logGone && s.x >= W - 34 && s.y > 270 && s.y < 450) {
+      s.x = W - 34; toast('The log is gone. The crossing is one-way.'); return;
+    }
+    if (s.screen === '11' && !s.thorns && s.y <= 112 && s.x > 115 && s.x < 335) { s.y = 112; toast('The Vines block the north path.'); }
+    if (s.screen === '01' && !s.boulders && s.x >= 920 && s.y > 280 && s.y < 440) { s.x = 920; toast('The boulders block the east path.'); }
+
+    const reachedEdge = (s.x <= minX && dx < 0) || (s.x >= maxX && dx > 0) || (s.y <= minY && dy < 0) || (s.y >= maxY && dy > 0);
+    if (reachedEdge) {
+      const moved = transitionAtEdge(s.x,s.y);
+      if (!moved) {
+        s.x = clamp(s.x, minX + 2, maxX - 2);
+        s.y = clamp(s.y, minY + 2, maxY - 2);
+      }
+    }
   }
 
   let last = performance.now();
@@ -819,7 +923,7 @@
           openModal('Catch this rodent?', '🐭', '<p>It is close enough to catch!</p>', () => {
             makeButton('CATCH', () => catchRodent(mouse.id));
             makeButton('Not yet', closeModal, true);
-          });
+          }, true);
         }
         return;
       }
