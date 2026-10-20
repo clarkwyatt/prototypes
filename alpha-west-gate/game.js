@@ -4,7 +4,6 @@
   const game = document.querySelector('#game');
   const questEl = document.querySelector('#quest');
   const itemsEl = document.querySelector('#items');
-  const areaEl = document.querySelector('#area');
   const modal = document.querySelector('#modal');
   const toastEl = document.querySelector('#toast');
   const W = 1120, H = 720;
@@ -12,19 +11,13 @@
   const keys = {};
 
   const s = {
-    screen: '13', x: 690, y: 380, face: 'left', speed: 215,
+    screen: '13', x: 605, y: 335, face: 'left', speed: 215,
     scene: 'outside', interior: '', rodents: 0, flowers: 0,
     key: false, gateOpen: false, logGone: false, potion: false,
     thorns: false, strength: false, boulders: false,
     giantHits: 0, giantDown: false, returned: false
   };
 
-  const roomNames = {
-    '01': 'White Shrine', '02': 'Boulder Path', '03': 'Giant Cave',
-    '06': 'North Path', '08': 'Cave Exit Path', '11': 'Thorn Path',
-    '12': 'River Crossing', '13': 'Village', '16': 'South Path',
-    '21': 'Alchemist Clearing'
-  };
   const roomNeighbors = {
     '13': { west: '12', north: '08' },
     '12': { east: '13', west: '11' },
@@ -40,12 +33,12 @@
 
   const roomObjects = {
     '13': [
-      { id: 'home', name: 'Your Home', x: 900, y: 235, r: 57 },
+      { id: 'home', name: 'Your Home', x: 560, y: 280, r: 57 },
       { id: 'grandpa', name: 'Grandfather’s House', x: 850, y: 520, r: 58 },
       { id: 'gate', name: 'West Gate', x: 65, y: 375, r: 44 }
     ],
     '12': [{ id: 'log', name: 'River Log', x: 530, y: 360, r: 55 }],
-    '11': [{ id: 'thorns', name: 'Thorny Vines', x: 220, y: 128, r: 64 }],
+    '11': [{ id: 'thorns', name: 'Thorny Vines', x: 330, y: 205, r: 72 }],
     '21': [
       { id: 'hut', name: 'Alchemist’s Hut', x: 260, y: 390, r: 64 },
       { id: 'flowers', name: 'Bright Flowers', x: 700, y: 425, r: 55 }
@@ -79,7 +72,6 @@
   }
 
   function updateHud() {
-    areaEl.textContent = `${s.screen} · ${roomNames[s.screen] || 'Forest Path'}`;
     const inventory = [];
     if (s.key) inventory.push('🗝 West Gate Key');
     if (s.potion) inventory.push('🧪 Vine Potion');
@@ -171,7 +163,6 @@
     if (entrySide === 'east') { s.x = W - 36; s.y = H / 2; }
     if (entrySide === 'north') { s.x = W / 2; s.y = 38; }
     if (entrySide === 'south') { s.x = W / 2; s.y = H - 38; }
-    toast(`Screen ${id} · ${roomNames[id] || 'Forest Path'}`);
     updateHud();
     if (id === '13' && s.giantDown && !s.returned) {
       s.returned = true;
@@ -352,10 +343,12 @@
     ctx.strokeStyle = '#efdfb4'; ctx.lineWidth = width - 14; ctx.stroke(); ctx.restore();
   }
 
-  function drawHouse(x, y, roof, label, scale = 1) {
+  function drawHouse(x, y, roof, label, scale = 1, peaked = false) {
     ctx.save(); ctx.translate(x, y); ctx.scale(scale, scale);
     ctx.fillStyle = '#6b503b'; ctx.fillRect(-43, -7, 86, 56);
-    ctx.fillStyle = roof; ctx.beginPath(); ctx.moveTo(-52, -5); ctx.lineTo(0, -47); ctx.lineTo(52, -5); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = roof;
+    if (peaked) { ctx.beginPath(); ctx.moveTo(-52, -5); ctx.lineTo(0, -47); ctx.lineTo(52, -5); ctx.closePath(); ctx.fill(); }
+    else ctx.fillRect(-49, -17, 98, 13);
     ctx.fillStyle = '#f2d69d'; ctx.fillRect(-9, 15, 18, 34);
     ctx.fillStyle = '#9ad3db'; ctx.fillRect(-33, 8, 15, 14); ctx.fillRect(18, 8, 15, 14);
     ctx.fillStyle = '#395f48'; ctx.font = '800 13px Nunito'; ctx.textAlign = 'center'; ctx.fillText(label, 0, 69);
@@ -374,28 +367,38 @@
     ctx.globalAlpha = 1;
     [[34, 54], [1082, 52], [32, 657], [1080, 652], [340, 35], [780, 676], [1020, 215], [140, 510]].forEach((point, i) => tree(...point, .82 + (i % 3) * .12));
     for (let i = 0; i < 35; i++) flower((i * 83 + 37) % W, (i * 139 + 58) % H, ['#fff1d0', '#f4c76a', '#d88c9a'][i % 3]);
-    roundedRect(12, 12, 110, 34, 12, '#fff9ebd9');
-    ctx.fillStyle = '#49654c'; ctx.font = '900 15px Nunito'; ctx.textAlign = 'left'; ctx.fillText(`SCREEN ${s.screen}`, 26, 34);
+    if (s.screen === '13') drawVillageHomes();
+  }
+
+  function drawVillageHomes() {
+    drawHouse(265, 205, '#897553', '', .78);
+    drawHouse(885, 195, '#897553', '', .78);
+    drawHouse(1035, 360, '#897553', '', .78);
+    drawHouse(275, 560, '#897553', '', .78);
+    drawHouse(635, 585, '#897553', '', .78);
   }
 
   function drawRoomPath() {
     switch (s.screen) {
-      case '13': drawPath([[1020, 375], [850, 375], [700, 380], [540, 370], [370, 375], [210, 375], [45, 375]], 76); break;
+      case '13': drawPath([[45, 375], [175, 375], [240, 520], [390, 520], [555, 520], [710, 440], [655, 345], [610, 245], [515, 160], [560, 38]], 76); break;
       case '12':
-        drawPath([[1080, 360], [890, 360], [735, 360], [600, 360], [520, 360], [435, 360], [280, 360], [40, 360]], 76);
+        drawPath([[1080, 360], [910, 360], [820, 255], [680, 255], [530, 255], [425, 405], [280, 430], [130, 450], [80, 375], [40, 360]], 76);
         ctx.fillStyle = '#6eafc0'; ctx.fillRect(430, 0, 155, H);
         ctx.strokeStyle = '#b7e3e6'; ctx.lineWidth = 4;
         for (let y = 35; y < H; y += 76) { ctx.beginPath(); ctx.moveTo(445, y); ctx.bezierCurveTo(485, y + 12, 525, y - 12, 570, y); ctx.stroke(); }
         if (!s.logGone) { roundedRect(427, 337, 164, 46, 14, '#8b5f38'); ctx.fillStyle = '#c0915b'; for (let x = 444; x < 578; x += 24) { ctx.beginPath(); ctx.arc(x, 359, 3, 0, Math.PI * 2); ctx.fill(); } }
         break;
-      case '11': drawPath([[560, 40], [560, 180], [520, 300], [555, 440], [560, 570], [560, 690]], 78); if (!s.thorns) { drawPath([[560, 180], [455, 145], [350, 145], [285, 125], [240, 125]], 55); } break;
-      case '16': drawPath([[560, 35], [560, 200], [535, 340], [560, 500], [560, 685]], 82); break;
-      case '21': drawPath([[560, 40], [560, 185], [535, 320], [560, 470], [560, 680]], 84); break;
-      case '06': drawPath([[560, 680], [560, 520], [530, 360], [560, 200], [560, 38]], 82); break;
-      case '01': drawPath([[560, 685], [560, 530], [560, 365], [560, 205], [560, 40]], 86); break;
-      case '02': drawPath([[40, 360], [220, 360], [390, 360], [570, 360], [760, 360], [1078, 360]], 82); break;
-      case '03': drawPath([[42, 360], [240, 360], [420, 360], [635, 360], [910, 360]], 88); break;
-      case '08': drawPath([[560, 40], [560, 195], [530, 360], [560, 520], [560, 680]], 80); break;
+      case '11':
+        drawPath([[1080, 360], [900, 360], [780, 330], [650, 330], [520, 330], [420, 250], [330, 205], [235, 155], [220, 95], [220, 38]], 76);
+        drawPath([[520, 330], [405, 355], [290, 420], [250, 505], [220, 590], [340, 635], [430, 680], [560, 680]], 70);
+        break;
+      case '16': drawPath([[560, 35], [500, 170], [365, 215], [240, 280], [180, 390], [230, 525], [370, 565], [500, 610], [560, 685]], 82); break;
+      case '21': drawPath([[560, 40], [555, 175], [680, 240], [760, 350], [670, 470], [520, 520], [390, 545], [250, 505], [190, 390], [40, 360]], 84); break;
+      case '06': drawPath([[560, 680], [490, 535], [370, 475], [270, 390], [350, 270], [455, 200], [520, 135], [560, 38]], 82); break;
+      case '01': drawPath([[560, 685], [515, 550], [470, 430], [560, 320], [660, 220], [600, 105], [560, 40]], 86); break;
+      case '02': drawPath([[40, 360], [180, 360], [320, 265], [510, 260], [700, 260], [850, 300], [1078, 360]], 82); break;
+      case '03': drawPath([[42, 360], [240, 360], [370, 300], [500, 220], [690, 205], [850, 250], [910, 360], [855, 485], [770, 585], [560, 680]], 88); break;
+      case '08': drawPath([[560, 40], [485, 165], [440, 280], [550, 375], [665, 475], [630, 585], [560, 680]], 80); break;
     }
   }
 
@@ -404,7 +407,7 @@
     ctx.save(); ctx.translate(object.x, object.y);
     if (selected) { ctx.strokeStyle = '#fff7cb'; ctx.lineWidth = 4; ctx.beginPath(); ctx.ellipse(0, 15, object.r * 1.1, object.r * .62, 0, 0, Math.PI * 2); ctx.stroke(); }
     switch (object.id) {
-      case 'home': drawHouse(0, 0, '#b76352', 'Home', .92); break;
+      case 'home': drawHouse(0, 0, '#b76352', 'Home', .92, true); break;
       case 'grandpa': drawHouse(0, 0, '#8c6947', 'Grandpa', .94); break;
       case 'gate':
         ctx.fillStyle = '#775332'; ctx.fillRect(-28, -46, 10, 92); ctx.fillRect(18, -46, 10, 92); ctx.fillStyle = '#ad8154'; ctx.fillRect(-18, -38, 36, 76);
@@ -485,7 +488,7 @@
     if (s.screen === '13' && nx < 85 && ny > 305 && ny < 425 && !s.gateOpen) { toast('The West Gate is locked.'); return; }
     if (s.screen === '12' && nx > 400 && nx < 620 && (ny < 300 || ny > 420)) return;
     if (s.screen === '12' && s.logGone && nx < 600 && nx > 400) { toast('The log is gone.'); return; }
-    if (s.screen === '11' && !s.thorns && ny < 235 && nx < 325) { toast('The vines block the north exit.'); return; }
+    if (s.screen === '11' && !s.thorns && ny < 120 && nx < 270) { toast('The vines block the north exit.'); return; }
     if (s.screen === '02' && !s.boulders && nx > 925 && ny > 285 && ny < 435) { toast('The boulders block the east path.'); return; }
     s.x = clamp(nx, 8, W - 8); s.y = clamp(ny, 8, H - 8);
     transitionAtEdge(s.x, s.y);
