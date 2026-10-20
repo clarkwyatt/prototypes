@@ -229,9 +229,8 @@
     s.rodents++;
     updateHud();
     if (s.rodents >= 5) {
-      openModal('All Rodents Caught!', '🐭', '<p>Go upstairs and speak with Grandfather.</p>', () => {
-        makeButton('Go upstairs', () => { closeModal(); exitBasement(); });
-      }, true);
+      closeModal();
+      toast('All 5 rodents caught. Talk to Grandfather.');
     } else closeModal();
   }
 
@@ -476,9 +475,7 @@
   function drawVillageHomes() {
     drawHouse(265, 205, '#897553', '', 1.08);
     drawHouse(970, 195, '#897553', '', 1.08);
-    drawHouse(1035, 360, '#897553', '', 1.08);
     drawHouse(275, 560, '#897553', '', 1.08);
-    drawHouse(635, 585, '#897553', '', 1.08);
   }
 
   function drawRoomPath() {
@@ -754,7 +751,7 @@
       if (x > 80 && x < W-80 && y > 80 && y < H-80) treeEdges.push([x,y,29]);
     }
     const fixed = {
-      '13': [[560,280,47],[850,520,48],[265,205,43],[970,195,43],[1035,360,43],[275,560,43],[635,585,43]],
+      '13': [[560,280,47],[850,520,48],[265,205,43],[970,195,43],[275,560,43]],
       '11': s.thorns ? [] : [[225,155,48]],
       '21': [[250,390,58]],
       '06': [[850,195,48],[850,315,30]],
