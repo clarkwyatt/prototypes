@@ -828,9 +828,10 @@
     nx = clamp(nx, minX, maxX);
     const oldX = s.x;
     const returnAcrossVanishedLog = s.screen === '12' && s.logGone && oldX <= 430 && nx > 430;
+    const offLogRiverEntry = s.screen === '12' && nx > 430 && nx < 690 && (s.y < 342 || s.y > 378);
     if (s.screen === '13' && !s.giantDown && ny < 118 && nx > 755 && nx < 905) {
       toast('The gate is locked from the other side.');
-    } else if (!returnAcrossVanishedLog && !(s.screen === '13' && !s.gateOpen && nx < 125 && ny > 290 && ny < 430) && !hitsWorldObject(nx,ny)) {
+    } else if (!returnAcrossVanishedLog && !offLogRiverEntry && !(s.screen === '13' && !s.gateOpen && nx < 125 && ny > 290 && ny < 430) && !hitsWorldObject(nx,ny)) {
       s.x = nx;
     }
 
