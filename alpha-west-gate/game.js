@@ -59,8 +59,8 @@
     '13': [
       { id: 'home', name: 'Your Home', x: 560, y: 280, r: 57 },
       { id: 'grandpa', name: 'Grandfather’s House', x: 850, y: 520, r: 58 },
-      { id: 'gate', name: 'West Gate', x: 65, y: 360, r: 44 },
-      { id: 'northGate', name: 'North Gate', x: 830, y: 52, r: 48 }
+      { id: 'gate', name: 'West Gate', x: 90, y: 360, r: 44 },
+      { id: 'northGate', name: 'North Gate', x: 830, y: 80, r: 48 }
     ],
     '11': [{ id: 'thorns', name: 'Thorny Vines', x: 225, y: 155, r: 82 }],
     '21': [
@@ -393,9 +393,9 @@
 
   function drawVillageFence() {
     // Openings line up with the West Gate and the far-side-locked North Gate.
-    fenceSegment(20,24,760,24); fenceSegment(900,24,1100,24);
-    fenceSegment(20,696,1100,696); fenceSegment(20,24,20,305); fenceSegment(20,415,20,696);
-    fenceSegment(1100,24,1100,696);
+    fenceSegment(55,68,760,68); fenceSegment(900,68,1065,68);
+    fenceSegment(55,660,1065,660); fenceSegment(55,68,55,305); fenceSegment(55,415,55,660);
+    fenceSegment(1065,68,1065,660);
   }
 
   function flower(x, y, color = '#f1d469') {
@@ -482,7 +482,7 @@
 
   function drawRoomPath() {
     switch (s.screen) {
-      case '13': drawPath([[45, 360], [190, 360], [320, 520], [510, 540], [700, 500], [820, 390], [790, 265], [785, 165], [830, 40]], 142); break;
+      case '13': drawPath([[90, 360], [190, 360], [320, 520], [510, 540], [700, 500], [820, 390], [790, 265], [785, 165], [830, 40]], 142); break;
       case '12':
         drawPath([[1080, 360], [900, 360], [760, 360], [660, 360], [560, 360], [460, 360], [330, 360], [180, 360], [40, 360]], 142);
         ctx.fillStyle = '#6eafc0'; ctx.fillRect(445, 0, 230, H);
@@ -742,7 +742,7 @@
       s.x = clamp(nx, 215, 905); s.y = clamp(ny, 175, 545);
       return;
     }
-    if (s.screen === '13' && nx < 85 && ny > 305 && ny < 425 && !s.gateOpen) { toast('The West Gate is locked.'); return; }
+    if (s.screen === '13' && nx < 110 && ny > 305 && ny < 425 && !s.gateOpen) { toast('The West Gate is locked.'); return; }
     if (s.screen === '13' && ny < 100 && nx > 760 && nx < 900 && !s.giantDown) { toast('The gate is locked from the other side.'); return; }
     const previousX = s.x;
     if (s.screen === '12' && nx > 430 && nx < 690 && (ny < 285 || ny > 435)) return;
