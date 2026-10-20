@@ -54,7 +54,7 @@
       { id: 'grandpa', name: 'Grandfather’s House', x: 850, y: 520, r: 58 },
       { id: 'villageGrandma', name: 'Grandma', x: 930, y: 455, r: 42, description: 'Grandma enjoys the sun outside Grandfather’s house. Her flower basket smells of mint and wild thyme.' },
       { id: 'villagerMara', name: 'Mara the Gardener', x: 405, y: 245, r: 38, description: 'Mara tends the village garden and knows every flower along the paths.' },
-      { id: 'villagerPip', name: 'Pip', x: 740, y: 570, r: 36, description: 'Pip collects river stones and keeps the shiniest one in a tiny pocket.' },
+      { id: 'villagerPip', name: 'Pip', x: 670, y: 545, r: 36, description: 'Pip collects river stones and keeps the shiniest one in a tiny pocket.' },
       { id: 'villagerTomas', name: 'Tomas the Baker', x: 320, y: 405, r: 39, description: 'Tomas is the village baker. A warm berry bun is cooling in his basket.' },
       { id: 'gate', name: 'West Gate', x: 90, y: 360, r: 44 },
       { id: 'northGate', name: 'North Gate', x: 830, y: 80, r: 48, description: 'A weathered gate with little brass stars hammered into its posts.' },
@@ -903,7 +903,7 @@
       if (x > 80 && x < W-80 && y > 80 && y < H-80) treeEdges.push([x,y,35]);
     }
     const fixed = {
-      '13': [[560,280,58],[850,520,58],[265,205,52],[930,455,27],[405,245,27],[740,570,27],[320,405,27]],
+      '13': [[560,280,58],[850,520,58],[265,205,52],[930,455,27],[405,245,27],[670,545,27],[320,405,27]],
       '11': s.thorns ? [] : [[225,155,58]],
       '21': [[250,390,68]],
       '06': []
