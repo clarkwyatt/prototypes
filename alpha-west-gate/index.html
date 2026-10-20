@@ -22,19 +22,19 @@ canvas{display:block;width:100%;height:100%;touch-action:none}
 .card h1{font-size:clamp(22px,4vw,34px);line-height:1.05;margin:0 0 8px;color:#285c4b}.card p{margin:8px auto;max-width:480px;line-height:1.5;font-weight:700;color:#52665a}.card .scene{height:160px;margin:14px 0;border:3px solid #d2bb83;border-radius:18px;background:linear-gradient(#c8e5ad 0 17%,#d8bd8c 17% 100%);display:grid;place-items:center;font-size:64px;box-shadow:inset 0 -10px #b18d5f33}
 .buttons{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-top:16px}.btn{border:0;border-radius:13px;padding:11px 20px;background:var(--green);color:white;font:900 14px Nunito, sans-serif;box-shadow:0 4px 0 #26754d;cursor:pointer}.btn:hover{filter:brightness(1.08);transform:translateY(-1px)}.btn.secondary{background:#e6d4a7;color:#485b4c;box-shadow:0 4px 0 #bca979}.btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
 #toast{position:absolute;left:50%;top:90px;transform:translate(-50%,-8px);background:#fff9eb;border:2px solid #d4bd83;border-radius:999px;padding:9px 18px;font-size:13px;font-weight:900;box-shadow:0 5px 18px #10292345;opacity:0;transition:.2s;pointer-events:none;z-index:4;white-space:nowrap}#toast.show{opacity:1;transform:translate(-50%,0)}
-.touch{position:absolute;bottom:48px;left:16px;display:none;grid-template-columns:42px 42px 42px;grid-template-rows:40px 40px;gap:4px;opacity:.82}.touch button,.act{border:2px solid #fff0c5;background:#fff9ebd9;color:#245244;border-radius:12px;font-size:17px;font-weight:900;touch-action:none}.touch [data-dir=up]{grid-column:2}.touch [data-dir=left]{grid-column:1}.touch [data-dir=down]{grid-column:2}.touch [data-dir=right]{grid-column:3}.act{display:none;position:absolute;bottom:55px;right:18px;padding:13px 18px;background:#3d9b68;color:#fff;font-size:13px}
-@media(max-width:700px){body{padding:0}#game{width:100vw;height:100dvh;min-height:0;border:0;border-radius:0}.hud{inset:8px 8px auto;gap:5px}.brand{font-size:14px;padding:7px 9px}.brand small{font-size:8px}.quest{min-width:0;width:42vw;padding:7px 9px;font-size:10px}.quest strong{font-size:11px}.right{gap:5px;flex-direction:column;align-items:flex-end}.inventory{font-size:10px;min-width:98px;padding:6px 8px}.hint{bottom:8px;font-size:10px;max-width:94%;overflow:hidden}.touch,.act{display:grid}.act{display:block}.card{padding:18px}.card .scene{height:120px}}
+.touch{position:absolute;bottom:48px;left:16px;display:none;grid-template-columns:42px 42px 42px;grid-template-rows:40px 40px;gap:4px;opacity:.82}.touch button{border:2px solid #fff0c5;background:#fff9ebd9;color:#245244;border-radius:12px;font-size:17px;font-weight:900;touch-action:none}.touch [data-dir=up]{grid-column:2}.touch [data-dir=left]{grid-column:1}.touch [data-dir=down]{grid-column:2}.touch [data-dir=right]{grid-column:3}
+@media(max-width:700px){body{padding:0}#game{width:100vw;height:100dvh;min-height:0;border:0;border-radius:0}.hud{inset:8px 8px auto;gap:5px}.brand{font-size:14px;padding:7px 9px}.brand small{font-size:8px}.quest{min-width:0;width:42vw;padding:7px 9px;font-size:10px}.quest strong{font-size:11px}.right{gap:5px;flex-direction:column;align-items:flex-end}.inventory{font-size:10px;min-width:98px;padding:6px 8px}.hint{bottom:8px;font-size:10px;max-width:94%;overflow:hidden;white-space:normal;text-align:center}.touch{display:grid}.card{padding:18px}.card .scene{height:120px}}
 </style>
 </head>
 <body>
 <main id="game" aria-label="The Boy and the West Gate game prototype">
 <canvas id="world" aria-label="Top down village adventure"></canvas>
 <div class="hud"><div class="brand">THE WEST GATE<small>an adventure prototype</small></div><div class="quest" id="quest"><strong>First Steps</strong>Explore the village and find Grandfather.</div><div class="right"><div class="inventory"><span>Inventory</span><b id="items">Empty</b></div></div></div>
-<div class="hint" id="hint">Each numbered panel is a screen · Move with WASD or arrow keys · Press E to interact</div>
-<div class="touch" aria-label="Movement controls"><button data-dir="up">▲</button><button data-dir="left">◀</button><button data-dir="down">▼</button><button data-dir="right">▶</button></div><button class="act" id="act">INTERACT</button>
+<div class="hint" id="hint">Move with WASD or arrow keys · Left-click nearby objects to interact</div>
+<div class="touch" aria-label="Movement controls"><button data-dir="up">▲</button><button data-dir="left">◀</button><button data-dir="down">▼</button><button data-dir="right">▶</button></div>
 <div id="toast"></div>
 <section class="modal" id="modal" role="dialog" aria-modal="true"><div class="card"><h1 id="modal-title"></h1><div class="scene" id="modal-scene"></div><div id="modal-copy"></div><div class="buttons" id="modal-buttons"></div></div></section>
 </main>
-<script src="game.js?v=rooms-2"></script>
+<script src="game.js?v=basement-3"></script>
 </body>
 </html>
