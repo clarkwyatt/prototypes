@@ -438,7 +438,6 @@
       : [[34, 54], [1082, 52], [32, 657], [1080, 652], [340, 35], [780, 676], [1020, 215], [140, 510]];
     treePoints.forEach((point, i) => tree(...point, .9 + (i % 3) * .13));
     if (s.screen !== '21') for (let i = 0; i < 17; i++) flower((i * 137 + 53) % W, (i * 211 + 75) % H, ['#fff1d0', '#f4c76a', '#d88c9a'][i % 3]);
-    if (s.screen === '13') drawVillageHomes();
   }
 
   function drawVillageHomes() {
@@ -649,6 +648,7 @@
 
   function draw() {
     drawGround(); drawRoomPath();
+    if (s.screen === '13') drawVillageHomes();
     (roomObjects[s.screen] || []).filter((o) => getAvailableObjects().some((active) => active.id === o.id)).forEach(drawObject);
     if (s.scene === 'outside' || s.scene === 'cave') drawBoy();
     else if (s.scene === 'basement') drawBasement();
