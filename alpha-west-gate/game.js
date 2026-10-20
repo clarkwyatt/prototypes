@@ -14,11 +14,15 @@
   const s = {
     screen: '13', x: 605, y: 335, face: 'left', speed: 215,
     scene: 'outside', interior: '', rodents: 0, mice: [], basementEntered: false,
-    returnX: 0, returnY: 0, flowers: 0,
+    returnX: 0, returnY: 0, outsideX: 0, outsideY: 0,
+    flowers: { sunpetal: false, bluebell: false, mooncap: false, lavender: false, amberleaf: false, fern: false }, alchemistTalked: false, vinesStarted: false,
     key: false, gateOpen: false, logGone: false, potion: false,
     thorns: false, strength: false, boulders: false,
     giantHits: 0, giantDown: false, returned: false
   };
+
+  const flowerNames = { sunpetal: 'Sunpetal', bluebell: 'Bluebell', mooncap: 'Mooncap', lavender: 'Lavender', amberleaf: 'Amberleaf', fern: 'Fern' };
+  const requiredFlowers = Object.keys(flowerNames).sort(() => Math.random() - 0.5).slice(0, 3);
 
   const roomNeighbors = {
     '13': { west: '12', north: '08' },
@@ -33,21 +37,34 @@
     '08': { north: '03', south: '13' }
   };
 
+  // Each exit is placed where the hand-drawn path meets the edge of its panel.
+  const roomDoors = {
+    '13': { west: 360, north: 560 }, '12': { east: 360 },
+    '11': { east: 360, north: 220, south: 560 }, '16': { north: 560, south: 560 },
+    '21': { north: 560 }, '06': { south: 220, north: 560 },
+    '01': { south: 560, east: 360 }, '02': { west: 360, east: 360 },
+    '03': { west: 360, south: 560 }, '08': { north: 560, south: 560 }
+  };
+
   const roomObjects = {
     '13': [
       { id: 'home', name: 'Your Home', x: 560, y: 280, r: 57 },
       { id: 'grandpa', name: 'Grandfather’s House', x: 850, y: 520, r: 58 },
-      { id: 'gate', name: 'West Gate', x: 65, y: 375, r: 44 }
+      { id: 'gate', name: 'West Gate', x: 65, y: 360, r: 44 }
     ],
-    '12': [{ id: 'log', name: 'River Log', x: 530, y: 360, r: 55 }],
-    '11': [{ id: 'thorns', name: 'Thorny Vines', x: 330, y: 205, r: 72 }],
+    '11': [{ id: 'thorns', name: 'Thorny Vines', x: 225, y: 155, r: 82 }],
     '21': [
-      { id: 'hut', name: 'Alchemist’s Hut', x: 260, y: 390, r: 64 },
-      { id: 'flowers', name: 'Bright Flowers', x: 700, y: 425, r: 55 }
+      { id: 'hut', name: 'Alchemist’s Hut', x: 250, y: 390, r: 72 },
+      { id: 'sunpetal', name: 'Sunpetal', x: 760, y: 180, r: 42 },
+      { id: 'bluebell', name: 'Bluebell', x: 830, y: 470, r: 42 },
+      { id: 'mooncap', name: 'Mooncap', x: 460, y: 540, r: 42 },
+      { id: 'lavender', name: 'Lavender', x: 600, y: 260, r: 40 },
+      { id: 'amberleaf', name: 'Amberleaf', x: 940, y: 320, r: 40 },
+      { id: 'fern', name: 'Fern', x: 410, y: 250, r: 40 }
     ],
     '01': [
-      { id: 'shrine', name: 'White Shrine', x: 550, y: 235, r: 62 },
-      { id: 'fountain', name: 'Blue Fountain', x: 550, y: 400, r: 48 }
+      { id: 'shrine', name: 'White Shrine', x: 850, y: 195, r: 68 },
+      { id: 'fountain', name: 'Blue Fountain', x: 850, y: 315, r: 52 }
     ],
     '02': [{ id: 'boulders', name: 'Boulder Blockage', x: 1000, y: 360, r: 64 }],
     '03': [{ id: 'cave', name: 'Giant’s Cave', x: 750, y: 360, r: 75 }],
@@ -81,27 +98,27 @@
     itemsEl.textContent = inventory.length ? inventory.join(' · ') : 'Empty';
     hintEl.textContent = s.scene === 'basement'
       ? 'Move with WASD or arrows · Get close, left-click a rodent, then choose CATCH · Click the stairs to leave'
-      : 'Move with WASD or arrow keys · Left-click nearby objects to interact';
+      : s.scene === 'interior'
+        ? 'Explore the room · Move with WASD or arrows · Left-click nearby objects'
+        : 'Move with WASD or arrow keys · Left-click nearby objects to interact';
 
-    if (s.scene !== 'outside') {
-      questEl.innerHTML = `<strong>Basement Challenge</strong>Catch the runaway rodents: ${s.rodents}/5`;
-    } else if (!s.key) {
-      questEl.innerHTML = `<strong>First Quest</strong>Catch 5 rodents in Grandfather’s basement: ${s.rodents}/5`;
-    } else if (!s.logGone) {
-      questEl.innerHTML = '<strong>West Gate</strong>Unlock the gate and cross the river on the log.';
-    } else if (!s.potion) {
-      questEl.innerHTML = `<strong>Alchemist’s Request</strong>Find 3 bright flowers, then bring them to the hut: ${s.flowers}/3`;
-    } else if (!s.thorns) {
-      questEl.innerHTML = '<strong>Clear the Way</strong>Use the potion on the thorny vines.';
-    } else if (!s.strength) {
-      questEl.innerHTML = '<strong>The White Shrine</strong>Drink from the fountain to gain strength.';
-    } else if (!s.boulders) {
-      questEl.innerHTML = '<strong>Open the Cave</strong>Push the boulders aside.';
-    } else if (!s.giantDown) {
-      questEl.innerHTML = `<strong>Giant Cave</strong>Push falling boulders into the Giant: ${s.giantHits}/3`;
-    } else {
-      questEl.innerHTML = '<strong>To Be Continued…</strong>Find the path back to the village.';
+    let quest = '';
+    if (!s.key && s.rodents < 5) quest = `<strong>First Quest</strong>Catch 5 rodents: ${s.rodents}/5`;
+    else if (s.key && !s.gateOpen) quest = '<strong>Quest</strong>Unlock the West Gate';
+    else if (s.vinesStarted && !s.alchemistTalked) quest = '<strong>Quest</strong>Find a way to remove the Vines.';
+    else if (s.vinesStarted && s.alchemistTalked && !s.potion && !s.thorns) {
+      const count = requiredFlowers.filter((id) => s.flowers[id]).length;
+      quest = count < 3
+        ? `<strong>Quest</strong>Gather the alchemist’s flowers: ${count}/3`
+        : '<strong>Quest</strong>Talk to the Alchemist for the potion.';
     }
+    else if (s.vinesStarted && s.potion && !s.thorns) quest = '<strong>Quest</strong>Use the potion on the Vines.';
+    else if (s.thorns && !s.strength) quest = '<strong>Quest</strong>Find the Shrine and drink the blue water.';
+    else if (s.strength && !s.boulders) quest = '<strong>Quest</strong>Push the boulders aside.';
+    else if (s.boulders && !s.giantDown) quest = `<strong>Quest</strong>Defeat the Giant: ${s.giantHits}/3`;
+    else if (s.giantDown) quest = '<strong>Quest</strong>Follow the path back to the village.';
+    questEl.innerHTML = quest;
+    questEl.classList.toggle('empty', !quest);
   }
 
   function makeButton(label, fn, secondary = false) {
@@ -125,10 +142,6 @@
 
   function closeModal() {
     modal.classList.remove('open');
-    if (s.scene === 'interior') {
-      s.scene = 'outside';
-      s.interior = '';
-    }
     updateHud();
   }
 
@@ -136,10 +149,41 @@
     openModal(title, emoji, `<p>${text}</p>`, () => makeButton('Got it!', closeModal));
   }
 
-  function openInterior(title, emoji, text, buttons) {
-    s.scene = 'interior';
-    s.interior = title;
-    openModal(title, emoji, `<p>${text}</p>`, buttons);
+  function enterInterior(type) {
+    s.outsideX = s.x; s.outsideY = s.y;
+    s.scene = 'interior'; s.interior = type;
+    s.x = 560; s.y = 520;
+    updateHud();
+  }
+
+  function leaveInterior() {
+    s.scene = 'outside'; s.interior = '';
+    s.x = s.outsideX || 560; s.y = s.outsideY || 335;
+    updateHud();
+  }
+
+  function openHouseTalk() {
+    if (s.rodents < 5) {
+      openModal('Grandfather', '🧓', '<p>Catch all 5 rodents downstairs and I’ll give you the West Gate key.</p>', () => makeButton('Okay', closeModal));
+    } else {
+      s.key = true;
+      openModal('Grandfather', '🧓', '<p>Thank you for catching the rodents. Here is the West Gate key.</p>', () => makeButton('Thanks', closeModal));
+      updateHud();
+    }
+  }
+
+  function talkToAlchemist() {
+    s.alchemistTalked = true;
+    const count = requiredFlowers.filter((id) => s.flowers[id]).length;
+    const requested = requiredFlowers.map((id) => flowerNames[id]).join(', ');
+    updateHud();
+    if (count < 3) {
+      openModal('The Alchemist', '🧙', `<p>I can make a potion to clear the Vines. Please bring me these flowers: ${requested}.</p>`, () => makeButton('I’ll look for them', closeModal));
+      return;
+    }
+    openModal('The Alchemist', '🧙', '<p>You found all three flowers. I’ll brew the potion for you.</p>', () => {
+      makeButton('Take the potion', () => { s.potion = true; closeModal(); toast('You received a Vine Potion.'); updateHud(); });
+    });
   }
 
   function showBasement() {
@@ -159,8 +203,8 @@
   }
 
   function exitBasement() {
-    s.scene = 'outside'; s.interior = '';
-    s.x = s.returnX || 850; s.y = s.returnY || 520;
+    s.scene = 'interior'; s.interior = 'grandpa';
+    s.x = 560; s.y = 205;
     updateHud();
   }
 
@@ -178,10 +222,11 @@
 
   function enterRoom(id, entrySide) {
     s.screen = id;
-    if (entrySide === 'west') { s.x = 36; s.y = H / 2; }
-    if (entrySide === 'east') { s.x = W - 36; s.y = H / 2; }
-    if (entrySide === 'north') { s.x = W / 2; s.y = 38; }
-    if (entrySide === 'south') { s.x = W / 2; s.y = H - 38; }
+    const lane = roomDoors[id]?.[entrySide];
+    if (entrySide === 'west') { s.x = 36; s.y = lane ?? H / 2; }
+    if (entrySide === 'east') { s.x = W - 36; s.y = lane ?? H / 2; }
+    if (entrySide === 'north') { s.x = lane ?? W / 2; s.y = 38; }
+    if (entrySide === 'south') { s.x = lane ?? W / 2; s.y = H - 38; }
     updateHud();
     if (id === '13' && s.giantDown && !s.returned) {
       s.returned = true;
@@ -192,9 +237,8 @@
   function getAvailableObjects() {
     return (roomObjects[s.screen] || []).filter((object) => {
       if (object.id === 'gate') return true;
-      if (object.id === 'log') return !s.logGone;
       if (object.id === 'thorns') return !s.thorns;
-      if (object.id === 'flowers') return s.flowers < 3;
+      if (object.id in s.flowers) return !requiredFlowers.includes(object.id) || !s.flowers[object.id];
       if (object.id === 'boulders') return !s.boulders;
       if (object.id === 'cave') return !s.giantDown;
       return true;
@@ -212,43 +256,22 @@
   function interact(object = nearestObject()) {
     if (!object) { toast('Move closer to an object first.'); return; }
     switch (object.id) {
-      case 'home':
-        openInterior('Your Home', '🏠', 'A little house in the village. This is where the adventure begins.', () => makeButton('Step outside', closeModal));
-        break;
-      case 'grandpa':
-        openInterior('Grandfather’s House', '🪵', 'Grandfather asks for help in the basement. Catch all 5 runaway rodents and he’ll give you the West Gate key.', () => {
-          makeButton('Go to the basement', () => { s.returnX = s.x; s.returnY = s.y; showBasement(); });
-          makeButton('Not now', closeModal, true);
-        });
-        break;
+      case 'home': enterInterior('home'); break;
+      case 'grandpa': enterInterior('grandpa'); break;
       case 'gate':
         if (s.gateOpen) toast('The West Gate is open. Walk left to screen 12.');
         else if (!s.key) simpleModal('The West Gate is locked', '🚪', 'Grandfather may have a key.');
         else { s.key = false; s.gateOpen = true; toast('The key opens the West Gate. Walk left to screen 12.'); updateHud(); }
         break;
-      case 'log':
-        if (!s.gateOpen) simpleModal('River Crossing', '🌊', 'The West Gate must be open before you can reach the log.');
-        else {
-          s.logGone = true;
-          enterRoom('11', 'east');
-          toast('You crossed the river. The log drifts away.');
-        }
-        break;
       case 'thorns':
-        if (!s.potion) simpleModal('Thorny Vines', '🌿', 'These vines block the north path. The alchemist may be able to help.');
-        else { s.potion = false; s.thorns = true; toast('The potion clears the vines. The sky grows dim…'); updateHud(); }
+        s.vinesStarted = true;
+        if (!s.potion) simpleModal('Thorny Vines', '🌿', 'The Vines block the path. Find a way to remove them.');
+        else { s.potion = false; s.thorns = true; toast('The potion clears the Vines. The sky grows dim…'); updateHud(); }
         break;
-      case 'hut':
-        openInterior('The Alchemist’s Hut', '⚗️', s.flowers >= 3 ? 'The alchemist can brew your potion with these flowers.' : 'The retired alchemist needs 3 bright flowers to brew a potion.', () => {
-          if (s.flowers >= 3 && !s.potion && !s.thorns) makeButton('Give the flowers', () => { s.flowers = 0; s.potion = true; closeModal(); toast('You received a Vine Potion.'); updateHud(); });
-          makeButton('Leave the hut', closeModal, true);
-        });
-        break;
-      case 'flowers':
-        s.flowers++;
-        toast(`Bright flower collected: ${s.flowers}/3`);
-        updateHud();
-        if (s.flowers === 3) simpleModal('That’s all 3 flowers!', '🌼', 'Bring them to the alchemist’s hut.');
+      case 'hut': enterInterior('hut'); break;
+      case 'sunpetal': case 'bluebell': case 'mooncap': case 'lavender': case 'amberleaf': case 'fern':
+        if (requiredFlowers.includes(object.id) && s.alchemistTalked) { s.flowers[object.id] = true; toast(`${object.name} collected.`); updateHud(); }
+        else simpleModal(object.name, object.id === 'fern' ? '🌿' : '🌸', 'A bit of local plant life.');
         break;
       case 'shrine':
         simpleModal('A Quiet Clearing', '⛩️', 'A white shrine stands in the trees. A small blue fountain bubbles nearby.');
@@ -321,6 +344,7 @@
       toast('You crossed the river. The log drifts away.');
       return true;
     }
+    if (s.screen === '11' && direction === 'east' && s.logGone) { toast('The log is gone. The crossing is one-way.'); return false; }
     if (s.screen === '11' && direction === 'north' && !s.thorns) { toast('The thorny vines block the north path.'); return false; }
     if (s.screen === '02' && direction === 'east' && !s.boulders) { toast('The boulders block the path to the cave.'); return false; }
     if (s.screen === '03' && direction === 'south' && !s.giantDown) { toast('The cave exits are blocked while the Giant is awake.'); return false; }
@@ -354,10 +378,11 @@
     ctx.save(); ctx.lineCap = 'round'; ctx.lineJoin = 'round';
     ctx.strokeStyle = '#8eaa69'; ctx.lineWidth = width + 18;
     ctx.beginPath(); ctx.moveTo(points[0][0], points[0][1]);
-    for (let i = 1; i < points.length; i += 3) {
-      if (points[i + 2]) ctx.bezierCurveTo(...points[i], ...points[i + 1], ...points[i + 2]);
-      else ctx.lineTo(...points[i]);
+    for (let i = 1; i < points.length - 1; i++) {
+      const current = points[i], next = points[i + 1];
+      ctx.quadraticCurveTo(current[0], current[1], (current[0] + next[0]) / 2, (current[1] + next[1]) / 2);
     }
+    ctx.lineTo(points[points.length - 1][0], points[points.length - 1][1]);
     ctx.stroke(); ctx.strokeStyle = '#e0c991'; ctx.lineWidth = width; ctx.stroke();
     ctx.strokeStyle = '#efdfb4'; ctx.lineWidth = width - 14; ctx.stroke(); ctx.restore();
   }
@@ -374,6 +399,30 @@
     ctx.restore();
   }
 
+  function drawFlora(id, x, y) {
+    ctx.save(); ctx.translate(x, y);
+    if (id === 'sunpetal') {
+      ctx.strokeStyle = '#477b49'; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(0, 12); ctx.lineTo(0, 32); ctx.stroke();
+      for (let i = 0; i < 8; i++) { ctx.fillStyle = '#f3c94e'; ctx.beginPath(); ctx.ellipse(Math.cos(i * Math.PI / 4) * 15, Math.sin(i * Math.PI / 4) * 15, 9, 15, i * Math.PI / 4, 0, Math.PI * 2); ctx.fill(); }
+      ctx.fillStyle = '#945d38'; ctx.beginPath(); ctx.arc(0, 0, 9, 0, Math.PI * 2); ctx.fill();
+    } else if (id === 'bluebell') {
+      ctx.strokeStyle = '#47804e'; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(0, 22); ctx.quadraticCurveTo(-5, 0, 0, -22); ctx.stroke();
+      [[-12,-13], [3,-22], [15,-8]].forEach(([bx,by],i)=>{ctx.fillStyle=['#667fd0','#8276d3','#5c92d2'][i];ctx.beginPath();ctx.moveTo(bx-8,by-3);ctx.quadraticCurveTo(bx,by-15,bx+8,by-3);ctx.lineTo(bx+5,by+7);ctx.quadraticCurveTo(bx,by+12,bx-5,by+7);ctx.closePath();ctx.fill();});
+    } else if (id === 'mooncap') {
+      ctx.fillStyle = '#f0e9d3'; ctx.fillRect(-5, 0, 10, 23); ctx.fillStyle = '#9c6e9f'; ctx.beginPath(); ctx.ellipse(0, 0, 25, 14, -.12, Math.PI, 0); ctx.fill();
+      ctx.fillStyle = '#e3d9b4'; for (let i = -12; i <= 12; i += 12) { ctx.beginPath(); ctx.arc(i, -5, 2.5, 0, Math.PI * 2); ctx.fill(); }
+    } else if (id === 'lavender') {
+      ctx.strokeStyle = '#4f7f4c'; ctx.lineWidth = 4; for (let j = -1; j <= 1; j++) { ctx.beginPath(); ctx.moveTo(j * 10, 25); ctx.lineTo(j * 8, -15); ctx.stroke(); for (let k=0;k<4;k++){ctx.fillStyle='#9376bd';ctx.beginPath();ctx.ellipse(j*8+(k%2)*4,-14+k*8,4,7,.4,0,Math.PI*2);ctx.fill();} }
+    } else if (id === 'amberleaf') {
+      for (let i=0;i<5;i++){ctx.fillStyle=i%2?'#7e9b4d':'#b4a24f';ctx.beginPath();ctx.ellipse(Math.cos(i*1.25)*12,Math.sin(i*1.25)*10,9,18,i*1.25,0,Math.PI*2);ctx.fill();}
+      ctx.strokeStyle='#536e42';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(-14,16);ctx.lineTo(16,-16);ctx.stroke();
+    } else {
+      ctx.strokeStyle='#477b49';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(0,26);ctx.quadraticCurveTo(-8,4,-23,-8);ctx.moveTo(0,26);ctx.quadraticCurveTo(9,5,24,-12);ctx.stroke();
+      for(let i=0;i<5;i++){ctx.fillStyle='#568959';ctx.beginPath();ctx.ellipse(-14+i*7,6-Math.abs(2-i)*5,8,16,-.5+i*.25,0,Math.PI*2);ctx.fill();}
+    }
+    ctx.restore();
+  }
+
   function drawGround() {
     const colors = s.screen === '03' ? ['#78906b', '#637e63'] : ['#b8d89a', '#84b778'];
     const grad = ctx.createLinearGradient(0, 0, 0, H); grad.addColorStop(0, colors[0]); grad.addColorStop(1, colors[1]);
@@ -384,8 +433,11 @@
       ctx.beginPath(); ctx.ellipse(x, y, 74, 25, (i % 5) * .35, 0, Math.PI * 2); ctx.fill();
     }
     ctx.globalAlpha = 1;
-    [[34, 54], [1082, 52], [32, 657], [1080, 652], [340, 35], [780, 676], [1020, 215], [140, 510]].forEach((point, i) => tree(...point, .82 + (i % 3) * .12));
-    for (let i = 0; i < 35; i++) flower((i * 83 + 37) % W, (i * 139 + 58) % H, ['#fff1d0', '#f4c76a', '#d88c9a'][i % 3]);
+    const treePoints = s.screen === '01'
+      ? [[34, 54], [1082, 52], [32, 657], [1080, 652], [340, 35], [780, 676]]
+      : [[34, 54], [1082, 52], [32, 657], [1080, 652], [340, 35], [780, 676], [1020, 215], [140, 510]];
+    treePoints.forEach((point, i) => tree(...point, .9 + (i % 3) * .13));
+    if (s.screen !== '21') for (let i = 0; i < 17; i++) flower((i * 137 + 53) % W, (i * 211 + 75) % H, ['#fff1d0', '#f4c76a', '#d88c9a'][i % 3]);
     if (s.screen === '13') drawVillageHomes();
   }
 
@@ -399,25 +451,42 @@
 
   function drawRoomPath() {
     switch (s.screen) {
-      case '13': drawPath([[45, 375], [175, 375], [240, 520], [390, 520], [555, 520], [710, 440], [655, 345], [610, 245], [515, 160], [560, 38]], 76); break;
+      case '13': drawPath([[45, 360], [190, 360], [320, 520], [510, 540], [700, 500], [820, 390], [780, 265], [680, 165], [560, 40]], 142); break;
       case '12':
-        drawPath([[1080, 360], [910, 360], [820, 255], [680, 255], [530, 255], [425, 405], [280, 430], [130, 450], [80, 375], [40, 360]], 76);
-        ctx.fillStyle = '#6eafc0'; ctx.fillRect(430, 0, 155, H);
-        ctx.strokeStyle = '#b7e3e6'; ctx.lineWidth = 4;
-        for (let y = 35; y < H; y += 76) { ctx.beginPath(); ctx.moveTo(445, y); ctx.bezierCurveTo(485, y + 12, 525, y - 12, 570, y); ctx.stroke(); }
-        if (!s.logGone) { roundedRect(427, 337, 164, 46, 14, '#8b5f38'); ctx.fillStyle = '#c0915b'; for (let x = 444; x < 578; x += 24) { ctx.beginPath(); ctx.arc(x, 359, 3, 0, Math.PI * 2); ctx.fill(); } }
+        drawPath([[1080, 360], [900, 360], [760, 360], [660, 360], [560, 360], [460, 360], [330, 360], [180, 360], [40, 360]], 142);
+        ctx.fillStyle = '#6eafc0'; ctx.fillRect(445, 0, 230, H);
+        ctx.strokeStyle = '#b7e3e6'; ctx.lineWidth = 5;
+        for (let y = 24; y < H; y += 76) { ctx.beginPath(); ctx.moveTo(455, y); ctx.bezierCurveTo(515, y + 16, 590, y - 16, 665, y); ctx.stroke(); }
+        if (!s.logGone) {
+          roundedRect(428, 322, 264, 76, 18, '#805632');
+          roundedRect(440, 330, 240, 58, 14, '#a87949');
+          ctx.strokeStyle = '#76502f'; ctx.lineWidth = 4;
+          for (let x = 460; x < 675; x += 34) { ctx.beginPath(); ctx.moveTo(x, 332); ctx.lineTo(x, 386); ctx.stroke(); }
+        }
         break;
       case '11':
-        drawPath([[1080, 360], [900, 360], [780, 330], [650, 330], [520, 330], [420, 250], [330, 205], [235, 155], [220, 95], [220, 38]], 76);
-        drawPath([[520, 330], [405, 355], [290, 420], [250, 505], [220, 590], [340, 635], [430, 680], [560, 680]], 70);
+        drawPath([[1080, 360], [890, 360], [730, 390], [570, 390], [430, 330], [330, 245], [225, 155], [220, 80], [220, 38]], 136);
+        drawPath([[570, 390], [470, 425], [370, 500], [350, 600], [420, 675], [560, 680]], 126);
         break;
-      case '16': drawPath([[560, 35], [500, 170], [365, 215], [240, 280], [180, 390], [230, 525], [370, 565], [500, 610], [560, 685]], 82); break;
-      case '21': drawPath([[560, 40], [555, 175], [680, 240], [760, 350], [670, 470], [520, 520], [390, 545], [250, 505], [190, 390], [40, 360]], 84); break;
-      case '06': drawPath([[560, 680], [490, 535], [370, 475], [270, 390], [350, 270], [455, 200], [520, 135], [560, 38]], 82); break;
-      case '01': drawPath([[560, 685], [515, 550], [470, 430], [560, 320], [660, 220], [600, 105], [560, 40]], 86); break;
-      case '02': drawPath([[40, 360], [180, 360], [320, 265], [510, 260], [700, 260], [850, 300], [1078, 360]], 82); break;
-      case '03': drawPath([[42, 360], [240, 360], [370, 300], [500, 220], [690, 205], [850, 250], [910, 360], [855, 485], [770, 585], [560, 680]], 88); break;
-      case '08': drawPath([[560, 40], [485, 165], [440, 280], [550, 375], [665, 475], [630, 585], [560, 680]], 80); break;
+      case '16': drawPath([[560, 35], [470, 150], [340, 230], [245, 350], [270, 490], [390, 585], [485, 650], [560, 685]], 142); break;
+      case '21': drawPath([[560, 40], [520, 170], [460, 285], [370, 370], [260, 390]], 144); break;
+      case '06': drawPath([[220, 680], [260, 560], [350, 440], [430, 320], [500, 210], [560, 40]], 142); break;
+      case '01':
+        drawPath([[560, 685], [560, 590], [600, 500], [720, 440], [860, 390], [990, 360], [1080, 360]], 142);
+        // A quiet, open clearing frames the shrine in the upper-right.
+        [[700, 85], [1035, 105], [1080, 250], [685, 270], [1005, 650], [570, 120]].forEach((p, i) => tree(...p, .9 + (i % 2) * .12));
+        break;
+      case '02': drawPath([[40, 360], [190, 360], [340, 360], [500, 360], [660, 360], [800, 360], [1078, 360]], 142); break;
+      case '03':
+        ctx.fillStyle = '#5a6253'; ctx.fillRect(0, 0, W, H);
+        ctx.fillStyle = '#776f5b'; ctx.beginPath(); ctx.ellipse(560, 360, 535, 340, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#927f60'; ctx.beginPath(); ctx.ellipse(560, 360, 475, 285, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#9a8966'; ctx.beginPath(); ctx.ellipse(565, 375, 345, 205, 0, 0, Math.PI * 2); ctx.fill();
+        [[160,180,44],[320,115,34],[530,92,38],[790,115,48],[960,205,38],[1020,500,48],[800,605,38],[565,630,46],[330,585,40],[130,450,44]].forEach(([x,y,r],i)=>{ctx.fillStyle=i%2?'#615d50':'#6d6857';ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#b0a17c';ctx.lineWidth=5;ctx.stroke();});
+        ctx.fillStyle = '#26332f'; ctx.beginPath(); ctx.ellipse(560, 170, 85, 48, 0, Math.PI, Math.PI * 2); ctx.fill();
+        if (!s.giantDown) { ctx.font = '86px serif'; ctx.textAlign = 'center'; ctx.fillText('👹', 560, 360); }
+        break;
+      case '08': drawPath([[560, 40], [560, 160], [520, 285], [560, 390], [620, 500], [560, 590], [560, 680]], 142); break;
     }
   }
 
@@ -436,8 +505,8 @@
       case 'thorns':
         if (!s.thorns) { for (let i = 0; i < 8; i++) { ctx.strokeStyle = i % 2 ? '#465e39' : '#607343'; ctx.lineWidth = 8; ctx.beginPath(); ctx.moveTo(-43 + i * 12, 25); ctx.bezierCurveTo(-25 + i * 8, -24, 8 + i * 4, 40, 39 - i * 8, -28); ctx.stroke(); } }
         break;
-      case 'hut': drawHouse(0, 0, '#a98259', '', 1); ctx.font = '28px serif'; ctx.textAlign = 'center'; ctx.fillText('⚗️', 0, -28); break;
-      case 'flowers': for (let i = 0; i < 12; i++) flower(-35 + (i % 4) * 24, -22 + Math.floor(i / 4) * 24, ['#f8d568', '#dc91a1', '#f5efe0'][i % 3]); break;
+      case 'hut': drawHouse(0, 0, '#a98259', '', 1.22); ctx.font = '30px serif'; ctx.textAlign = 'center'; ctx.fillText('⚗️', 0, -28); break;
+      case 'sunpetal': case 'bluebell': case 'mooncap': case 'lavender': case 'amberleaf': case 'fern': drawFlora(object.id, 0, 0); break;
       case 'shrine':
         ctx.fillStyle = '#fff9e9'; ctx.strokeStyle = '#c4b99e'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(-43, -20); ctx.lineTo(0, -58); ctx.lineTo(43, -20); ctx.lineTo(35, 35); ctx.lineTo(-35, 35); ctx.closePath(); ctx.fill(); ctx.stroke();
         ctx.fillStyle = '#9fd5db'; ctx.fillRect(-9, 4, 18, 31); break;
@@ -456,7 +525,7 @@
   }
 
   function drawBoy() {
-    ctx.save(); ctx.translate(s.x, s.y);
+    ctx.save(); ctx.translate(s.x, s.y); ctx.scale(1.18,1.18);
     ctx.fillStyle = '#21362d48'; ctx.beginPath(); ctx.ellipse(0, 14, 17, 8, 0, 0, Math.PI * 2); ctx.fill();
     ctx.fillStyle = '#5b4a3b'; ctx.beginPath(); ctx.arc(0, -7, 12, 0, Math.PI * 2); ctx.fill();
     ctx.fillStyle = '#e3b77f'; ctx.beginPath(); ctx.arc(0, -6, 8, 0, Math.PI * 2); ctx.fill();
@@ -466,11 +535,52 @@
     ctx.restore();
   }
 
+  function drawInteriorPerson(x, y, robe = '#617d63') {
+    ctx.save(); ctx.translate(x, y);
+    ctx.fillStyle = '#302e2a'; ctx.beginPath(); ctx.arc(0, -13, 18, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#e6bd94'; ctx.beginPath(); ctx.arc(0, -12, 13, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = robe; ctx.beginPath(); ctx.ellipse(0, 15, 20, 25, 0, 0, Math.PI*2); ctx.fill();
+    ctx.restore();
+  }
+
   function drawInterior() {
-    ctx.fillStyle = '#18372f'; ctx.fillRect(0, 0, W, H);
-    roundedRect(185, 120, 750, 500, 24, '#bd9b66');
-    ctx.strokeStyle = '#e5d1a2'; ctx.lineWidth = 14; ctx.strokeRect(188, 123, 744, 494);
-    for (let y = 170; y < 610; y += 75) { ctx.strokeStyle = '#a98655'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(200, y); ctx.lineTo(920, y); ctx.stroke(); }
+    ctx.fillStyle = '#263b34'; ctx.fillRect(0, 0, W, H);
+    roundedRect(100, 55, 920, 610, 28, '#e0c68f');
+    roundedRect(124, 79, 872, 562, 18, s.interior === 'hut' ? '#b7a675' : '#bd9b66');
+    // Broad top-down floorboards and perimeter walls make this read as a room.
+    ctx.save(); ctx.beginPath(); ctx.roundRect(124, 79, 872, 562, 18); ctx.clip();
+    for (let y=100;y<645;y+=66) {
+      ctx.fillStyle = y%132 ? '#cba873' : '#d3b47d'; ctx.fillRect(128,y,864,62);
+      ctx.strokeStyle = '#ae895b'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(128,y+63); ctx.lineTo(992,y+63); ctx.stroke();
+      for(let x=210+(Math.floor(y/66)%2)*90;x<990;x+=180){ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x,y+62);ctx.stroke();}
+    }
+    ctx.restore();
+    ctx.strokeStyle = '#f0ddb0'; ctx.lineWidth = 13; ctx.strokeRect(124,79,872,562);
+
+    if (s.interior === 'home') {
+      roundedRect(205,150,255,150,15,'#775b43'); roundedRect(218,160,229,124,12,'#d9ccaa');
+      roundedRect(715,145,190,105,12,'#805e3e'); roundedRect(730,160,160,76,8,'#b98b55');
+      roundedRect(270,420,245,120,18,'#6e8c68'); roundedRect(285,435,215,90,12,'#9db78a');
+    } else if (s.interior === 'grandpa') {
+      roundedRect(220,145,240,82,10,'#765238'); roundedRect(235,157,210,57,6,'#a77c4d');
+      roundedRect(735,455,160,95,12,'#805a39'); roundedRect(750,467,130,70,6,'#a77c4d');
+      // Basement stairs
+      roundedRect(495,105,130,155,14,'#755238');
+      for(let y=117;y<252;y+=19){ctx.strokeStyle='#d2b17c';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(505,y);ctx.lineTo(615,y);ctx.stroke();}
+      drawInteriorPerson(805,335,'#71846a');
+      if(Math.hypot(s.x-560,s.y-178)<94){ctx.strokeStyle='#fff1b9';ctx.lineWidth=5;ctx.strokeRect(490,100,140,165);}
+    } else if (s.interior === 'hut') {
+      roundedRect(200,150,190,110,12,'#80603e'); roundedRect(215,164,160,82,7,'#b58c55');
+      ctx.fillStyle='#74563d';ctx.beginPath();ctx.ellipse(585,300,86,42,0,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle='#508b7c';ctx.beginPath();ctx.ellipse(585,290,68,31,0,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle='#d7c091';ctx.fillRect(565,260,40,42);
+      drawFlora('sunpetal',760,185); drawFlora('bluebell',700,530); drawFlora('fern',380,490);
+      drawInteriorPerson(820,345,'#716483');
+    }
+    // Exterior doorway is always centered at the south wall.
+    ctx.fillStyle='#392f28';ctx.beginPath();ctx.roundRect(510,600,100,55,14,14);ctx.fill();
+    ctx.fillStyle='#dfc181';ctx.beginPath();ctx.arc(590,628,5,0,Math.PI*2);ctx.fill();
+    drawBoy();
   }
 
   function drawBasementMouse(mouse) {
@@ -540,24 +650,24 @@
   function draw() {
     drawGround(); drawRoomPath();
     (roomObjects[s.screen] || []).filter((o) => getAvailableObjects().some((active) => active.id === o.id)).forEach(drawObject);
-    if (s.scene === 'outside') drawBoy();
+    if (s.scene === 'outside' || s.scene === 'cave') drawBoy();
     else if (s.scene === 'basement') drawBasement();
-    else drawInterior();
+    else if (s.scene === 'interior') drawInterior();
     updateHud(); requestAnimationFrame(draw);
   }
 
   function transitionAtEdge(nx, ny) {
-    const doorY = ny > 305 && ny < 425;
-    const doorX = nx > 395 && nx < 725;
-    if (nx < 12 && doorY) return moveToRoom('west');
-    if (nx > W - 12 && doorY) return moveToRoom('east');
-    if (ny < 10 && doorX) return moveToRoom('north');
-    if (ny > H - 10 && doorX) return moveToRoom('south');
+    const lanes = roomDoors[s.screen] || {};
+    if (nx < 12 && lanes.west != null && Math.abs(ny - lanes.west) < 105) return moveToRoom('west');
+    if (nx > W - 12 && lanes.east != null && Math.abs(ny - lanes.east) < 105) return moveToRoom('east');
+    if (ny < 10 && lanes.north != null && Math.abs(nx - lanes.north) < 125) return moveToRoom('north');
+    if (ny > H - 10 && lanes.south != null && Math.abs(nx - lanes.south) < 125) return moveToRoom('south');
     return false;
   }
 
   function move(dt) {
-    if ((s.scene !== 'outside' && s.scene !== 'basement') || modal.classList.contains('open')) return;
+    if (modal.classList.contains('open')) return;
+    if (!['outside','basement','interior'].includes(s.scene)) return;
     let dx = 0, dy = 0;
     if (keys.ArrowLeft || keys.a || keys.A) dx--;
     if (keys.ArrowRight || keys.d || keys.D) dx++;
@@ -566,16 +676,26 @@
     const length = Math.hypot(dx, dy) || 1; dx /= length; dy /= length;
     if (dx) s.face = dx < 0 ? 'left' : 'right';
     const nx = s.x + dx * s.speed * dt, ny = s.y + dy * s.speed * dt;
+    if (s.scene === 'interior') {
+      s.x = clamp(nx, 155, 965); s.y = clamp(ny, 110, 615);
+      return;
+    }
     if (s.scene === 'basement') {
       s.x = clamp(nx, 215, 905); s.y = clamp(ny, 175, 545);
       return;
     }
     if (s.screen === '13' && nx < 85 && ny > 305 && ny < 425 && !s.gateOpen) { toast('The West Gate is locked.'); return; }
-    if (s.screen === '12' && nx > 400 && nx < 620 && (ny < 300 || ny > 420)) return;
-    if (s.screen === '12' && s.logGone && nx < 600 && nx > 400) { toast('The log is gone.'); return; }
-    if (s.screen === '11' && !s.thorns && ny < 120 && nx < 270) { toast('The vines block the north exit.'); return; }
+    const previousX = s.x;
+    if (s.screen === '12' && nx > 430 && nx < 690 && (ny < 285 || ny > 435)) return;
+    if (s.screen === '12' && s.logGone && nx < 690 && nx > 430) return;
+    if (s.screen === '11' && s.logGone && nx > W - 18 && ny > 260 && ny < 460) { toast('The log is gone. The crossing is one-way.'); return; }
+    if (s.screen === '11' && !s.thorns && ny < 95 && nx > 110 && nx < 335) { toast('The Vines block the north path.'); return; }
     if (s.screen === '02' && !s.boulders && nx > 925 && ny > 285 && ny < 435) { toast('The boulders block the east path.'); return; }
     s.x = clamp(nx, 8, W - 8); s.y = clamp(ny, 8, H - 8);
+    if (s.screen === '12' && !s.logGone && previousX > 430 && s.x <= 430 && s.y > 305 && s.y < 415) {
+      moveToRoom('west');
+      return;
+    }
     transitionAtEdge(s.x, s.y);
   }
 
@@ -595,6 +715,34 @@
     const rect = canvas.getBoundingClientRect();
     const x = (event.clientX - rect.left) / rect.width * W;
     const y = (event.clientY - rect.top) / rect.height * H;
+    if (s.scene === 'interior') {
+      const near = (px, py, radius = 115) => Math.hypot(s.x - px, s.y - py) < radius;
+      if (x > 495 && x < 625 && y > 590 && near(560, 620)) { leaveInterior(); return; }
+      if (s.interior === 'grandpa' && x > 485 && x < 635 && y > 100 && y < 265) {
+        if (near(560, 180, 115)) { s.returnX = s.x; s.returnY = s.y; showBasement(); }
+        else toast('Walk over to the stairs.');
+        return;
+      }
+      if (s.interior === 'grandpa' && Math.hypot(x-805,y-335)<58) {
+        if (near(805,335,125)) openHouseTalk(); else toast('Walk closer to Grandfather.');
+        return;
+      }
+      if (s.interior === 'hut' && Math.hypot(x-820,y-345)<58) {
+        if (near(820,345,135)) talkToAlchemist(); else toast('Walk closer to the Alchemist.');
+        return;
+      }
+      if (s.interior === 'home' && x > 205 && x < 465 && y > 145 && y < 310) {
+        if (near(335,225,130)) simpleModal('A Cozy Bed', '🛏️', 'A soft place to rest.'); else toast('Walk closer to look around.');
+        return;
+      }
+      if (s.interior === 'hut' && x > 500 && x < 670 && y > 245 && y < 350) {
+        if (near(585,300,120)) simpleModal('Bubbling Cauldron', '⚗️', 'The cauldron is ready for a potion.'); else toast('Walk closer to look around.');
+        return;
+      }
+      if (x > 495 && x < 625 && y > 590) toast('Walk over to the doorway.');
+      else toast('Explore the room and click nearby objects.');
+      return;
+    }
     if (s.scene === 'basement') {
       const mouse = s.mice
         .map((item) => ({ ...item, distance: Math.hypot(x - item.x, y - item.y) }))
