@@ -779,7 +779,7 @@
       const near = (px, py, radius = 115) => Math.hypot(s.x - px, s.y - py) < radius;
       if (x > 495 && x < 625 && y > 590 && near(560, 620, 105)) { leaveInterior(); return; }
       if (s.interior === 'grandpa' && x > 485 && x < 635 && y > 100 && y < 265) {
-        if (near(560, 180, 115)) { s.returnX = s.x; s.returnY = s.y; showBasement(); }
+        if (near(560, 180, 94)) { s.returnX = s.x; s.returnY = s.y; showBasement(); }
         return;
       }
       if (s.interior === 'grandpa' && Math.hypot(x-805,y-335)<58) {
