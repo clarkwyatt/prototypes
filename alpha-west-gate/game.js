@@ -4,7 +4,6 @@
   const game = document.querySelector('#game');
   const questEl = document.querySelector('#quest');
   const itemsEl = document.querySelector('#items');
-  const hintEl = document.querySelector('#hint');
   const modal = document.querySelector('#modal');
   const toastEl = document.querySelector('#toast');
   const W = 1120, H = 720;
@@ -17,8 +16,7 @@
     returnX: 0, returnY: 0, outsideX: 0, outsideY: 0,
     flowers: { sunpetal: false, bluebell: false, mooncap: false, lavender: false, amberleaf: false, fern: false }, alchemistTalked: false, vinesStarted: false,
     key: false, gateOpen: false, logGone: false, potion: false,
-    thorns: false, strength: false, boulders: false, returnGateOpen: false,
-    giantHits: 0, giantDown: false, returned: false
+    thorns: false, returned: false
   };
 
   const flowerNames = { sunpetal: 'Sunpetal', bluebell: 'Bluebell', mooncap: 'Mooncap', lavender: 'Lavender', amberleaf: 'Amberleaf', fern: 'Fern' };
@@ -39,20 +37,15 @@
     '11': { east: '12', north: '06', south: '16' },
     '16': { north: '11', south: '21' },
     '21': { north: '16' },
-    '06': { south: '11', north: '01' },
-    '01': { south: '06', east: '02' },
-    '02': { west: '01', east: '03' },
-    '03': { west: '02', south: '08' },
-    '08': { north: '03', south: '13' }
+    '06': { south: '11', north: '08' },
+    '08': { north: '06', south: '13' }
   };
 
   // Each exit is placed where the hand-drawn path meets the edge of its panel.
   const roomDoors = {
     '13': { west: 360, north: 830 }, '12': { east: 360, west: 360 },
     '11': { east: 360, north: 220, south: 560 }, '16': { north: 560, south: 560 },
-    '21': { north: 560 }, '06': { south: 220, north: 560 },
-    '01': { south: 560, east: 360 }, '02': { west: 360, east: 360 },
-    '03': { west: 360, south: 560 }, '08': { north: 560, south: 830 }
+    '21': { north: 560 }, '06': { south: 220, north: 560 }, '08': { north: 560, south: 830 }
   };
 
   const roomObjects = {
@@ -73,13 +66,7 @@
       { id: 'fern', name: 'Fern', x: 410, y: 250, r: 40 }
     ],
     '06': [],
-    '01': [
-      { id: 'shrine', name: 'White Shrine', x: 850, y: 195, r: 68 },
-      { id: 'fountain', name: 'Blue Fountain', x: 850, y: 315, r: 52 }
-    ],
-    '02': [{ id: 'boulders', name: 'Boulder Blockage', x: 560, y: 360, r: 100 }],
-    '03': [{ id: 'cave', name: 'Giant’s Cave', x: 750, y: 360, r: 75 }],
-    '08': [{ id: 'returnGate', name: 'Village Gate', x: 830, y: 645, r: 55 }]
+    '08': []
   };
 
   const clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
@@ -105,18 +92,13 @@
     const inventory = [];
     if (s.key) inventory.push('🗝 West Gate Key');
     if (s.potion) inventory.push('🧪 Vine Potion');
-    if (s.strength) inventory.push('✦ Super Strength');
     itemsEl.textContent = inventory.length ? inventory.join(' · ') : 'Empty';
-    hintEl.textContent = s.scene === 'basement'
-      ? 'Move with WASD or arrows · Get close, left-click a rodent, then choose CATCH · Click the stairs to leave'
-      : s.scene === 'interior'
-        ? 'Move with WASD or arrows · Left-click highlighted objects'
-      : 'Move with WASD or arrow keys · Left-click highlighted objects';
 
     let quest = '';
     if (!s.key && s.rodents < 5) quest = `<strong>First Quest</strong>Catch 5 rodents: ${s.rodents}/5`;
     else if (!s.gateOpen && !s.key && s.rodents >= 5) quest = '<strong>Quest</strong>Talk to Grandfather.';
     else if (s.key && !s.gateOpen) quest = '<strong>Quest</strong>Unlock the West Gate';
+    else if (s.gateOpen && !s.vinesStarted) quest = '<strong>Quest</strong>Investigate the Vines';
     else if (s.vinesStarted && !s.alchemistTalked) quest = '<strong>Quest</strong>Find a way to remove the Vines.';
     else if (s.vinesStarted && s.alchemistTalked && !s.potion && !s.thorns) {
       const count = requiredFlowers.filter((id) => s.flowers[id]).length;
@@ -125,10 +107,7 @@
         : '<strong>Quest</strong>Talk to the Alchemist for the potion.';
     }
     else if (s.vinesStarted && s.potion && !s.thorns) quest = '<strong>Quest</strong>Use the potion on the Vines.';
-    else if (s.thorns && !s.strength) quest = '<strong>Quest</strong>Find the Shrine and drink the blue water.';
-    else if (s.strength && !s.boulders) quest = '<strong>Quest</strong>Push the boulders aside.';
-    else if (s.boulders && !s.giantDown) quest = `<strong>Quest</strong>Defeat the Giant: ${s.giantHits}/3`;
-    else if (s.giantDown) quest = '<strong>Quest</strong>Follow the path back to the village.';
+    else if (s.thorns && !s.returned) quest = '<strong>Quest</strong>Follow the path back to the village.';
     questEl.innerHTML = quest;
     questEl.classList.toggle('empty', !quest);
   }
@@ -165,7 +144,7 @@
   }
 
   function objectOptions(title, emoji, description, actions = []) {
-    openModal(title, emoji, '<p>Choose an action.</p>', () => {
+    openModal(title, emoji, '', () => {
       makeButton('LOOK', () => simpleModal(title, emoji, description), true);
       for (const action of actions) {
         makeButton(action.label, () => { closeModal(); action.run(); });
@@ -250,14 +229,15 @@
   function enterRoom(id, entrySide) {
     s.screen = id;
     const lane = roomDoors[id]?.[entrySide];
-    if (entrySide === 'west') { s.x = 46; s.y = lane ?? H / 2; }
-    if (entrySide === 'east') { s.x = W - 46; s.y = lane ?? H / 2; }
-    if (entrySide === 'north') { s.x = lane ?? W / 2; s.y = 46; }
-    if (entrySide === 'south') { s.x = lane ?? W / 2; s.y = H - 46; }
+    if (entrySide === 'west') { s.x = 98; s.y = lane ?? H / 2; }
+    if (entrySide === 'east') { s.x = W - 98; s.y = lane ?? H / 2; }
+    if (entrySide === 'north') { s.x = lane ?? W / 2; s.y = 65; }
+    if (entrySide === 'south') { s.x = lane ?? W / 2; s.y = H - 65; }
     updateHud();
-    if (id === '13' && s.giantDown && !s.returned) {
+    if (id === '13' && s.thorns && !s.returned) {
       s.returned = true;
-      setTimeout(() => simpleModal('Back in the Village', '🏘️', 'The Giant is defeated, but thorny vines have overtaken the village.'), 180);
+      updateHud();
+      setTimeout(() => simpleModal('Back in the Village', '🏘️', 'The Vines have overtaken the village.'), 180);
     }
   }
 
@@ -266,9 +246,6 @@
       if (object.id === 'gate') return true;
       if (object.id === 'thorns') return !s.thorns;
       if (object.id in s.flowers) return !requiredFlowers.includes(object.id) || !s.flowers[object.id];
-      if (object.id === 'boulders') return !s.boulders;
-      if (object.id === 'cave') return !s.giantDown;
-      if (object.id === 'returnGate') return s.giantDown;
       return true;
     });
   }
@@ -282,7 +259,7 @@
   }
 
   function interact(object = nearestObject()) {
-    if (!object) { toast('Move closer to an object first.'); return; }
+    if (!object) return;
     switch (object.id) {
       case 'home':
         objectOptions('Your Home', '🏠', 'A small house in the village.', [{ label: 'ENTER', run: () => enterInterior('home') }]);
@@ -300,7 +277,7 @@
         }]);
         break;
       case 'northGate':
-        objectOptions('Gate', '🚪', 'A sturdy gate blocks the path back to the village.', s.giantDown ? [] : [{
+        objectOptions('Gate', '🚪', 'A sturdy gate blocks the path back to the village.', s.thorns ? [] : [{
           label: 'TRY GATE',
           run: () => simpleModal('Gate', '🚪', 'The gate is locked from the other side.')
         }]);
@@ -329,69 +306,7 @@
         objectOptions(object.name, object.id === 'fern' ? '🌿' : '🌸', description, actions);
         break;
       }
-      case 'shrine':
-        objectOptions('White Shrine', '⛩️', 'A quiet white shrine stands in a secluded clearing.');
-        break;
-      case 'fountain':
-        objectOptions('Shrine Fountain', '💧', 'A small fountain holds clear blue liquid.', !s.strength ? [{
-          label: 'DRINK',
-          run: () => openModal('The Shrine Fountain', '💧', '<p>The blue liquid sparkles in the light. Do you drink it?</p>', () => {
-            makeButton('Drink', () => { s.strength = true; closeModal(); toast('You feel much stronger!'); updateHud(); });
-            makeButton('Not yet', closeModal, true);
-          }, true)
-        }] : []);
-        break;
-      case 'boulders':
-        objectOptions('Heavy Boulders', '🪨', 'A wall of boulders blocks the path to the east.', [{
-          label: 'PUSH',
-          run: () => {
-            if (!s.strength) { simpleModal('Heavy Boulders', '🪨', 'They won’t budge. Drink from the shrine fountain first.'); return; }
-            s.boulders = true; toast('Super strength! You push the boulders aside.'); updateHud();
-          }
-        }]);
-        break;
-      case 'cave':
-        objectOptions('Giant’s Cave', '🕳️', 'A dark cave entrance opens beyond the boulder path.', [{
-          label: 'ENTER',
-          run: () => {
-            if (!s.boulders) simpleModal('Giant’s Cave', '🕳️', 'The boulders block the cave entrance.');
-            else startGiantFight();
-          }
-        }]);
-        break;
-      case 'returnGate':
-        objectOptions('Village Gate', '🚪', 'A wooden gate stands at the end of the path back to the village.', !s.returnGateOpen ? [{
-          label: 'UNLOCK',
-          run: () => { s.returnGateOpen = true; toast('The gate opens.'); updateHud(); }
-        }] : []);
-        break;
     }
-  }
-
-  function startGiantFight() {
-    s.scene = 'cave';
-    s.interior = 'giant cave';
-    s.giantHits = 0;
-    function fight() {
-      openModal('The Giant’s Cave', '👹', `<p>The Giant is furious! Wait for falling boulders, then push one toward him. Hit him 3 times.</p><div style="font-size:64px;margin:10px">👹</div><div id="boss-count" style="font-weight:900;color:#286448">Hits: ${s.giantHits} / 3</div>`, () => {
-        makeButton('Wait for a boulder', () => {
-          const count = document.querySelector('#boss-count');
-          if (count) count.textContent = 'Shadows blink… push now!';
-          setTimeout(() => {
-            if (!modal.classList.contains('open')) return;
-            s.giantHits++;
-            if (s.giantHits >= 3) {
-              s.giantDown = true;
-              s.scene = 'outside';
-              s.interior = '';
-              openModal('The Giant Is Down!', '💫', '<p>The cave exit opens below. Follow the path back to the village.</p>', () => makeButton('Leave the cave', () => { closeModal(); enterRoom('08', 'north'); }));
-            } else fight();
-          }, 850);
-        });
-        makeButton('Not yet', () => { closeModal(); s.scene = 'outside'; s.interior = ''; }, true);
-      });
-    }
-    fight();
   }
 
   function moveToRoom(direction) {
@@ -406,7 +321,7 @@
         updateHud();
       }
     }
-    if (s.screen === '13' && direction === 'north' && !s.giantDown) {
+    if (s.screen === '13' && direction === 'north' && !s.thorns) {
       toast('The gate is locked from the other side.'); return false;
     }
     if (s.screen === '12' && direction === 'west' && !s.logGone) {
@@ -414,9 +329,6 @@
     }
     if (s.screen === '11' && direction === 'east' && s.logGone) { toast('The log is gone. The crossing is one-way.'); return false; }
     if (s.screen === '11' && direction === 'north' && !s.thorns) { toast('The thorny vines block the north path.'); return false; }
-    if (s.screen === '02' && direction === 'east' && !s.boulders) { toast('The boulders block the path to the cave.'); return false; }
-    if (s.screen === '03' && direction === 'south' && !s.giantDown) { toast('The cave exits are blocked while the Giant is awake.'); return false; }
-    if (s.screen === '08' && direction === 'south' && !s.returnGateOpen) { toast('Unlock the gate to return to the village.'); return false; }
     let entering = { west: 'east', east: 'west', north: 'south', south: 'north' }[direction];
     enterRoom(next, entering);
     return true;
@@ -427,10 +339,10 @@
   }
 
   function tree(x, y, scale = 1) {
-    ctx.save(); ctx.translate(x, y); ctx.scale(scale, scale);
-    ctx.fillStyle = '#77583d'; ctx.fillRect(-5, 8, 10, 24);
+    ctx.save(); ctx.translate(x, y); ctx.scale(scale * 1.2, scale * 1.2);
+    ctx.fillStyle = '#77583d'; ctx.fillRect(-6, 8, 12, 29);
     ['#4e8757', '#5d9a5f', '#72aa66'].forEach((color, i) => {
-      ctx.fillStyle = color; ctx.beginPath(); ctx.arc(0, -6 - i * 9, 22 - i * 3, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = color; ctx.beginPath(); ctx.arc(0, -6 - i * 10, 27 - i * 4, 0, Math.PI * 2); ctx.fill();
     });
     ctx.restore();
   }
@@ -454,12 +366,12 @@
   function flower(x, y, color = '#f1d469') {
     ctx.fillStyle = '#f6e5a1';
     for (let i = 0; i < 5; i++) {
-      ctx.beginPath(); ctx.ellipse(x + Math.cos(i * 1.256) * 5, y + Math.sin(i * 1.256) * 5, 3, 4, i * 1.256, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(x + Math.cos(i * 1.256) * 6, y + Math.sin(i * 1.256) * 6, 4, 5, i * 1.256, 0, Math.PI * 2); ctx.fill();
     }
-    ctx.fillStyle = color; ctx.beginPath(); ctx.arc(x, y, 3, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = color; ctx.beginPath(); ctx.arc(x, y, 4, 0, Math.PI * 2); ctx.fill();
   }
 
-  function drawPath(points, width = 88, colors = ['#8eaa69', '#e0c991', '#efdfb4']) {
+  function drawPath(points, width = 88, colors = ['#254c31', '#315d39', '#3d6d43']) {
     ctx.save(); ctx.lineCap = 'round'; ctx.lineJoin = 'round';
     ctx.strokeStyle = colors[0]; ctx.lineWidth = width + 18;
     ctx.beginPath(); ctx.moveTo(points[0][0], points[0][1]);
@@ -509,7 +421,7 @@
   }
 
   function drawGround() {
-    const colors = s.screen === '03' ? ['#78906b', '#637e63'] : ['#b8d89a', '#84b778'];
+    const colors = ['#b8d89a', '#84b778'];
     const grad = ctx.createLinearGradient(0, 0, 0, H); grad.addColorStop(0, colors[0]); grad.addColorStop(1, colors[1]);
     ctx.fillStyle = grad; ctx.fillRect(0, 0, W, H);
     for (let i = 0; i < 24; i++) {
@@ -518,22 +430,20 @@
       ctx.beginPath(); ctx.ellipse(x, y, 74, 25, (i % 5) * .35, 0, Math.PI * 2); ctx.fill();
     }
     ctx.globalAlpha = 1;
-    const treePoints = s.screen === '01'
-      ? [[34, 54], [1082, 52], [32, 657], [1080, 652], [340, 35], [780, 676]]
-      : [[34, 54], [1082, 52], [32, 657], [1080, 652], [340, 35], [780, 676], [1020, 215], [140, 510]];
+    const treePoints = [[34, 54], [1082, 52], [32, 657], [1080, 652], [340, 35], [780, 676], [1020, 215], [140, 510]];
     treePoints.forEach((point, i) => tree(...point, 1.2 + (i % 3) * .14));
     if (s.screen !== '21') for (let i = 0; i < 17; i++) flower((i * 137 + 53) % W, (i * 211 + 75) % H, ['#fff1d0', '#f4c76a', '#d88c9a'][i % 3]);
   }
 
   function drawVillageHomes() {
-    drawHouse(265, 205, '#897553', '', 1.08);
+    drawHouse(265, 205, '#897553', '', 1.24);
   }
 
   function drawRoomPath() {
     switch (s.screen) {
-      case '13': drawPath([[90, 360], [190, 360], [320, 520], [510, 540], [700, 500], [820, 390], [790, 265], [785, 165], [830, 40]], 142); break;
+      case '13': drawPath([[90, 360], [190, 360], [320, 520], [510, 540], [700, 500], [820, 390], [790, 265], [785, 165], [830, 40]], 180); break;
       case '12':
-        drawPath([[1080, 360], [900, 360], [760, 360], [660, 360], [560, 360], [460, 360], [330, 360], [180, 360], [40, 360]], 142);
+        drawPath([[1080, 360], [900, 360], [760, 360], [660, 360], [560, 360], [460, 360], [330, 360], [180, 360], [40, 360]], 180);
         ctx.fillStyle = '#6eafc0'; ctx.fillRect(445, 0, 230, H);
         ctx.strokeStyle = '#b7e3e6'; ctx.lineWidth = 5;
         for (let y = 24; y < H; y += 76) { ctx.beginPath(); ctx.moveTo(455, y); ctx.bezierCurveTo(515, y + 16, 590, y - 16, 665, y); ctx.stroke(); }
@@ -545,31 +455,16 @@
         }
         break;
       case '11':
-        drawPath([[1080, 360], [890, 360], [730, 390], [570, 390], [430, 330], [330, 245], [225, 155], [220, 80], [220, 38]], 136);
-        drawPath([[570, 390], [470, 425], [370, 500], [350, 600], [420, 675], [560, 680]], 126);
+        drawPath([[1080, 360], [890, 360], [730, 390], [570, 390], [430, 330], [330, 245], [225, 155], [220, 80], [220, 38]], 174);
+        drawPath([[570, 390], [470, 425], [370, 500], [350, 600], [420, 675], [560, 680]], 164);
         break;
-      case '16': drawPath([[560, 35], [470, 150], [340, 230], [245, 350], [270, 490], [390, 585], [485, 650], [560, 685]], 142); break;
-      case '21': drawPath([[560, 40], [520, 170], [460, 285], [370, 370], [260, 390]], 430, ['#254c31', '#315d39', '#3d6d43']); break;
+      case '16': drawPath([[560, 35], [470, 150], [340, 230], [245, 350], [270, 490], [390, 585], [485, 650], [560, 685]], 180); break;
+      case '21': drawPath([[560, 40], [520, 170], [460, 285], [370, 370], [260, 390]], 460, ['#254c31', '#315d39', '#3d6d43']); break;
       case '06':
-        drawPath([[220, 680], [255, 560], [335, 455], [420, 350], [500, 255], [560, 40]], 142);
+        drawPath([[220, 680], [255, 560], [335, 455], [420, 350], [500, 255], [560, 40]], 180);
         [[700,85],[1040,100],[1080,255],[690,300],[1030,650],[620,120]].forEach((p,i)=>tree(...p,1.15+(i%2)*.14));
         break;
-      case '01':
-        drawPath([[560, 685], [560, 590], [600, 500], [720, 440], [860, 390], [990, 360], [1080, 360]], 142);
-        // A quiet, open clearing frames the shrine in the upper-right.
-        [[700, 85], [1035, 105], [1080, 250], [685, 270], [1005, 650], [570, 120]].forEach((p, i) => tree(...p, .9 + (i % 2) * .12));
-        break;
-      case '02': drawPath([[40, 360], [190, 360], [340, 360], [500, 360], [660, 360], [800, 360], [1078, 360]], 142); break;
-      case '03':
-        ctx.fillStyle = '#5a6253'; ctx.fillRect(0, 0, W, H);
-        ctx.fillStyle = '#776f5b'; ctx.beginPath(); ctx.ellipse(560, 360, 535, 340, 0, 0, Math.PI * 2); ctx.fill();
-        ctx.fillStyle = '#927f60'; ctx.beginPath(); ctx.ellipse(560, 360, 475, 285, 0, 0, Math.PI * 2); ctx.fill();
-        ctx.fillStyle = '#9a8966'; ctx.beginPath(); ctx.ellipse(565, 375, 345, 205, 0, 0, Math.PI * 2); ctx.fill();
-        [[160,180,44],[320,115,34],[530,92,38],[790,115,48],[960,205,38],[1020,500,48],[800,605,38],[565,630,46],[330,585,40],[130,450,44]].forEach(([x,y,r],i)=>{ctx.fillStyle=i%2?'#615d50':'#6d6857';ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#b0a17c';ctx.lineWidth=5;ctx.stroke();});
-        ctx.fillStyle = '#26332f'; ctx.beginPath(); ctx.ellipse(560, 170, 85, 48, 0, Math.PI, Math.PI * 2); ctx.fill();
-        if (!s.giantDown) { ctx.font = '86px serif'; ctx.textAlign = 'center'; ctx.fillText('👹', 560, 360); }
-        break;
-      case '08': drawPath([[560, 40], [580, 160], [640, 270], [715, 380], [770, 500], [830, 680]], 142); break;
+      case '08': drawPath([[560, 40], [585, 155], [630, 270], [690, 385], [750, 510], [830, 680]], 180); break;
     }
   }
 
@@ -578,8 +473,8 @@
     ctx.save(); ctx.translate(object.x, object.y);
     if (selected) { ctx.strokeStyle = '#fff7cb'; ctx.lineWidth = 4; ctx.beginPath(); ctx.ellipse(0, 15, object.r * 1.1, object.r * .62, 0, 0, Math.PI * 2); ctx.stroke(); }
     switch (object.id) {
-      case 'home': drawHouse(0, 0, '#b76352', '', 1.15, true); break;
-      case 'grandpa': drawHouse(0, 0, '#8c6947', '', 1.16); break;
+      case 'home': drawHouse(0, 0, '#b76352', '', 1.35, true); break;
+      case 'grandpa': drawHouse(0, 0, '#8c6947', '', 1.34); break;
       case 'gate':
         ctx.fillStyle = '#775332'; ctx.fillRect(-28, -46, 10, 92); ctx.fillRect(18, -46, 10, 92);
         ctx.fillStyle = s.gateOpen ? '#b5cc84' : '#ad8154'; ctx.fillRect(-18, -38, 36, 76);
@@ -587,44 +482,22 @@
         break;
       case 'northGate':
         ctx.fillStyle='#775332';ctx.fillRect(-35,-34,12,76);ctx.fillRect(23,-34,12,76);
-        ctx.fillStyle=s.giantDown?'#b5cc84':'#ad8154';ctx.fillRect(-23,-28,46,62);
+        ctx.fillStyle=s.thorns?'#b5cc84':'#ad8154';ctx.fillRect(-23,-28,46,62);
         ctx.fillStyle='#8c663e';ctx.fillRect(-23,-28,46,9);
-        if(!s.giantDown){ctx.strokeStyle='#d8bd83';ctx.lineWidth=4;for(let x=-14;x<=14;x+=14){ctx.beginPath();ctx.moveTo(x,-18);ctx.lineTo(x,27);ctx.stroke();}}
-        break;
-      case 'returnGate':
-        ctx.fillStyle='#775332';ctx.fillRect(-50,-22,12,44);ctx.fillRect(38,-22,12,44);
-        ctx.fillStyle='#ad8154';
-        if (s.returnGateOpen) {
-          ctx.save(); ctx.rotate(-.55); ctx.fillRect(-42,-8,35,10); ctx.restore();
-          ctx.save(); ctx.rotate(.55); ctx.fillRect(7,-8,35,10); ctx.restore();
-        } else {
-          ctx.fillRect(-38,-13,76,9); ctx.fillRect(-38,4,76,9);
-          ctx.fillStyle='#8c663e'; for(let x=-25;x<=25;x+=25) ctx.fillRect(x-3,-13,6,26);
-        }
+        if(!s.thorns){ctx.strokeStyle='#d8bd83';ctx.lineWidth=4;for(let x=-14;x<=14;x+=14){ctx.beginPath();ctx.moveTo(x,-18);ctx.lineTo(x,27);ctx.stroke();}}
         break;
       case 'thorns':
         if (!s.thorns) { for (let i = 0; i < 8; i++) { ctx.strokeStyle = i % 2 ? '#465e39' : '#607343'; ctx.lineWidth = 8; ctx.beginPath(); ctx.moveTo(-43 + i * 12, 25); ctx.bezierCurveTo(-25 + i * 8, -24, 8 + i * 4, 40, 39 - i * 8, -28); ctx.stroke(); } }
         break;
       case 'hut': drawHouse(0, 0, '#a98259', '', 1.5); ctx.font = '34px serif'; ctx.textAlign = 'center'; ctx.fillText('⚗️', 0, -34); break;
       case 'sunpetal': case 'bluebell': case 'mooncap': case 'lavender': case 'amberleaf': case 'fern': drawFlora(object.id, 0, 0); break;
-      case 'shrine':
-        ctx.fillStyle = '#fff9e9'; ctx.strokeStyle = '#c4b99e'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(-43, -20); ctx.lineTo(0, -58); ctx.lineTo(43, -20); ctx.lineTo(35, 35); ctx.lineTo(-35, 35); ctx.closePath(); ctx.fill(); ctx.stroke();
-        ctx.fillStyle = '#9fd5db'; ctx.fillRect(-9, 4, 18, 31); break;
-      case 'fountain':
-        ctx.fillStyle = '#b8dbe1'; ctx.beginPath(); ctx.ellipse(0, 0, 43, 23, 0, 0, Math.PI * 2); ctx.fill(); ctx.strokeStyle = '#f5f2de'; ctx.lineWidth = 5; ctx.stroke(); ctx.fillStyle = '#71b8c4'; ctx.beginPath(); ctx.ellipse(0, -3, 27, 12, 0, 0, Math.PI * 2); ctx.fill(); break;
-      case 'boulders':
-        if (!s.boulders) [-72,-48,-24,0,24,48,72].forEach((y,i) => { ctx.fillStyle = ['#8a8b78', '#777d70', '#9d9b83', '#747b70'][i % 4]; ctx.beginPath(); ctx.ellipse(Math.sin(i) * 5, y, 24, 23, 0, 0, Math.PI * 2); ctx.fill(); ctx.strokeStyle = '#bbc0a5'; ctx.lineWidth = 2; ctx.stroke(); });
-        break;
-      case 'cave':
-        ctx.fillStyle = '#574d46'; ctx.beginPath(); ctx.ellipse(0, 0, 88, 65, 0, Math.PI, 0); ctx.closePath(); ctx.fill(); ctx.fillStyle = '#233c36'; ctx.beginPath(); ctx.ellipse(0, 10, 65, 46, 0, Math.PI, 0); ctx.closePath(); ctx.fill();
-        if (!s.giantDown) { ctx.font = '52px serif'; ctx.textAlign = 'center'; ctx.fillText('👹', 0, 18); }
-        break;
+
     }
     ctx.restore();
   }
 
   function drawBoy() {
-    const scale = s.scene === 'basement' ? 1.2 : s.scene === 'interior' ? 1 : .82;
+    const scale = s.scene === 'basement' ? 1.65 : s.scene === 'interior' ? 1.6 : 1.08;
     ctx.save(); ctx.translate(s.x, s.y); ctx.scale(scale,scale);
     ctx.fillStyle = '#21362d48'; ctx.beginPath(); ctx.ellipse(0, 14, 17, 8, 0, 0, Math.PI * 2); ctx.fill();
     ctx.fillStyle = '#5b4a3b'; ctx.beginPath(); ctx.arc(0, -7, 12, 0, Math.PI * 2); ctx.fill();
@@ -768,7 +641,7 @@
     drawGround(); if (s.screen === '13') drawVillageFence(); drawRoomPath();
     if (s.screen === '13') drawVillageHomes();
     (roomObjects[s.screen] || []).filter((o) => getAvailableObjects().some((active) => active.id === o.id)).forEach(drawObject);
-    if (s.scene === 'outside' || s.scene === 'cave') drawBoy();
+    if (s.scene === 'outside') drawBoy();
     else if (s.scene === 'basement') drawBasement();
     else if (s.scene === 'interior') drawInterior();
     updateHud(); requestAnimationFrame(draw);
@@ -794,38 +667,29 @@
       [100,100,770,100], [890,100,1020,100], [100,620,1020,620],
       [100,100,100,305], [100,415,100,620], [1020,100,1020,620]
     ];
-    if (!s.giantDown) fence.push([770,100,890,100]);
+    if (!s.thorns) fence.push([770,100,890,100]);
     if (!s.gateOpen) fence.push([100,305,100,415]);
     return fence.some((line) => hitsSegment(x, y, line));
   }
 
   function solidCircles() {
     const treeEdges = [];
-    const groundTrees = s.screen === '01'
-      ? [[34,54],[1082,52],[32,657],[1080,652],[340,35],[780,676]]
-      : [[34,54],[1082,52],[32,657],[1080,652],[340,35],[780,676],[1020,215],[140,510]];
+    const groundTrees = [[34,54],[1082,52],[32,657],[1080,652],[340,35],[780,676],[1020,215],[140,510]];
     const sceneTrees = s.screen === '06'
       ? [[700,85],[1040,100],[1080,255],[690,300],[1030,650],[620,120]]
-      : s.screen === '01'
-        ? [[700,85],[1035,105],[1080,250],[685,270],[1005,650],[570,120]] : [];
+      : [];
     for (const [x,y] of [...groundTrees,...sceneTrees]) {
-      if (x > 80 && x < W-80 && y > 80 && y < H-80) treeEdges.push([x,y,29]);
+      if (x > 80 && x < W-80 && y > 80 && y < H-80) treeEdges.push([x,y,35]);
     }
-    const boulderWall = s.boulders ? [] : [-72,-48,-24,0,24,48,72].map((offset) => [560,360+offset,24]);
-    const returnGate = s.screen === '08' && s.giantDown && !s.returnGateOpen ? [[830,645,36]] : [];
     const fixed = {
-      '13': [[560,280,47],[850,520,48],[265,205,43]],
-      '11': s.thorns ? [] : [[225,155,48]],
-      '21': [[250,390,58]],
-      '06': [],
-      '01': [[850,195,48],[850,315,30]],
-      '02': boulderWall,
-      '03': [[750,360,55]],
-      '08': returnGate
+      '13': [[560,280,58],[850,520,58],[265,205,52]],
+      '11': s.thorns ? [] : [[225,155,58]],
+      '21': [[250,390,68]],
+      '06': []
     };
     const objects = fixed[s.screen] || [];
-    const gate = s.screen === '13' && !s.gateOpen ? [[100,360,30]] : [];
-    const northGate = s.screen === '13' && !s.giantDown ? [[830,100,30]] : [];
+    const gate = s.screen === '13' && !s.gateOpen ? [[100,360,36]] : [];
+    const northGate = s.screen === '13' && !s.thorns ? [[830,100,36]] : [];
     return [...treeEdges, ...objects, ...gate, ...northGate];
   }
 
@@ -850,10 +714,10 @@
 
   function transitionAtEdge(nx, ny) {
     const lanes = roomDoors[s.screen] || {};
-    if (nx <= 28 && lanes.west != null && Math.abs(ny - lanes.west) < 90) return moveToRoom('west');
-    if (nx >= W - 28 && lanes.east != null && Math.abs(ny - lanes.east) < 90) return moveToRoom('east');
-    if (ny <= 28 && lanes.north != null && Math.abs(nx - lanes.north) < 105) return moveToRoom('north');
-    if (ny >= H - 28 && lanes.south != null && Math.abs(nx - lanes.south) < 105) return moveToRoom('south');
+    if (nx <= 86 && lanes.west != null && Math.abs(ny - lanes.west) < 90) return moveToRoom('west');
+    if (nx >= W - 86 && lanes.east != null && Math.abs(ny - lanes.east) < 90) return moveToRoom('east');
+    if (ny <= 55 && lanes.north != null && Math.abs(nx - lanes.north) < 105) return moveToRoom('north');
+    if (ny >= H - 55 && lanes.south != null && Math.abs(nx - lanes.south) < 105) return moveToRoom('south');
     return false;
   }
 
@@ -885,12 +749,12 @@
       return;
     }
 
-    const minX = 28, maxX = W - 28, minY = 28, maxY = H - 28;
+    const minX = 86, maxX = W - 86, minY = 55, maxY = H - 55;
     nx = clamp(nx, minX, maxX);
     const oldX = s.x;
     const returnAcrossVanishedLog = s.screen === '12' && s.logGone && oldX <= 430 && nx > 430;
     const offLogRiverEntry = s.screen === '12' && nx > 430 && nx < 690 && (s.y < 342 || s.y > 378);
-    if (s.screen === '13' && !s.giantDown && ny < 118 && nx > 755 && nx < 905) {
+    if (s.screen === '13' && !s.thorns && ny < 118 && nx > 755 && nx < 905) {
       toast('The gate is locked from the other side.');
     } else if (!returnAcrossVanishedLog && !offLogRiverEntry && !(s.screen === '13' && !s.gateOpen && nx < 125 && ny > 290 && ny < 430) && !hitsWorldObject(nx,ny)) {
       s.x = nx;
@@ -901,7 +765,7 @@
     const onLog = ny >= 342 && ny <= 378;
     const riverBlocks = riverOverlap && !onLog;
     const crossedAfterLog = s.screen === '12' && s.logGone && s.x <= 430 && nx > 430;
-    if (!riverBlocks && !crossedAfterLog && !(s.screen === '13' && !s.giantDown && ny < 118 && s.x > 755 && s.x < 905) && !hitsWorldObject(s.x,ny)) {
+    if (!riverBlocks && !crossedAfterLog && !(s.screen === '13' && !s.thorns && ny < 118 && s.x > 755 && s.x < 905) && !hitsWorldObject(s.x,ny)) {
       s.y = ny;
     }
 
@@ -913,7 +777,7 @@
       s.x = W - 34; toast('The log is gone. The crossing is one-way.'); return;
     }
     if (s.screen === '11' && !s.thorns && s.y <= 112 && s.x > 115 && s.x < 335) { s.y = 112; toast('The Vines block the north path.'); }
-    if (s.screen === '02' && !s.boulders && s.x >= 920 && s.y > 280 && s.y < 440) { s.x = 920; toast('The boulders block the east path.'); }
+    
 
     const reachedEdge = (s.x <= minX && dx < 0) || (s.x >= maxX && dx > 0) || (s.y <= minY && dy < 0) || (s.y >= maxY && dy > 0);
     if (reachedEdge) {
