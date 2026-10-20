@@ -781,6 +781,34 @@
     ctx.fillStyle='#74543b';ctx.fillRect(249,502,8,25);ctx.fillRect(378,502,8,25);
   }
 
+  function drawHomeRoomAccents() {
+    // Stitching and a quilt pattern make the oversized bed feel like a crafted object.
+    ctx.strokeStyle='#e6dfba';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(245,231);ctx.lineTo(437,231);ctx.moveTo(245,270);ctx.lineTo(437,270);ctx.stroke();
+    for(let x=253;x<433;x+=24){ctx.strokeStyle=x%48?'#6d986d':'#d3dfb0';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(x,238);ctx.lineTo(x+8,247);ctx.lineTo(x,256);ctx.lineTo(x-8,247);ctx.closePath();ctx.stroke();}
+    ctx.fillStyle='#73533a';ctx.beginPath();ctx.ellipse(492,220,34,15,0,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#a97a4d';ctx.beginPath();ctx.roundRect(462,198,60,39,6);ctx.fill();
+    ctx.fillStyle='#d5b87d';ctx.beginPath();ctx.arc(492,207,8,0,Math.PI*2);ctx.fill();
+    // Keepsake cabinet with a family portrait and small colored curios.
+    ctx.fillStyle='#714e36';ctx.beginPath();ctx.roundRect(704,137,214,128,15);ctx.fill();
+    ctx.fillStyle='#c59a61';ctx.beginPath();ctx.roundRect(713,146,196,110,10);ctx.fill();
+    ctx.strokeStyle='#80583b';ctx.lineWidth=3;for(let x=720;x<905;x+=61){ctx.beginPath();ctx.moveTo(x,151);ctx.lineTo(x,250);ctx.stroke();}
+    for(let row=0;row<3;row++)for(let col=0;col<3;col++){const x=733+col*59,y=160+row*27;ctx.fillStyle=['#9b6250','#67846b','#6987a5','#b48651'][((row*3+col)%4)];ctx.beginPath();ctx.roundRect(x,y,39,19,3);ctx.fill();ctx.fillStyle='#e1c488';ctx.beginPath();ctx.arc(x+20,y+10,2.5,0,Math.PI*2);ctx.fill();}
+    ctx.fillStyle='#e6d9b8';ctx.beginPath();ctx.roundRect(816,161,48,42,5);ctx.fill();ctx.fillStyle='#71906a';ctx.beginPath();ctx.arc(840,178,11,0,Math.PI*2);ctx.fill();ctx.fillStyle='#d59d7a';ctx.beginPath();ctx.arc(840,190,7,Math.PI,0);ctx.fill();
+    // A woven oval rug and a little teacup make the sitting corner feel used.
+    ctx.strokeStyle='#dfd1a5';ctx.lineWidth=2;for(let i=0;i<3;i++){ctx.beginPath();ctx.ellipse(392,480,75-i*13,27-i*5,0,0,Math.PI*2);ctx.stroke();}
+    ctx.fillStyle='#6c5842';ctx.beginPath();ctx.ellipse(465,467,12,9,0,0,Math.PI*2);ctx.fill();ctx.fillStyle='#f1dfb9';ctx.beginPath();ctx.ellipse(463,464,8,5,0,0,Math.PI*2);ctx.fill();
+  }
+
+  function drawHutRoomAccents() {
+    // Dried herbs and potion bottles are arranged like a working alchemist's shop.
+    ctx.fillStyle='#654832';ctx.beginPath();ctx.roundRect(668,132,274,22,7);ctx.fill();ctx.fillStyle='#b88852';ctx.fillRect(674,128,262,7);
+    for(let i=0;i<6;i++){const x=690+i*43;ctx.fillStyle=['#7a9a62','#9c79aa','#d1b667'][i%3];ctx.fillRect(x,159,22,42);ctx.fillStyle='#e8d6ac';ctx.fillRect(x+4,166,14,14);ctx.fillStyle='#75513c';ctx.fillRect(x-3,157,28,5);ctx.fillStyle='#88a25d';ctx.strokeStyle='#63834e';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(x+11,130);ctx.lineTo(x+11,125);ctx.lineTo(x+4,116);ctx.moveTo(x+11,127);ctx.lineTo(x+19,115);ctx.stroke();}
+    ctx.fillStyle='#77523a';ctx.beginPath();ctx.roundRect(667,286,280,19,6);ctx.fill();
+    for(let i=0;i<5;i++){const x=686+i*50;ctx.fillStyle=['#8c5d83','#789c75','#d1ad68','#638e9d','#a96d54'][i];ctx.beginPath();ctx.roundRect(x,250,31,36,6);ctx.fill();ctx.fillStyle='#e6d29c';ctx.beginPath();ctx.ellipse(x+15,250,12,5,0,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#f0d9a6';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(x+8,262);ctx.lineTo(x+23,262);ctx.stroke();}
+    ctx.strokeStyle='#dfc986';ctx.lineWidth=3;ctx.beginPath();ctx.arc(820,230,71,-2.8,-.3);ctx.stroke();
+    for(let i=0;i<9;i++){const a=-2.8+i*.31;ctx.fillStyle=i%2?'#d5d880':'#e7c278';ctx.beginPath();ctx.arc(820+Math.cos(a)*71,230+Math.sin(a)*71,2.5,0,Math.PI*2);ctx.fill();}
+  }
+
   function drawHutGuide() {
     for (const card of hutGuideCards) {
       const highlighted = Math.hypot(s.x-card.x,s.y-card.y) < 86;
@@ -826,13 +854,16 @@
       for(let yy=0;yy<3;yy++){roundedRect(735,163+yy*25,70,19,4,'#d1ad78');roundedRect(816,163+yy*25,70,19,4,'#d1ad78');ctx.fillStyle='#805a3d';ctx.beginPath();ctx.arc(795,173+yy*25,2,0,Math.PI*2);ctx.arc(876,173+yy*25,2,0,Math.PI*2);ctx.fill();}
       roundedRect(270,420,245,120,18,'#5d7554');roundedRect(281,430,223,100,13,'#9ab286');
       ctx.strokeStyle='#e1d8ad';ctx.lineWidth=3;ctx.beginPath();ctx.ellipse(392,480,82,33,0,0,Math.PI*2);ctx.stroke();ctx.fillStyle='#f3d68a';ctx.beginPath();ctx.arc(392,480,8,0,Math.PI*2);ctx.fill();
+      drawHomeRoomAccents();
     } else if (s.interior === 'grandpa') {
       drawGrandpaRoomDetails();
       drawInteriorPerson(805,335,'#71846a');
       if(Math.hypot(s.x-560,s.y-178)<94){const p=(Math.sin(performance.now()/230)+1)/2;ctx.save();ctx.strokeStyle=`rgba(100,255,130,${.76+p*.18})`;ctx.lineWidth=3+p;ctx.shadowColor='#5dff7e';ctx.shadowBlur=8+p*11;ctx.beginPath();ctx.roundRect(485,99,150,175,16);ctx.stroke();ctx.restore();}
       if(Math.hypot(s.x-805,s.y-335)<125){const p=(Math.sin(performance.now()/230)+1)/2;ctx.save();ctx.strokeStyle=`rgba(100,255,130,${.76+p*.18})`;ctx.lineWidth=3+p;ctx.shadowColor='#5dff7e';ctx.shadowBlur=8+p*11;ctx.beginPath();ctx.moveTo(781,357);ctx.quadraticCurveTo(778,329,786,315);ctx.arc(805,322,20,Math.PI,0);ctx.quadraticCurveTo(832,333,829,357);ctx.quadraticCurveTo(805,370,781,357);ctx.closePath();ctx.stroke();ctx.restore();}
     } else if (s.interior === 'hut') {
+      drawHutRoomAccents();
       drawHutGuide();
+      ctx.fillStyle='#263b2d35';ctx.beginPath();ctx.ellipse(822,262,110,35,0,0,Math.PI*2);ctx.fill();
       ctx.fillStyle='#74563d';ctx.beginPath();ctx.ellipse(820,240,93,47,0,0,Math.PI*2);ctx.fill();
       ctx.fillStyle='#557b54';ctx.beginPath();ctx.ellipse(820,239,80,36,0,0,Math.PI*2);ctx.fill();
       ctx.fillStyle='#4c9880';ctx.beginPath();ctx.ellipse(820,230,67,28,0,0,Math.PI*2);ctx.fill();
@@ -985,7 +1016,7 @@
     }
     if (s.scene === 'interior') {
       const furniture = s.interior === 'grandpa'
-        ? [[340,185,63],[815,500,54],[560,180,35],[805,335,30]]
+        ? [[340,185,63],[815,500,54],[560,180,35],[805,335,30],[820,190,43]]
         : s.interior === 'home'
           ? [[335,225,82],[810,198,45],[392,480,57]]
           : [[820,240,55],[820,345,30],...hutGuideCards.map((c)=>[c.x,c.y,34])];
