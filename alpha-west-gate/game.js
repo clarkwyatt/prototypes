@@ -22,6 +22,15 @@
   };
 
   const flowerNames = { sunpetal: 'Sunpetal', bluebell: 'Bluebell', mooncap: 'Mooncap', lavender: 'Lavender', amberleaf: 'Amberleaf', fern: 'Fern' };
+  const flowerDetails = {
+    sunpetal: 'A golden flower with bright, round petals.', bluebell: 'A blue, bell-shaped flower growing on a curved stem.',
+    mooncap: 'A pale mushroom with a violet cap.', lavender: 'A cluster of slender purple flower spikes.',
+    amberleaf: 'A plant with warm gold and green leaves.', fern: 'A leafy green plant with curling fronds.'
+  };
+  const hutGuideCards = [
+    { id:'sunpetal', x:255, y:165 }, { id:'bluebell', x:390, y:165 }, { id:'mooncap', x:525, y:165 },
+    { id:'lavender', x:255, y:285 }, { id:'amberleaf', x:390, y:285 }, { id:'fern', x:525, y:285 }
+  ];
   const requiredFlowers = Object.keys(flowerNames).sort(() => Math.random() - 0.5).slice(0, 3);
 
   const roomNeighbors = {
@@ -39,18 +48,19 @@
 
   // Each exit is placed where the hand-drawn path meets the edge of its panel.
   const roomDoors = {
-    '13': { west: 360, north: 560 }, '12': { east: 360 },
+    '13': { west: 360, north: 830 }, '12': { east: 360 },
     '11': { east: 360, north: 220, south: 560 }, '16': { north: 560, south: 560 },
     '21': { north: 560 }, '06': { south: 220, north: 560 },
     '01': { south: 560, east: 360 }, '02': { west: 360, east: 360 },
-    '03': { west: 360, south: 560 }, '08': { north: 560, south: 560 }
+    '03': { west: 360, south: 560 }, '08': { north: 560, south: 830 }
   };
 
   const roomObjects = {
     '13': [
       { id: 'home', name: 'Your Home', x: 560, y: 280, r: 57 },
       { id: 'grandpa', name: 'Grandfather’s House', x: 850, y: 520, r: 58 },
-      { id: 'gate', name: 'West Gate', x: 65, y: 360, r: 44 }
+      { id: 'gate', name: 'West Gate', x: 65, y: 360, r: 44 },
+      { id: 'northGate', name: 'North Gate', x: 830, y: 52, r: 48 }
     ],
     '11': [{ id: 'thorns', name: 'Thorny Vines', x: 225, y: 155, r: 82 }],
     '21': [
@@ -62,11 +72,12 @@
       { id: 'amberleaf', name: 'Amberleaf', x: 940, y: 320, r: 40 },
       { id: 'fern', name: 'Fern', x: 410, y: 250, r: 40 }
     ],
-    '01': [
+    '06': [
       { id: 'shrine', name: 'White Shrine', x: 850, y: 195, r: 68 },
       { id: 'fountain', name: 'Blue Fountain', x: 850, y: 315, r: 52 }
     ],
-    '02': [{ id: 'boulders', name: 'Boulder Blockage', x: 1000, y: 360, r: 64 }],
+    '01': [{ id: 'boulders', name: 'Boulder Blockage', x: 1000, y: 360, r: 64 }],
+    '02': [],
     '03': [{ id: 'cave', name: 'Giant’s Cave', x: 750, y: 360, r: 75 }],
     '08': [{ id: 'return', name: 'Village Path', x: 560, y: 620, r: 45 }]
   };
@@ -99,17 +110,18 @@
     hintEl.textContent = s.scene === 'basement'
       ? 'Move with WASD or arrows · Get close, left-click a rodent, then choose CATCH · Click the stairs to leave'
       : s.scene === 'interior'
-        ? 'Explore the room · Move with WASD or arrows · Left-click nearby objects'
-        : 'Move with WASD or arrow keys · Left-click nearby objects to interact';
+        ? 'Move with WASD or arrows · Left-click highlighted objects'
+      : 'Move with WASD or arrow keys · Left-click highlighted objects';
 
     let quest = '';
     if (!s.key && s.rodents < 5) quest = `<strong>First Quest</strong>Catch 5 rodents: ${s.rodents}/5`;
+    else if (!s.key && s.rodents >= 5) quest = '<strong>Quest</strong>Talk to Grandfather.';
     else if (s.key && !s.gateOpen) quest = '<strong>Quest</strong>Unlock the West Gate';
     else if (s.vinesStarted && !s.alchemistTalked) quest = '<strong>Quest</strong>Find a way to remove the Vines.';
     else if (s.vinesStarted && s.alchemistTalked && !s.potion && !s.thorns) {
       const count = requiredFlowers.filter((id) => s.flowers[id]).length;
       quest = count < 3
-        ? `<strong>Quest</strong>Gather the alchemist’s flowers: ${count}/3`
+        ? `<strong>Quest</strong>${requiredFlowers.map((id) => `${flowerNames[id]} ${s.flowers[id] ? '1/1' : '0/1'}`).join(' · ')}`
         : '<strong>Quest</strong>Talk to the Alchemist for the potion.';
     }
     else if (s.vinesStarted && s.potion && !s.thorns) quest = '<strong>Quest</strong>Use the potion on the Vines.';
@@ -175,7 +187,7 @@
   function talkToAlchemist() {
     s.alchemistTalked = true;
     const count = requiredFlowers.filter((id) => s.flowers[id]).length;
-    const requested = requiredFlowers.map((id) => flowerNames[id]).join(', ');
+    const requested = requiredFlowers.map((id) => `${flowerNames[id]} (1 needed)`).join(', ');
     updateHud();
     if (count < 3) {
       openModal('The Alchemist', '🧙', `<p>I can make a potion to clear the Vines. Please bring me these flowers: ${requested}.</p>`, () => makeButton('I’ll look for them', closeModal));
@@ -213,8 +225,7 @@
     s.rodents++;
     updateHud();
     if (s.rodents >= 5) {
-      s.key = true;
-      openModal('West Gate Key!', '🗝️', '<p>All 5 rodents are caught. You have the West Gate key.</p>', () => {
+      openModal('All Rodents Caught!', '🐭', '<p>Go upstairs and speak with Grandfather.</p>', () => {
         makeButton('Go upstairs', () => { closeModal(); exitBasement(); });
       });
     } else closeModal();
@@ -262,6 +273,10 @@
         if (s.gateOpen) toast('The West Gate is open. Walk left to screen 12.');
         else if (!s.key) simpleModal('The West Gate is locked', '🚪', 'Grandfather may have a key.');
         else { s.key = false; s.gateOpen = true; toast('The key opens the West Gate. Walk left to screen 12.'); updateHud(); }
+        break;
+      case 'northGate':
+        if (s.giantDown) toast('The gate is open. Follow the path home.');
+        else simpleModal('North Gate', '🚪', 'The gate is locked from the other side.');
         break;
       case 'thorns':
         s.vinesStarted = true;
@@ -336,17 +351,19 @@
         updateHud();
       }
     }
-    if (s.screen === '12' && direction === 'west') {
-      if (s.logGone) { toast('The log is gone. There’s no way back across the river.'); return false; }
+    if (s.screen === '13' && direction === 'north' && !s.giantDown) {
+      toast('The gate is locked from the other side.'); return false;
+    }
+    if (s.screen === '12' && direction === 'west' && !s.logGone) {
       if (s.y < 300 || s.y > 420) { toast('Cross the river at the log.'); return false; }
       s.logGone = true;
-      enterRoom(next, 'east');
-      toast('You crossed the river. The log drifts away.');
+      s.x = 430;
+      toast('You cross the river. The log drifts away.');
       return true;
     }
     if (s.screen === '11' && direction === 'east' && s.logGone) { toast('The log is gone. The crossing is one-way.'); return false; }
     if (s.screen === '11' && direction === 'north' && !s.thorns) { toast('The thorny vines block the north path.'); return false; }
-    if (s.screen === '02' && direction === 'east' && !s.boulders) { toast('The boulders block the path to the cave.'); return false; }
+    if (s.screen === '01' && direction === 'east' && !s.boulders) { toast('The boulders block the path to the cave.'); return false; }
     if (s.screen === '03' && direction === 'south' && !s.giantDown) { toast('The cave exits are blocked while the Giant is awake.'); return false; }
     let entering = { west: 'east', east: 'west', north: 'south', south: 'north' }[direction];
     enterRoom(next, entering);
@@ -364,6 +381,21 @@
       ctx.fillStyle = color; ctx.beginPath(); ctx.arc(0, -6 - i * 9, 22 - i * 3, 0, Math.PI * 2); ctx.fill();
     });
     ctx.restore();
+  }
+
+  function fenceSegment(x1, y1, x2, y2) {
+    ctx.save(); ctx.strokeStyle = '#805a37'; ctx.lineWidth = 8; ctx.beginPath(); ctx.moveTo(x1,y1+8); ctx.lineTo(x2,y2+8); ctx.stroke();
+    ctx.strokeStyle = '#b88752'; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+    const length = Math.hypot(x2-x1,y2-y1), steps = Math.max(1, Math.floor(length/30));
+    for(let i=0;i<=steps;i++){const t=i/steps,x=x1+(x2-x1)*t,y=y1+(y2-y1)*t;ctx.fillStyle='#875e39';ctx.fillRect(x-4,y-10,8,34);ctx.fillStyle='#c99a60';ctx.fillRect(x-4,y-10,8,6);}
+    ctx.restore();
+  }
+
+  function drawVillageFence() {
+    // Openings line up with the West Gate and the far-side-locked North Gate.
+    fenceSegment(20,24,760,24); fenceSegment(900,24,1100,24);
+    fenceSegment(20,696,1100,696); fenceSegment(20,24,20,305); fenceSegment(20,415,20,696);
+    fenceSegment(1100,24,1100,696);
   }
 
   function flower(x, y, color = '#f1d469') {
@@ -436,21 +468,21 @@
     const treePoints = s.screen === '01'
       ? [[34, 54], [1082, 52], [32, 657], [1080, 652], [340, 35], [780, 676]]
       : [[34, 54], [1082, 52], [32, 657], [1080, 652], [340, 35], [780, 676], [1020, 215], [140, 510]];
-    treePoints.forEach((point, i) => tree(...point, .9 + (i % 3) * .13));
+    treePoints.forEach((point, i) => tree(...point, 1.2 + (i % 3) * .14));
     if (s.screen !== '21') for (let i = 0; i < 17; i++) flower((i * 137 + 53) % W, (i * 211 + 75) % H, ['#fff1d0', '#f4c76a', '#d88c9a'][i % 3]);
   }
 
   function drawVillageHomes() {
-    drawHouse(265, 205, '#897553', '', .78);
-    drawHouse(885, 195, '#897553', '', .78);
-    drawHouse(1035, 360, '#897553', '', .78);
-    drawHouse(275, 560, '#897553', '', .78);
-    drawHouse(635, 585, '#897553', '', .78);
+    drawHouse(265, 205, '#897553', '', 1.08);
+    drawHouse(970, 195, '#897553', '', 1.08);
+    drawHouse(1035, 360, '#897553', '', 1.08);
+    drawHouse(275, 560, '#897553', '', 1.08);
+    drawHouse(635, 585, '#897553', '', 1.08);
   }
 
   function drawRoomPath() {
     switch (s.screen) {
-      case '13': drawPath([[45, 360], [190, 360], [320, 520], [510, 540], [700, 500], [820, 390], [780, 265], [680, 165], [560, 40]], 142); break;
+      case '13': drawPath([[45, 360], [190, 360], [320, 520], [510, 540], [700, 500], [820, 390], [790, 265], [785, 165], [830, 40]], 142); break;
       case '12':
         drawPath([[1080, 360], [900, 360], [760, 360], [660, 360], [560, 360], [460, 360], [330, 360], [180, 360], [40, 360]], 142);
         ctx.fillStyle = '#6eafc0'; ctx.fillRect(445, 0, 230, H);
@@ -469,7 +501,10 @@
         break;
       case '16': drawPath([[560, 35], [470, 150], [340, 230], [245, 350], [270, 490], [390, 585], [485, 650], [560, 685]], 142); break;
       case '21': drawPath([[560, 40], [520, 170], [460, 285], [370, 370], [260, 390]], 144); break;
-      case '06': drawPath([[220, 680], [260, 560], [350, 440], [430, 320], [500, 210], [560, 40]], 142); break;
+      case '06':
+        drawPath([[220, 680], [255, 560], [335, 455], [420, 350], [500, 255], [560, 40]], 142);
+        [[700,85],[1040,100],[1080,255],[690,300],[1030,650],[620,120]].forEach((p,i)=>tree(...p,1.15+(i%2)*.14));
+        break;
       case '01':
         drawPath([[560, 685], [560, 590], [600, 500], [720, 440], [860, 390], [990, 360], [1080, 360]], 142);
         // A quiet, open clearing frames the shrine in the upper-right.
@@ -485,7 +520,7 @@
         ctx.fillStyle = '#26332f'; ctx.beginPath(); ctx.ellipse(560, 170, 85, 48, 0, Math.PI, Math.PI * 2); ctx.fill();
         if (!s.giantDown) { ctx.font = '86px serif'; ctx.textAlign = 'center'; ctx.fillText('👹', 560, 360); }
         break;
-      case '08': drawPath([[560, 40], [560, 160], [520, 285], [560, 390], [620, 500], [560, 590], [560, 680]], 142); break;
+      case '08': drawPath([[560, 40], [580, 160], [640, 270], [715, 380], [770, 500], [830, 680]], 142); break;
     }
   }
 
@@ -494,17 +529,23 @@
     ctx.save(); ctx.translate(object.x, object.y);
     if (selected) { ctx.strokeStyle = '#fff7cb'; ctx.lineWidth = 4; ctx.beginPath(); ctx.ellipse(0, 15, object.r * 1.1, object.r * .62, 0, 0, Math.PI * 2); ctx.stroke(); }
     switch (object.id) {
-      case 'home': drawHouse(0, 0, '#b76352', '', .92, true); break;
-      case 'grandpa': drawHouse(0, 0, '#8c6947', '', .94); break;
+      case 'home': drawHouse(0, 0, '#b76352', '', 1.15, true); break;
+      case 'grandpa': drawHouse(0, 0, '#8c6947', '', 1.16); break;
       case 'gate':
         ctx.fillStyle = '#775332'; ctx.fillRect(-28, -46, 10, 92); ctx.fillRect(18, -46, 10, 92);
         ctx.fillStyle = s.gateOpen ? '#b5cc84' : '#ad8154'; ctx.fillRect(-18, -38, 36, 76);
         if (!s.gateOpen) { ctx.strokeStyle = '#f0d596'; ctx.lineWidth = 5; ctx.beginPath(); ctx.arc(0, -7, 9, Math.PI, 0); ctx.lineTo(9, 8); ctx.lineTo(-9, 8); ctx.closePath(); ctx.stroke(); ctx.fillStyle = '#f0d596'; ctx.beginPath(); ctx.arc(0, 4, 3, 0, Math.PI * 2); ctx.fill(); }
         break;
+      case 'northGate':
+        ctx.fillStyle='#775332';ctx.fillRect(-35,-34,12,76);ctx.fillRect(23,-34,12,76);
+        ctx.fillStyle=s.giantDown?'#b5cc84':'#ad8154';ctx.fillRect(-23,-28,46,62);
+        ctx.fillStyle='#8c663e';ctx.fillRect(-23,-28,46,9);
+        if(!s.giantDown){ctx.strokeStyle='#d8bd83';ctx.lineWidth=4;for(let x=-14;x<=14;x+=14){ctx.beginPath();ctx.moveTo(x,-18);ctx.lineTo(x,27);ctx.stroke();}}
+        break;
       case 'thorns':
         if (!s.thorns) { for (let i = 0; i < 8; i++) { ctx.strokeStyle = i % 2 ? '#465e39' : '#607343'; ctx.lineWidth = 8; ctx.beginPath(); ctx.moveTo(-43 + i * 12, 25); ctx.bezierCurveTo(-25 + i * 8, -24, 8 + i * 4, 40, 39 - i * 8, -28); ctx.stroke(); } }
         break;
-      case 'hut': drawHouse(0, 0, '#a98259', '', 1.22); ctx.font = '30px serif'; ctx.textAlign = 'center'; ctx.fillText('⚗️', 0, -28); break;
+      case 'hut': drawHouse(0, 0, '#a98259', '', 1.5); ctx.font = '34px serif'; ctx.textAlign = 'center'; ctx.fillText('⚗️', 0, -34); break;
       case 'sunpetal': case 'bluebell': case 'mooncap': case 'lavender': case 'amberleaf': case 'fern': drawFlora(object.id, 0, 0); break;
       case 'shrine':
         ctx.fillStyle = '#fff9e9'; ctx.strokeStyle = '#c4b99e'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(-43, -20); ctx.lineTo(0, -58); ctx.lineTo(43, -20); ctx.lineTo(35, 35); ctx.lineTo(-35, 35); ctx.closePath(); ctx.fill(); ctx.stroke();
@@ -524,7 +565,7 @@
   }
 
   function drawBoy() {
-    ctx.save(); ctx.translate(s.x, s.y); ctx.scale(1.18,1.18);
+    ctx.save(); ctx.translate(s.x, s.y); ctx.scale(.82,.82);
     ctx.fillStyle = '#21362d48'; ctx.beginPath(); ctx.ellipse(0, 14, 17, 8, 0, 0, Math.PI * 2); ctx.fill();
     ctx.fillStyle = '#5b4a3b'; ctx.beginPath(); ctx.arc(0, -7, 12, 0, Math.PI * 2); ctx.fill();
     ctx.fillStyle = '#e3b77f'; ctx.beginPath(); ctx.arc(0, -6, 8, 0, Math.PI * 2); ctx.fill();
@@ -540,6 +581,19 @@
     ctx.fillStyle = '#e6bd94'; ctx.beginPath(); ctx.arc(0, -12, 13, 0, Math.PI*2); ctx.fill();
     ctx.fillStyle = robe; ctx.beginPath(); ctx.ellipse(0, 15, 20, 25, 0, 0, Math.PI*2); ctx.fill();
     ctx.restore();
+  }
+
+  function drawHutGuide() {
+    for (const card of hutGuideCards) {
+      const highlighted = Math.hypot(s.x-card.x,s.y-card.y) < 86;
+      ctx.save();
+      roundedRect(card.x-48,card.y-39,96,82,9,highlighted?'#fff0bf':'#78583b');
+      roundedRect(card.x-42,card.y-33,84,70,6,highlighted?'#fff9e8':'#e6d6ad');
+      ctx.save();ctx.translate(card.x,card.y-7);ctx.scale(.52,.52);drawFlora(card.id,0,0);ctx.restore();
+      ctx.fillStyle='#425b48';ctx.font='800 11px Nunito';ctx.textAlign='center';ctx.fillText(flowerNames[card.id],card.x,card.y+30);
+      if(highlighted){ctx.strokeStyle='#fff3b8';ctx.lineWidth=4;ctx.strokeRect(card.x-49,card.y-40,98,84);}
+      ctx.restore();
+    }
   }
 
   function drawInterior() {
@@ -558,6 +612,7 @@
 
     if (s.interior === 'home') {
       roundedRect(205,150,255,150,15,'#775b43'); roundedRect(218,160,229,124,12,'#d9ccaa');
+      if(Math.hypot(s.x-335,s.y-225)<130){ctx.strokeStyle='#fff1b9';ctx.lineWidth=5;ctx.strokeRect(200,145,265,160);}
       roundedRect(715,145,190,105,12,'#805e3e'); roundedRect(730,160,160,76,8,'#b98b55');
       roundedRect(270,420,245,120,18,'#6e8c68'); roundedRect(285,435,215,90,12,'#9db78a');
     } else if (s.interior === 'grandpa') {
@@ -568,15 +623,18 @@
       for(let y=117;y<252;y+=19){ctx.strokeStyle='#d2b17c';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(505,y);ctx.lineTo(615,y);ctx.stroke();}
       drawInteriorPerson(805,335,'#71846a');
       if(Math.hypot(s.x-560,s.y-178)<94){ctx.strokeStyle='#fff1b9';ctx.lineWidth=5;ctx.strokeRect(490,100,140,165);}
+      if(Math.hypot(s.x-805,s.y-335)<125){ctx.strokeStyle='#fff1b9';ctx.lineWidth=5;ctx.beginPath();ctx.ellipse(805,350,39,52,0,0,Math.PI*2);ctx.stroke();}
     } else if (s.interior === 'hut') {
-      roundedRect(200,150,190,110,12,'#80603e'); roundedRect(215,164,160,82,7,'#b58c55');
+      drawHutGuide();
       ctx.fillStyle='#74563d';ctx.beginPath();ctx.ellipse(585,300,86,42,0,0,Math.PI*2);ctx.fill();
       ctx.fillStyle='#508b7c';ctx.beginPath();ctx.ellipse(585,290,68,31,0,0,Math.PI*2);ctx.fill();
       ctx.fillStyle='#d7c091';ctx.fillRect(565,260,40,42);
-      drawFlora('sunpetal',760,185); drawFlora('bluebell',700,530); drawFlora('fern',380,490);
+      if(Math.hypot(s.x-585,s.y-300)<105){ctx.strokeStyle='#fff1b9';ctx.lineWidth=5;ctx.beginPath();ctx.ellipse(585,300,96,52,0,0,Math.PI*2);ctx.stroke();}
+      if(Math.hypot(s.x-820,s.y-345)<110){ctx.strokeStyle='#fff1b9';ctx.lineWidth=5;ctx.beginPath();ctx.ellipse(820,355,35,49,0,0,Math.PI*2);ctx.stroke();}
       drawInteriorPerson(820,345,'#716483');
     }
     // Exterior doorway is always centered at the south wall.
+    if(Math.hypot(s.x-560,s.y-620)<105){ctx.strokeStyle='#fff1b9';ctx.lineWidth=5;ctx.strokeRect(505,590,110,65);}
     ctx.fillStyle='#392f28';ctx.beginPath();ctx.roundRect(510,600,100,55,14,14);ctx.fill();
     ctx.fillStyle='#dfc181';ctx.beginPath();ctx.arc(590,628,5,0,Math.PI*2);ctx.fill();
     drawBoy();
@@ -647,7 +705,7 @@
   }
 
   function draw() {
-    drawGround(); drawRoomPath();
+    drawGround(); if (s.screen === '13') drawVillageFence(); drawRoomPath();
     if (s.screen === '13') drawVillageHomes();
     (roomObjects[s.screen] || []).filter((o) => getAvailableObjects().some((active) => active.id === o.id)).forEach(drawObject);
     if (s.scene === 'outside' || s.scene === 'cave') drawBoy();
@@ -685,15 +743,17 @@
       return;
     }
     if (s.screen === '13' && nx < 85 && ny > 305 && ny < 425 && !s.gateOpen) { toast('The West Gate is locked.'); return; }
+    if (s.screen === '13' && ny < 100 && nx > 760 && nx < 900 && !s.giantDown) { toast('The gate is locked from the other side.'); return; }
     const previousX = s.x;
     if (s.screen === '12' && nx > 430 && nx < 690 && (ny < 285 || ny > 435)) return;
     if (s.screen === '12' && s.logGone && nx < 690 && nx > 430) return;
     if (s.screen === '11' && s.logGone && nx > W - 18 && ny > 260 && ny < 460) { toast('The log is gone. The crossing is one-way.'); return; }
     if (s.screen === '11' && !s.thorns && ny < 95 && nx > 110 && nx < 335) { toast('The Vines block the north path.'); return; }
-    if (s.screen === '02' && !s.boulders && nx > 925 && ny > 285 && ny < 435) { toast('The boulders block the east path.'); return; }
+    if (s.screen === '01' && !s.boulders && nx > 925 && ny > 285 && ny < 435) { toast('The boulders block the east path.'); return; }
     s.x = clamp(nx, 8, W - 8); s.y = clamp(ny, 8, H - 8);
     if (s.screen === '12' && !s.logGone && previousX > 430 && s.x <= 430 && s.y > 305 && s.y < 415) {
-      moveToRoom('west');
+      s.logGone = true; s.x = 430;
+      toast('You cross the river. The log drifts away.');
       return;
     }
     transitionAtEdge(s.x, s.y);
@@ -717,30 +777,36 @@
     const y = (event.clientY - rect.top) / rect.height * H;
     if (s.scene === 'interior') {
       const near = (px, py, radius = 115) => Math.hypot(s.x - px, s.y - py) < radius;
-      if (x > 495 && x < 625 && y > 590 && near(560, 620)) { leaveInterior(); return; }
+      if (x > 495 && x < 625 && y > 590 && near(560, 620, 105)) { leaveInterior(); return; }
       if (s.interior === 'grandpa' && x > 485 && x < 635 && y > 100 && y < 265) {
         if (near(560, 180, 115)) { s.returnX = s.x; s.returnY = s.y; showBasement(); }
-        else toast('Walk over to the stairs.');
         return;
       }
       if (s.interior === 'grandpa' && Math.hypot(x-805,y-335)<58) {
-        if (near(805,335,125)) openHouseTalk(); else toast('Walk closer to Grandfather.');
+        if (near(805,335,125)) openHouseTalk();
         return;
       }
       if (s.interior === 'hut' && Math.hypot(x-820,y-345)<58) {
-        if (near(820,345,135)) talkToAlchemist(); else toast('Walk closer to the Alchemist.');
+        if (near(820,345,110)) talkToAlchemist();
+        return;
+      }
+      if (s.interior === 'hut') {
+        const card = hutGuideCards.find((entry) => Math.abs(x-entry.x)<48 && Math.abs(y-entry.y)<41);
+        if (card && near(card.x,card.y,86)) {
+          const requested = requiredFlowers.includes(card.id);
+          const status = requested ? (s.flowers[card.id] ? 'This is one of the Alchemist’s requested ingredients, and you have collected it.' : 'This is one of the Alchemist’s requested ingredients.') : 'This flower is in the field guide, but is not on the Alchemist’s list this time.';
+          simpleModal(flowerNames[card.id], card.id==='fern'?'🌿':'🌸', `${flowerDetails[card.id]} ${status}`);
+        }
         return;
       }
       if (s.interior === 'home' && x > 205 && x < 465 && y > 145 && y < 310) {
-        if (near(335,225,130)) simpleModal('A Cozy Bed', '🛏️', 'A soft place to rest.'); else toast('Walk closer to look around.');
+        if (near(335,225,130)) simpleModal('A Cozy Bed', '🛏️', 'A soft place to rest.');
         return;
       }
       if (s.interior === 'hut' && x > 500 && x < 670 && y > 245 && y < 350) {
-        if (near(585,300,120)) simpleModal('Bubbling Cauldron', '⚗️', 'The cauldron is ready for a potion.'); else toast('Walk closer to look around.');
+        if (near(585,300,105)) simpleModal('Bubbling Cauldron', '⚗️', 'The cauldron is ready for a potion.');
         return;
       }
-      if (x > 495 && x < 625 && y > 590) toast('Walk over to the doorway.');
-      else toast('Explore the room and click nearby objects.');
       return;
     }
     if (s.scene === 'basement') {
@@ -754,12 +820,11 @@
             makeButton('CATCH', () => catchRodent(mouse.id));
             makeButton('Not yet', closeModal, true);
           });
-        } else toast('Get closer to catch it.');
+        }
         return;
       }
       if (Math.hypot(x - 560, y - 170) < 58) {
         if (Math.hypot(s.x - 560, s.y - 175) < 88) exitBasement();
-        else toast('Walk over to the stairs.');
       }
       return;
     }
@@ -768,8 +833,7 @@
       .map((o) => ({ ...o, distance: Math.hypot(x - o.x, y - o.y) }))
       .filter((o) => o.distance < o.r + 12)
       .sort((a, b) => a.distance - b.distance)[0];
-    if (object && Math.hypot(s.x - object.x, s.y - object.y) < object.r + 40) interact(object);
-    else if (object) toast('Walk closer, then click the object.');
+    if (object && nearestObject()?.id === object.id && Math.hypot(s.x - object.x, s.y - object.y) < object.r + 28) interact(object);
   });
 
   document.querySelectorAll('.touch button').forEach((button) => {
