@@ -701,11 +701,84 @@
   }
 
   function drawInteriorPerson(x, y, robe = '#617d63') {
-    ctx.save(); ctx.translate(x, y);
-    ctx.fillStyle = '#302e2a'; ctx.beginPath(); ctx.arc(0, -13, 18, 0, Math.PI*2); ctx.fill();
-    ctx.fillStyle = '#e6bd94'; ctx.beginPath(); ctx.arc(0, -12, 13, 0, Math.PI*2); ctx.fill();
-    ctx.fillStyle = robe; ctx.beginPath(); ctx.ellipse(0, 15, 20, 25, 0, 0, Math.PI*2); ctx.fill();
+    const alchemist=robe==='#716483';
+    ctx.save();ctx.translate(x,y);
+    ctx.fillStyle='#263a3048';ctx.beginPath();ctx.ellipse(2,31,29,11,-.08,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#72523a';ctx.beginPath();ctx.ellipse(-10,29,9,5,-.12,0,Math.PI*2);ctx.ellipse(11,29,9,5,.12,0,Math.PI*2);ctx.fill();
+    const cloth=ctx.createLinearGradient(-22,0,22,0);cloth.addColorStop(0,alchemist?'#4b4564':'#50634c');cloth.addColorStop(.48,robe);cloth.addColorStop(1,alchemist?'#544b70':'#53634b');
+    ctx.fillStyle=cloth;ctx.beginPath();ctx.moveTo(-12,-1);ctx.quadraticCurveTo(-24,0,-25,15);ctx.lineTo(-22,29);ctx.quadraticCurveTo(0,39,23,29);ctx.lineTo(25,14);ctx.quadraticCurveTo(22,1,12,-1);ctx.quadraticCurveTo(0,7,-12,-1);ctx.closePath();ctx.fill();
+    ctx.fillStyle=alchemist?'#c4b47a':'#cfb776';ctx.fillRect(-15,10,30,4);ctx.fillStyle='#f3da92';ctx.beginPath();ctx.arc(0,12,3,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#e2b990';ctx.beginPath();ctx.ellipse(-20,13,5,7,-.22,0,Math.PI*2);ctx.ellipse(20,13,5,7,.22,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#533f35';ctx.beginPath();ctx.ellipse(0,-12,17,19,0,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#efc99f';ctx.beginPath();ctx.ellipse(0,-13,13,15,0,0,Math.PI*2);ctx.fill();
+    if(alchemist){ctx.fillStyle='#8a789c';ctx.beginPath();ctx.arc(0,-16,16,Math.PI,Math.PI*2);ctx.lineTo(20,-8);ctx.quadraticCurveTo(0,-3,-20,-8);ctx.closePath();ctx.fill();ctx.fillStyle='#b2a0c5';ctx.beginPath();ctx.moveTo(-16,-18);ctx.lineTo(0,-39);ctx.lineTo(14,-18);ctx.closePath();ctx.fill();ctx.fillStyle='#e7c979';ctx.beginPath();ctx.arc(0,-26,2.5,0,Math.PI*2);ctx.fill();}
+    else {ctx.fillStyle='#e6dfc9';ctx.beginPath();ctx.arc(-13,-19,5,0,Math.PI*2);ctx.arc(-7,-25,6,0,Math.PI*2);ctx.arc(1,-27,6,0,Math.PI*2);ctx.arc(10,-23,6,0,Math.PI*2);ctx.arc(14,-17,5,0,Math.PI*2);ctx.fill();ctx.fillStyle='#d9d1bc';ctx.beginPath();ctx.moveTo(-11,-8);ctx.quadraticCurveTo(0,-4,11,-8);ctx.lineTo(9,2);ctx.quadraticCurveTo(0,13,-9,2);ctx.closePath();ctx.fill();}
+    ctx.fillStyle='#473831';ctx.beginPath();ctx.arc(-5,-14,1.5,0,Math.PI*2);ctx.arc(5,-14,1.5,0,Math.PI*2);ctx.fill();
+    ctx.strokeStyle='#ad6559';ctx.lineWidth=1.6;ctx.beginPath();ctx.arc(0,-8,3,.1,Math.PI-.1);ctx.stroke();
+    if(alchemist){ctx.strokeStyle='#d9d2c4';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(-3,-4);ctx.quadraticCurveTo(0,1,3,-4);ctx.stroke();}
     ctx.restore();
+  }
+
+  function drawGrandpaRoomDetails() {
+    // A woven family rug and low table turn the center of the room into a lived-in space.
+    ctx.fillStyle='#263b2d34';ctx.beginPath();ctx.ellipse(789,411,201,112,-.04,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#824d45';ctx.beginPath();ctx.roundRect(586,298,404,219,23);ctx.fill();
+    ctx.fillStyle='#d4ae72';ctx.beginPath();ctx.roundRect(598,310,380,195,18);ctx.fill();
+    ctx.fillStyle='#8c554b';ctx.beginPath();ctx.roundRect(611,323,354,169,14);ctx.fill();
+    ctx.strokeStyle='#dfbd81';ctx.lineWidth=3;ctx.beginPath();ctx.roundRect(624,336,328,143,9);ctx.stroke();
+    for(let x=638;x<946;x+=24){ctx.fillStyle=x%48?'#e3c68f':'#c79f68';ctx.beginPath();ctx.arc(x,344,2.5,0,Math.PI*2);ctx.arc(x,471,2.5,0,Math.PI*2);ctx.fill();}
+    ctx.fillStyle='#d0ad72';ctx.beginPath();ctx.arc(788,408,26,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#8c5549';ctx.beginPath();ctx.moveTo(788,389);ctx.lineTo(803,407);ctx.lineTo(788,426);ctx.lineTo(773,407);ctx.closePath();ctx.fill();
+    // Tall casement window with a painted meadow, carved frame and gathered curtains.
+    ctx.fillStyle='#46372d';ctx.beginPath();ctx.roundRect(700,116,244,151,13);ctx.fill();
+    ctx.fillStyle='#d9bb83';ctx.beginPath();ctx.roundRect(709,125,226,134,9);ctx.fill();
+    const sky=ctx.createLinearGradient(0,133,0,250);sky.addColorStop(0,'#7cb6bd');sky.addColorStop(.62,'#b9d4a0');sky.addColorStop(1,'#71956d');ctx.fillStyle=sky;ctx.beginPath();ctx.roundRect(721,137,202,110,5);ctx.fill();
+    ctx.fillStyle='#f2dc98';ctx.beginPath();ctx.arc(870,158,12,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#557e59';ctx.beginPath();ctx.moveTo(721,220);ctx.quadraticCurveTo(760,193,790,219);ctx.quadraticCurveTo(828,182,857,218);ctx.quadraticCurveTo(891,191,923,213);ctx.lineTo(923,247);ctx.lineTo(721,247);ctx.closePath();ctx.fill();
+    ctx.strokeStyle='#d9bb83';ctx.lineWidth=7;ctx.beginPath();ctx.moveTo(822,137);ctx.lineTo(822,247);ctx.moveTo(721,194);ctx.lineTo(923,194);ctx.stroke();
+    ctx.fillStyle='#aa6f61';ctx.beginPath();ctx.moveTo(697,127);ctx.lineTo(718,139);ctx.lineTo(718,228);ctx.quadraticCurveTo(696,218,697,127);ctx.fill();ctx.beginPath();ctx.moveTo(948,127);ctx.lineTo(927,139);ctx.lineTo(927,228);ctx.quadraticCurveTo(949,218,948,127);ctx.fill();
+    ctx.fillStyle='#d8b77f';ctx.beginPath();ctx.ellipse(708,136,10,5,0,0,Math.PI*2);ctx.ellipse(937,136,10,5,0,0,Math.PI*2);ctx.fill();
+    // A framed embroidery, candle sconces, and a potted herb soften the walls.
+    ctx.fillStyle='#4a392e';ctx.beginPath();ctx.roundRect(684,279,78,83,7);ctx.fill();
+    ctx.fillStyle='#d8bf8c';ctx.beginPath();ctx.roundRect(691,286,64,69,4);ctx.fill();
+    ctx.fillStyle='#70936b';ctx.beginPath();ctx.moveTo(700,343);ctx.lineTo(722,305);ctx.lineTo(745,343);ctx.closePath();ctx.fill();
+    ctx.fillStyle='#d5a85e';ctx.beginPath();ctx.arc(722,301,5,0,Math.PI*2);ctx.fill();
+    for(const x of [660,977]){ctx.fillStyle='#705038';ctx.fillRect(x-3,273,6,21);ctx.fillStyle='#e9bc66';ctx.beginPath();ctx.moveTo(x,263);ctx.quadraticCurveTo(x-8,276,x,281);ctx.quadraticCurveTo(x+8,276,x,263);ctx.fill();}
+    ctx.fillStyle='#35544455';ctx.beginPath();ctx.ellipse(940,395,33,11,0,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#805b3d';ctx.beginPath();ctx.moveTo(917,385);ctx.lineTo(925,408);ctx.lineTo(956,408);ctx.lineTo(964,385);ctx.closePath();ctx.fill();
+    ctx.fillStyle='#c48d64';ctx.fillRect(919,383,43,6);
+    for(let i=0;i<5;i++){ctx.strokeStyle=['#527a4d','#668a50','#527a4d','#779350','#55784d'][i];ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(940,385);ctx.quadraticCurveTo(925+i*7,369-(i%2)*8,920+i*8,351);ctx.stroke();ctx.fillStyle='#71965b';ctx.beginPath();ctx.ellipse(923+i*8,361-(i%2)*8,5,10,-.5,0,Math.PI*2);ctx.fill();}
+    // Bookcase: individual worn spines, brass labels, carved supports and a small keepsake.
+    ctx.fillStyle='#392b24';ctx.beginPath();ctx.roundRect(196,127,289,122,13);ctx.fill();
+    ctx.fillStyle='#895d40';ctx.beginPath();ctx.roundRect(204,135,273,107,9);ctx.fill();
+    ctx.fillStyle='#c29a62';ctx.fillRect(211,139,259,8);ctx.fillRect(211,228,259,8);
+    const books=[['#9c5948',58],['#647c5d',66],['#567d9b',57],['#b2834f',68],['#90658b',60],['#a6674c',64],['#6d875f',54]];
+    let bx=218;for(let i=0;i<books.length;i++){const [color,h]=books[i],w=i%2?29:31;ctx.fillStyle='#523b2f';ctx.beginPath();ctx.roundRect(bx,147+(66-h),w,h,3);ctx.fill();ctx.fillStyle=color;ctx.beginPath();ctx.roundRect(bx+3,150+(66-h),w-6,h-7,2);ctx.fill();ctx.fillStyle='#e2c784';ctx.fillRect(bx+6,160+(66-h),w-12,3);ctx.fillRect(bx+6,184+(66-h),w-12,2);ctx.strokeStyle='#f0d7a3';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(bx+5,153+(66-h));ctx.lineTo(bx+5,205);ctx.stroke();bx+=35;}
+    ctx.fillStyle='#e5c77f';ctx.beginPath();ctx.arc(459,156,5,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#74543b';ctx.beginPath();ctx.ellipse(458,214,12,10,0,0,Math.PI*2);ctx.fill();ctx.fillStyle='#d2b374';ctx.beginPath();ctx.ellipse(458,211,8,6,0,0,Math.PI*2);ctx.fill();
+    // The basement opening is a deep, timber-framed stairwell, not a flat ladder.
+    ctx.fillStyle='#3d2c23';ctx.beginPath();ctx.roundRect(485,99,150,175,16);ctx.fill();
+    ctx.fillStyle='#976d45';ctx.beginPath();ctx.roundRect(493,106,134,161,12);ctx.fill();
+    ctx.fillStyle='#292b25';ctx.beginPath();ctx.roundRect(507,116,106,137,8);ctx.fill();
+    const stair=ctx.createLinearGradient(0,119,0,252);stair.addColorStop(0,'#745238');stair.addColorStop(1,'#332e27');ctx.fillStyle=stair;ctx.beginPath();ctx.roundRect(513,121,94,124,6);ctx.fill();
+    for(let i=0;i<7;i++){const y=126+i*17;ctx.fillStyle=i%2?'#b58a56':'#c69a60';ctx.beginPath();ctx.moveTo(516,y);ctx.lineTo(604,y);ctx.lineTo(599,y+9);ctx.lineTo(521,y+9);ctx.closePath();ctx.fill();ctx.strokeStyle='#64452f';ctx.lineWidth=2;ctx.stroke();}
+    ctx.fillStyle='#342f28';ctx.beginPath();ctx.ellipse(560,244,40,10,0,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#d9bb83';ctx.fillRect(487,103,146,7);ctx.fillRect(487,263,146,7);
+    // A sturdy trestle worktable, with map, ink, a mug and small tools.
+    ctx.fillStyle='#263b2d45';ctx.beginPath();ctx.ellipse(815,530,103,37,0,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#604331';ctx.fillRect(748,486,13,64);ctx.fillRect(871,486,13,64);
+    ctx.fillStyle='#845c3d';ctx.beginPath();ctx.roundRect(726,449,177,91,11);ctx.fill();
+    const wood=ctx.createLinearGradient(0,453,0,535);wood.addColorStop(0,'#c4945c');wood.addColorStop(.45,'#a87548');wood.addColorStop(1,'#80563b');ctx.fillStyle=wood;ctx.beginPath();ctx.roundRect(734,457,161,74,8);ctx.fill();
+    ctx.strokeStyle='#d4ab70';ctx.lineWidth=2;for(let y=466;y<526;y+=17){ctx.beginPath();ctx.moveTo(742,y);ctx.quadraticCurveTo(805,y+5,886,y-2);ctx.stroke();}
+    ctx.fillStyle='#e7d6ad';ctx.beginPath();ctx.moveTo(759,470);ctx.lineTo(811,465);ctx.lineTo(821,503);ctx.lineTo(766,508);ctx.closePath();ctx.fill();
+    ctx.strokeStyle='#8c6b4d';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(767,481);ctx.lineTo(809,478);ctx.moveTo(769,489);ctx.lineTo(812,486);ctx.moveTo(771,497);ctx.lineTo(814,494);ctx.stroke();
+    ctx.fillStyle='#6c4b35';ctx.beginPath();ctx.ellipse(858,478,11,8,0,0,Math.PI*2);ctx.fill();ctx.fillStyle='#d4b16f';ctx.beginPath();ctx.ellipse(858,475,8,5,0,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#ddb86d';ctx.fillRect(840,502,31,5);ctx.fillRect(844,510,23,4);
+    // Small bench at the foot of the bookshelf.
+    ctx.fillStyle='#65482f';ctx.beginPath();ctx.roundRect(232,480,170,42,8);ctx.fill();
+    ctx.fillStyle='#a97a4a';ctx.beginPath();ctx.roundRect(238,474,158,31,7);ctx.fill();
+    ctx.strokeStyle='#d0a86b';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(246,483);ctx.quadraticCurveTo(310,492,389,481);ctx.stroke();
+    ctx.fillStyle='#74543b';ctx.fillRect(249,502,8,25);ctx.fillRect(378,502,8,25);
   }
 
   function drawHutGuide() {
@@ -742,9 +815,6 @@
     ctx.strokeStyle = '#f0ddb0'; ctx.lineWidth = 13; ctx.strokeRect(124,79,872,562);
 
     if (s.interior === 'home') {
-      roundedRect(205,150,255,150,15,'#654c3b');roundedRect(213,158,239,130,12,'#eee1c4');
-      roundedRect(224,169,217,108,10,'#829c75');roundedRect(233,177,199,92,8,'#a8bd91');
-      ctx.strokeStyle='#d9c697';ctx.lineWidth=3;for(let i=0;i<5;i++){ctx.beginPath();ctx.moveTo(240+i*38,180);ctx.lineTo(240+i*38,265);ctx.stroke();}
       // Familiar bed in the top-left is the room's scale reference.
       roundedRect(208,145,260,158,18,'#755039');roundedRect(219,156,238,136,15,'#f2e8d0');
       roundedRect(229,166,218,116,13,'#8ca982');roundedRect(236,174,204,99,11,'#abc39a');
@@ -757,15 +827,9 @@
       roundedRect(270,420,245,120,18,'#5d7554');roundedRect(281,430,223,100,13,'#9ab286');
       ctx.strokeStyle='#e1d8ad';ctx.lineWidth=3;ctx.beginPath();ctx.ellipse(392,480,82,33,0,0,Math.PI*2);ctx.stroke();ctx.fillStyle='#f3d68a';ctx.beginPath();ctx.arc(392,480,8,0,Math.PI*2);ctx.fill();
     } else if (s.interior === 'grandpa') {
-      roundedRect(206,132,270,104,14,'#543b30');roundedRect(217,142,248,82,9,'#9b714b');
-      ctx.fillStyle='#ead49c';for(let i=0;i<5;i++){ctx.fillRect(232+i*44,156,32,55);ctx.fillStyle=['#8e5246','#617d62','#6989aa','#b38348','#9d6590'][i];roundedRect(235+i*44,160,25,46,3,ctx.fillStyle);ctx.fillStyle='#ead49c';}
-      roundedRect(735,455,160,95,12,'#654936');roundedRect(746,465,138,76,8,'#ba8c58');
-      for(let i=0;i<3;i++){ctx.fillStyle='#e9d5aa';ctx.fillRect(760+i*36,476,24,7);ctx.fillRect(760+i*36,493,24,7);ctx.fillRect(760+i*36,510,24,7);}
-      // Basement stairs
-      roundedRect(495,105,130,155,14,'#755238');
-      for(let y=117;y<252;y+=19){ctx.strokeStyle='#d2b17c';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(505,y);ctx.lineTo(615,y);ctx.stroke();}
+      drawGrandpaRoomDetails();
       drawInteriorPerson(805,335,'#71846a');
-      if(Math.hypot(s.x-560,s.y-178)<94){const p=(Math.sin(performance.now()/230)+1)/2;ctx.save();ctx.strokeStyle=`rgba(100,255,130,${.76+p*.18})`;ctx.lineWidth=3+p;ctx.shadowColor='#5dff7e';ctx.shadowBlur=8+p*11;ctx.strokeRect(495,105,130,155);ctx.restore();}
+      if(Math.hypot(s.x-560,s.y-178)<94){const p=(Math.sin(performance.now()/230)+1)/2;ctx.save();ctx.strokeStyle=`rgba(100,255,130,${.76+p*.18})`;ctx.lineWidth=3+p;ctx.shadowColor='#5dff7e';ctx.shadowBlur=8+p*11;ctx.beginPath();ctx.roundRect(485,99,150,175,16);ctx.stroke();ctx.restore();}
       if(Math.hypot(s.x-805,s.y-335)<125){const p=(Math.sin(performance.now()/230)+1)/2;ctx.save();ctx.strokeStyle=`rgba(100,255,130,${.76+p*.18})`;ctx.lineWidth=3+p;ctx.shadowColor='#5dff7e';ctx.shadowBlur=8+p*11;ctx.beginPath();ctx.moveTo(781,357);ctx.quadraticCurveTo(778,329,786,315);ctx.arc(805,322,20,Math.PI,0);ctx.quadraticCurveTo(832,333,829,357);ctx.quadraticCurveTo(805,370,781,357);ctx.closePath();ctx.stroke();ctx.restore();}
     } else if (s.interior === 'hut') {
       drawHutGuide();
@@ -1033,8 +1097,20 @@
     if (s.scene === 'interior') {
       const near = (px, py, radius = 115) => Math.hypot(s.x - px, s.y - py) < radius;
       if (x > 495 && x < 625 && y > 590 && near(560, 620, 105)) { leaveInterior(); return; }
+      if (s.interior === 'grandpa' && x > 195 && x < 485 && y > 120 && y < 255) {
+        if (near(340,185,132)) simpleModal('Grandfather’s Bookshelf','📚','Every book is full of maps, old stories, and notes in Grandfather’s tiny handwriting.');
+        return;
+      }
+      if (s.interior === 'grandpa' && x > 695 && x < 950 && y > 110 && y < 270) {
+        if (near(820,190,145)) simpleModal('Meadow Window','🌙','The little moon carving above the window has watched over this room for as long as anyone can remember.');
+        return;
+      }
       if (s.interior === 'grandpa' && x > 485 && x < 635 && y > 100 && y < 265) {
         if (near(560, 180, 94)) { s.returnX = s.x; s.returnY = s.y; showBasement(); }
+        return;
+      }
+      if (s.interior === 'grandpa' && x > 720 && x < 910 && y > 445 && y < 555) {
+        if (near(815,500,145)) simpleModal('Grandfather’s Worktable','🗺️','An unfinished map, a jar of ink, and a warm mug cover the table. The map has a path marked with a tiny star.');
         return;
       }
       if (s.interior === 'grandpa' && Math.hypot(x-805,y-335)<58) {
@@ -1056,6 +1132,14 @@
         if (near(335,225,130)) simpleModal('A Cozy Bed', '🛏️', 'A soft place to rest.');
         return;
       }
+      if (s.interior === 'home' && x > 700 && x < 920 && y > 140 && y < 265) {
+        if (near(810,200,140)) simpleModal('Keepsake Cabinet','🪵','Small treasures from the village are tucked into each little drawer. One holds a smooth blue pebble.');
+        return;
+      }
+      if (s.interior === 'home' && x > 265 && x < 520 && y > 415 && y < 550) {
+        if (near(392,480,145)) simpleModal('Handmade Table','🕯️','The table was carved from a fallen oak. A warm candle makes the wood glow like honey.');
+        return;
+      }
       if (s.interior === 'hut' && x > 735 && x < 910 && y > 155 && y < 325) {
         if (near(820,240,105)) simpleModal('Bubbling Cauldron', '⚗️', 'A heavy cauldron bubbles with a bright green brew.');
         return;
@@ -1063,6 +1147,11 @@
       return;
     }
     if (s.scene === 'basement') {
+      const nearBasementProp=(px,py,r=118)=>Math.hypot(s.x-px,s.y-py)<r;
+      if(x>205&&x<330&&y>170&&y<240&&nearBasementProp(270,204)) { simpleModal('Old Supply Shelf','🧺','Dusty jars, twine, and a bundle of carrots sit here. The rodents have nibbled the label off one jar.'); return; }
+      if(x>775&&x<915&&y>165&&y<225&&nearBasementProp(846,194)) { simpleModal('Crate of Keepsakes','📦','Grandfather keeps old buttons and polished stones in this crate. A mouse has made a nest from the packing straw.'); return; }
+      const barrel=[{x:250,y:435,name:'Pickle Barrel',copy:'It smells of dill and garlic. A very small paw print is stamped in the dust.'},{x:875,y:320,name:'Rainwater Barrel',copy:'A little water drips from the lid. The rodents use it as a tiny swimming pool.'},{x:760,y:525,name:'Apple Cider Cask',copy:'The cask is almost empty, but it still smells sweet and crisp.'}].find(item=>Math.hypot(x-item.x,y-item.y)<31);
+      if(barrel&&nearBasementProp(barrel.x,barrel.y,105)){simpleModal(barrel.name,'🪵',barrel.copy);return;}
       const mouse = s.mice
         .map((item) => ({ ...item, distance: Math.hypot(x - item.x, y - item.y) }))
         .filter((item) => item.distance < 34)
@@ -1096,4 +1185,5 @@
   });
   updateHud();
 })();
+
 
