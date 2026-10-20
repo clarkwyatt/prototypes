@@ -4,6 +4,7 @@
   const game = document.querySelector('#game');
   const questEl = document.querySelector('#quest');
   const itemsEl = document.querySelector('#items');
+  const hintEl = document.querySelector('#hint');
   const modal = document.querySelector('#modal');
   const toastEl = document.querySelector('#toast');
   const W = 1120, H = 720;
@@ -12,7 +13,8 @@
 
   const s = {
     screen: '13', x: 605, y: 335, face: 'left', speed: 215,
-    scene: 'outside', interior: '', rodents: 0, flowers: 0,
+    scene: 'outside', interior: '', rodents: 0, mice: [], basementEntered: false,
+    returnX: 0, returnY: 0, flowers: 0,
     key: false, gateOpen: false, logGone: false, potion: false,
     thorns: false, strength: false, boulders: false,
     giantHits: 0, giantDown: false, returned: false
@@ -77,6 +79,9 @@
     if (s.potion) inventory.push('🧪 Vine Potion');
     if (s.strength) inventory.push('✦ Super Strength');
     itemsEl.textContent = inventory.length ? inventory.join(' · ') : 'Empty';
+    hintEl.textContent = s.scene === 'basement'
+      ? 'Move with WASD or arrows · Get close, left-click a rodent, then choose CATCH · Click the stairs to leave'
+      : 'Move with WASD or arrow keys · Left-click nearby objects to interact';
 
     if (s.scene !== 'outside') {
       questEl.innerHTML = `<strong>Basement Challenge</strong>Catch the runaway rodents: ${s.rodents}/5`;
@@ -120,7 +125,7 @@
 
   function closeModal() {
     modal.classList.remove('open');
-    if (s.scene !== 'outside') {
+    if (s.scene === 'interior') {
       s.scene = 'outside';
       s.interior = '';
     }
@@ -138,23 +143,37 @@
   }
 
   function showBasement() {
-    s.scene = 'interior';
+    s.scene = 'basement';
     s.interior = 'basement';
-    openModal('Grandfather’s Basement', '🐭',
-      `<p>Catch the little rodents! <b>${s.rodents}/5 caught.</b></p><div style="font-size:32px;letter-spacing:14px;margin:18px">${Array.from({ length: 5 }, (_, i) => i < s.rodents ? '✨' : '🐭').join('')}</div>`,
-      () => {
-        if (s.rodents < 5) {
-          makeButton('Catch a Rodent', () => {
-            s.rodents++;
-            if (s.rodents === 5) {
-              s.key = true;
-              updateHud();
-              openModal('West Gate Key!', '🗝️', '<p>Grandfather gives you the key. Head to the gate at the left edge of screen 13.</p>', () => makeButton('Return to the village', closeModal));
-            } else showBasement();
-          });
-        }
-        makeButton('Leave', closeModal, true);
+    s.x = 560; s.y = 490;
+    if (!s.basementEntered) {
+      s.mice = [
+        { id: 1, x: 270, y: 250 }, { id: 2, x: 440, y: 350 },
+        { id: 3, x: 760, y: 260 }, { id: 4, x: 850, y: 430 },
+        { id: 5, x: 370, y: 500 }
+      ].map((mouse) => ({ ...mouse, targetX: mouse.x, targetY: mouse.y, pauseUntil: performance.now() + 700 + Math.random() * 2200, moving: false, face: 1 }));
+      s.basementEntered = true;
+    }
+    modal.classList.remove('open');
+    updateHud();
+  }
+
+  function exitBasement() {
+    s.scene = 'outside'; s.interior = '';
+    s.x = s.returnX || 850; s.y = s.returnY || 520;
+    updateHud();
+  }
+
+  function catchRodent(id) {
+    s.mice = s.mice.filter((mouse) => mouse.id !== id);
+    s.rodents++;
+    updateHud();
+    if (s.rodents >= 5) {
+      s.key = true;
+      openModal('West Gate Key!', '🗝️', '<p>All 5 rodents are caught. You have the West Gate key.</p>', () => {
+        makeButton('Go upstairs', () => { closeModal(); exitBasement(); });
       });
+    } else closeModal();
   }
 
   function enterRoom(id, entrySide) {
@@ -198,7 +217,7 @@
         break;
       case 'grandpa':
         openInterior('Grandfather’s House', '🪵', 'Grandfather asks for help in the basement. Catch all 5 runaway rodents and he’ll give you the West Gate key.', () => {
-          makeButton('Go to the basement', showBasement);
+          makeButton('Go to the basement', () => { s.returnX = s.x; s.returnY = s.y; showBasement(); });
           makeButton('Not now', closeModal, true);
         });
         break;
@@ -351,7 +370,7 @@
     else ctx.fillRect(-49, -17, 98, 13);
     ctx.fillStyle = '#f2d69d'; ctx.fillRect(-9, 15, 18, 34);
     ctx.fillStyle = '#9ad3db'; ctx.fillRect(-33, 8, 15, 14); ctx.fillRect(18, 8, 15, 14);
-    ctx.fillStyle = '#395f48'; ctx.font = '800 13px Nunito'; ctx.textAlign = 'center'; ctx.fillText(label, 0, 69);
+    if (label) { ctx.fillStyle = '#395f48'; ctx.font = '800 13px Nunito'; ctx.textAlign = 'center'; ctx.fillText(label, 0, 69); }
     ctx.restore();
   }
 
@@ -407,19 +426,21 @@
     ctx.save(); ctx.translate(object.x, object.y);
     if (selected) { ctx.strokeStyle = '#fff7cb'; ctx.lineWidth = 4; ctx.beginPath(); ctx.ellipse(0, 15, object.r * 1.1, object.r * .62, 0, 0, Math.PI * 2); ctx.stroke(); }
     switch (object.id) {
-      case 'home': drawHouse(0, 0, '#b76352', 'Home', .92, true); break;
-      case 'grandpa': drawHouse(0, 0, '#8c6947', 'Grandpa', .94); break;
+      case 'home': drawHouse(0, 0, '#b76352', '', .92, true); break;
+      case 'grandpa': drawHouse(0, 0, '#8c6947', '', .94); break;
       case 'gate':
-        ctx.fillStyle = '#775332'; ctx.fillRect(-28, -46, 10, 92); ctx.fillRect(18, -46, 10, 92); ctx.fillStyle = '#ad8154'; ctx.fillRect(-18, -38, 36, 76);
-        ctx.fillStyle = '#f0d596'; ctx.font = '900 18px Nunito'; ctx.textAlign = 'center'; ctx.fillText(s.gateOpen ? 'OPEN' : 'LOCKED', 0, 8); break;
+        ctx.fillStyle = '#775332'; ctx.fillRect(-28, -46, 10, 92); ctx.fillRect(18, -46, 10, 92);
+        ctx.fillStyle = s.gateOpen ? '#b5cc84' : '#ad8154'; ctx.fillRect(-18, -38, 36, 76);
+        if (!s.gateOpen) { ctx.strokeStyle = '#f0d596'; ctx.lineWidth = 5; ctx.beginPath(); ctx.arc(0, -7, 9, Math.PI, 0); ctx.lineTo(9, 8); ctx.lineTo(-9, 8); ctx.closePath(); ctx.stroke(); ctx.fillStyle = '#f0d596'; ctx.beginPath(); ctx.arc(0, 4, 3, 0, Math.PI * 2); ctx.fill(); }
+        break;
       case 'thorns':
         if (!s.thorns) { for (let i = 0; i < 8; i++) { ctx.strokeStyle = i % 2 ? '#465e39' : '#607343'; ctx.lineWidth = 8; ctx.beginPath(); ctx.moveTo(-43 + i * 12, 25); ctx.bezierCurveTo(-25 + i * 8, -24, 8 + i * 4, 40, 39 - i * 8, -28); ctx.stroke(); } }
         break;
-      case 'hut': drawHouse(0, 0, '#a98259', 'Alchemist', 1); ctx.font = '28px serif'; ctx.textAlign = 'center'; ctx.fillText('⚗️', 0, -28); break;
-      case 'flowers': for (let i = 0; i < 12; i++) flower(-35 + (i % 4) * 24, -22 + Math.floor(i / 4) * 24, ['#f8d568', '#dc91a1', '#f5efe0'][i % 3]); ctx.fillStyle = '#365744'; ctx.font = '800 13px Nunito'; ctx.textAlign = 'center'; ctx.fillText(`BRIGHT FLOWERS ${s.flowers}/3`, 0, 64); break;
+      case 'hut': drawHouse(0, 0, '#a98259', '', 1); ctx.font = '28px serif'; ctx.textAlign = 'center'; ctx.fillText('⚗️', 0, -28); break;
+      case 'flowers': for (let i = 0; i < 12; i++) flower(-35 + (i % 4) * 24, -22 + Math.floor(i / 4) * 24, ['#f8d568', '#dc91a1', '#f5efe0'][i % 3]); break;
       case 'shrine':
         ctx.fillStyle = '#fff9e9'; ctx.strokeStyle = '#c4b99e'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(-43, -20); ctx.lineTo(0, -58); ctx.lineTo(43, -20); ctx.lineTo(35, 35); ctx.lineTo(-35, 35); ctx.closePath(); ctx.fill(); ctx.stroke();
-        ctx.fillStyle = '#9fd5db'; ctx.fillRect(-9, 4, 18, 31); ctx.fillStyle = '#395b47'; ctx.font = '800 13px Nunito'; ctx.textAlign = 'center'; ctx.fillText('WHITE SHRINE', 0, 59); break;
+        ctx.fillStyle = '#9fd5db'; ctx.fillRect(-9, 4, 18, 31); break;
       case 'fountain':
         ctx.fillStyle = '#b8dbe1'; ctx.beginPath(); ctx.ellipse(0, 0, 43, 23, 0, 0, Math.PI * 2); ctx.fill(); ctx.strokeStyle = '#f5f2de'; ctx.lineWidth = 5; ctx.stroke(); ctx.fillStyle = '#71b8c4'; ctx.beginPath(); ctx.ellipse(0, -3, 27, 12, 0, 0, Math.PI * 2); ctx.fill(); break;
       case 'boulders':
@@ -428,11 +449,8 @@
       case 'cave':
         ctx.fillStyle = '#574d46'; ctx.beginPath(); ctx.ellipse(0, 0, 88, 65, 0, Math.PI, 0); ctx.closePath(); ctx.fill(); ctx.fillStyle = '#233c36'; ctx.beginPath(); ctx.ellipse(0, 10, 65, 46, 0, Math.PI, 0); ctx.closePath(); ctx.fill();
         if (!s.giantDown) { ctx.font = '52px serif'; ctx.textAlign = 'center'; ctx.fillText('👹', 0, 18); }
-        ctx.fillStyle = '#fff4d5'; ctx.font = '800 14px Nunito'; ctx.textAlign = 'center'; ctx.fillText('GIANT’S CAVE', 0, 84); break;
-      case 'return': ctx.fillStyle = '#456f49'; ctx.beginPath(); ctx.arc(0, 0, 35, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = '#fff'; ctx.font = '800 12px Nunito'; ctx.textAlign = 'center'; ctx.fillText('VILLAGE', 0, 57); break;
-    }
-    if (object.id !== 'gate' && object.id !== 'thorns' && object.id !== 'boulders' && object.id !== 'cave' && object.id !== 'return') {
-      ctx.fillStyle = '#314d40'; ctx.font = '800 13px Nunito'; ctx.textAlign = 'center'; ctx.fillText(object.name.toUpperCase(), 0, object.r + 25);
+        break;
+      case 'return': ctx.fillStyle = '#456f49'; ctx.beginPath(); ctx.arc(0, 0, 35, 0, Math.PI * 2); ctx.fill(); break;
     }
     ctx.restore();
   }
@@ -450,18 +468,81 @@
 
   function drawInterior() {
     ctx.fillStyle = '#18372f'; ctx.fillRect(0, 0, W, H);
-    ctx.fillStyle = '#c7ae7b'; ctx.fillRect(0, 390, W, 330);
-    ctx.fillStyle = '#e5d1a2'; ctx.fillRect(0, 0, W, 392);
-    for (let x = 0; x < W; x += 140) { ctx.strokeStyle = '#c6af83'; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, 392); ctx.stroke(); }
-    ctx.fillStyle = '#6e553e'; ctx.fillRect(0, 395, W, 12);
-    ctx.fillStyle = '#523d2e'; ctx.fillRect(55, 500, 115, 140); ctx.fillStyle = '#987349'; ctx.fillRect(70, 512, 85, 112);
-    ctx.fillStyle = '#fff6d9'; ctx.font = '900 22px Nunito'; ctx.textAlign = 'center'; ctx.fillText(s.interior === 'basement' ? 'BASEMENT' : 'ROOM', W / 2, 455);
+    roundedRect(185, 120, 750, 500, 24, '#bd9b66');
+    ctx.strokeStyle = '#e5d1a2'; ctx.lineWidth = 14; ctx.strokeRect(188, 123, 744, 494);
+    for (let y = 170; y < 610; y += 75) { ctx.strokeStyle = '#a98655'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(200, y); ctx.lineTo(920, y); ctx.stroke(); }
+  }
+
+  function drawBasementMouse(mouse) {
+    const distance = Math.hypot(mouse.x - s.x, mouse.y - s.y);
+    ctx.save(); ctx.translate(mouse.x, mouse.y); ctx.rotate(mouse.face || 0);
+    if (distance < 76) { ctx.strokeStyle = '#fff1b9'; ctx.lineWidth = 4; ctx.beginPath(); ctx.ellipse(0, 5, 36, 27, 0, 0, Math.PI * 2); ctx.stroke(); }
+    ctx.strokeStyle = '#b77d76'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(-19, 4); ctx.quadraticCurveTo(-35, 12, -38, 24); ctx.stroke();
+    ctx.fillStyle = '#777a78'; ctx.beginPath(); ctx.ellipse(-2, 4, 22, 16, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#929594'; ctx.beginPath(); ctx.ellipse(15, 1, 12, 10, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#bc8785'; ctx.beginPath(); ctx.arc(10, -8, 6, 0, Math.PI * 2); ctx.arc(20, -7, 5, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#3a3735'; ctx.beginPath(); ctx.arc(20, -1, 2, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#eee4d6'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(23, 3); ctx.lineTo(34, -2); ctx.moveTo(23, 5); ctx.lineTo(35, 7); ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawBasement() {
+    ctx.fillStyle = '#102a27bb'; ctx.fillRect(0, 0, W, H);
+    roundedRect(145, 105, 830, 520, 28, '#553b2c');
+    roundedRect(165, 125, 790, 480, 18, '#c9a16a');
+    ctx.save(); ctx.beginPath(); ctx.roundRect(165, 125, 790, 480, 18); ctx.clip();
+    for (let y = 150; y < 610; y += 54) {
+      ctx.fillStyle = y % 108 ? '#d3ad76' : '#c7a06a'; ctx.fillRect(170, y, 780, 51);
+      ctx.strokeStyle = '#ad8757'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(170, y + 52); ctx.lineTo(950, y + 52); ctx.stroke();
+      for (let x = 215 + (y % 2) * 85; x < 940; x += 170) { ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, y + 52); ctx.stroke(); }
+    }
+    ctx.restore();
+    ctx.strokeStyle = '#ead09c'; ctx.lineWidth = 8; ctx.strokeRect(169, 129, 782, 472);
+
+    // Top-down shelves, crates, and barrels around the play area.
+    roundedRect(215, 175, 112, 58, 9, '#805a39'); roundedRect(225, 184, 92, 40, 5, '#a77c4d');
+    roundedRect(780, 170, 132, 48, 8, '#805a39'); roundedRect(790, 178, 112, 32, 4, '#a77c4d');
+    [[250, 435], [875, 320], [760, 525]].forEach(([x, y]) => {
+      ctx.fillStyle = '#805a39'; ctx.beginPath(); ctx.arc(x, y, 27, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#aa8052'; ctx.beginPath(); ctx.arc(x, y, 20, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = '#795333'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(x, y, 12, 0, Math.PI * 2); ctx.stroke();
+    });
+    // A small stairwell is the way back upstairs.
+    roundedRect(510, 128, 100, 80, 10, '#755238');
+    for (let y = 139; y < 200; y += 15) { ctx.strokeStyle = '#d2b17c'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(518, y); ctx.lineTo(602, y); ctx.stroke(); }
+    if (Math.hypot(s.x - 560, s.y - 175) < 88) { ctx.strokeStyle = '#fff1b9'; ctx.lineWidth = 4; ctx.strokeRect(505, 123, 110, 90); }
+    s.mice.forEach(drawBasementMouse);
+    drawBoy();
+  }
+
+  function updateMice(now, dt) {
+    if (s.scene !== 'basement' || modal.classList.contains('open')) return;
+    for (const mouse of s.mice) {
+      if (!mouse.moving && now >= mouse.pauseUntil) {
+        mouse.targetX = 235 + Math.random() * 650;
+        mouse.targetY = 245 + Math.random() * 285;
+        mouse.moving = true;
+      }
+      if (!mouse.moving) continue;
+      const dx = mouse.targetX - mouse.x, dy = mouse.targetY - mouse.y;
+      const distance = Math.hypot(dx, dy);
+      if (distance < 4) {
+        mouse.x = mouse.targetX; mouse.y = mouse.targetY; mouse.moving = false;
+        mouse.pauseUntil = now + 900 + Math.random() * 2300;
+      } else {
+        const step = Math.min(distance, (80 + (mouse.id % 3) * 22) * dt);
+        mouse.x += dx / distance * step; mouse.y += dy / distance * step;
+        mouse.face = Math.atan2(dy, dx);
+      }
+    }
   }
 
   function draw() {
     drawGround(); drawRoomPath();
     (roomObjects[s.screen] || []).filter((o) => getAvailableObjects().some((active) => active.id === o.id)).forEach(drawObject);
-    if (s.scene === 'outside') drawBoy(); else drawInterior();
+    if (s.scene === 'outside') drawBoy();
+    else if (s.scene === 'basement') drawBasement();
+    else drawInterior();
     updateHud(); requestAnimationFrame(draw);
   }
 
@@ -476,7 +557,7 @@
   }
 
   function move(dt) {
-    if (s.scene !== 'outside' || modal.classList.contains('open')) return;
+    if ((s.scene !== 'outside' && s.scene !== 'basement') || modal.classList.contains('open')) return;
     let dx = 0, dy = 0;
     if (keys.ArrowLeft || keys.a || keys.A) dx--;
     if (keys.ArrowRight || keys.d || keys.D) dx++;
@@ -485,6 +566,10 @@
     const length = Math.hypot(dx, dy) || 1; dx /= length; dy /= length;
     if (dx) s.face = dx < 0 ? 'left' : 'right';
     const nx = s.x + dx * s.speed * dt, ny = s.y + dy * s.speed * dt;
+    if (s.scene === 'basement') {
+      s.x = clamp(nx, 215, 905); s.y = clamp(ny, 175, 545);
+      return;
+    }
     if (s.screen === '13' && nx < 85 && ny > 305 && ny < 425 && !s.gateOpen) { toast('The West Gate is locked.'); return; }
     if (s.screen === '12' && nx > 400 && nx < 620 && (ny < 300 || ny > 420)) return;
     if (s.screen === '12' && s.logGone && nx < 600 && nx > 400) { toast('The log is gone.'); return; }
@@ -495,22 +580,42 @@
   }
 
   let last = performance.now();
-  function loop(now) { const dt = Math.min((now - last) / 1000, .04); last = now; move(dt); requestAnimationFrame(loop); }
+  function loop(now) { const dt = Math.min((now - last) / 1000, .04); last = now; move(dt); updateMice(now, dt); requestAnimationFrame(loop); }
   requestAnimationFrame(loop); draw();
 
   window.addEventListener('keydown', (event) => {
     if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(event.key)) event.preventDefault();
     keys[event.key] = true;
-    if ((event.key === 'e' || event.key === 'E' || event.key === 'Enter') && !modal.classList.contains('open')) interact();
     if (event.key === 'Escape' && modal.classList.contains('open')) closeModal();
   });
   window.addEventListener('keyup', (event) => { keys[event.key] = false; });
 
   canvas.addEventListener('pointerdown', (event) => {
-    if (modal.classList.contains('open')) return;
+    if (event.button !== 0 || modal.classList.contains('open')) return;
     const rect = canvas.getBoundingClientRect();
     const x = (event.clientX - rect.left) / rect.width * W;
     const y = (event.clientY - rect.top) / rect.height * H;
+    if (s.scene === 'basement') {
+      const mouse = s.mice
+        .map((item) => ({ ...item, distance: Math.hypot(x - item.x, y - item.y) }))
+        .filter((item) => item.distance < 34)
+        .sort((a, b) => a.distance - b.distance)[0];
+      if (mouse) {
+        if (Math.hypot(s.x - mouse.x, s.y - mouse.y) < 76) {
+          openModal('Catch this rodent?', '🐭', '<p>It is close enough to catch!</p>', () => {
+            makeButton('CATCH', () => catchRodent(mouse.id));
+            makeButton('Not yet', closeModal, true);
+          });
+        } else toast('Get closer to catch it.');
+        return;
+      }
+      if (Math.hypot(x - 560, y - 170) < 58) {
+        if (Math.hypot(s.x - 560, s.y - 175) < 88) exitBasement();
+        else toast('Walk over to the stairs.');
+      }
+      return;
+    }
+    if (s.scene !== 'outside') return;
     const object = getAvailableObjects()
       .map((o) => ({ ...o, distance: Math.hypot(x - o.x, y - o.y) }))
       .filter((o) => o.distance < o.r + 12)
@@ -524,6 +629,5 @@
     button.addEventListener('pointerdown', (event) => { event.preventDefault(); keys[key] = true; });
     ['pointerup', 'pointercancel', 'pointerleave'].forEach((name) => button.addEventListener(name, () => { keys[key] = false; }));
   });
-  document.querySelector('#act').onclick = () => interact();
   updateHud();
 })();
