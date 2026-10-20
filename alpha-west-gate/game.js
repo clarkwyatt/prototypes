@@ -220,7 +220,8 @@
 
   function exitBasement() {
     s.scene = 'interior'; s.interior = 'grandpa';
-    s.x = 560; s.y = 205;
+    // Arrive below the stair collision so the player can move freely upstairs.
+    s.x = 560; s.y = 280;
     updateHud();
   }
 
