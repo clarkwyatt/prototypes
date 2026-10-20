@@ -17,7 +17,7 @@
     returnX: 0, returnY: 0, outsideX: 0, outsideY: 0,
     flowers: { sunpetal: false, bluebell: false, mooncap: false, lavender: false, amberleaf: false, fern: false }, alchemistTalked: false, vinesStarted: false,
     key: false, gateOpen: false, logGone: false, potion: false,
-    thorns: false, strength: false, boulders: false,
+    thorns: false, strength: false, boulders: false, returnGateOpen: false,
     giantHits: 0, giantDown: false, returned: false
   };
 
@@ -72,14 +72,14 @@
       { id: 'amberleaf', name: 'Amberleaf', x: 940, y: 320, r: 40 },
       { id: 'fern', name: 'Fern', x: 410, y: 250, r: 40 }
     ],
-    '06': [
+    '06': [],
+    '01': [
       { id: 'shrine', name: 'White Shrine', x: 850, y: 195, r: 68 },
       { id: 'fountain', name: 'Blue Fountain', x: 850, y: 315, r: 52 }
     ],
-    '01': [{ id: 'boulders', name: 'Boulder Blockage', x: 1000, y: 360, r: 64 }],
-    '02': [],
+    '02': [{ id: 'boulders', name: 'Boulder Blockage', x: 560, y: 360, r: 100 }],
     '03': [{ id: 'cave', name: 'Giant’s Cave', x: 750, y: 360, r: 75 }],
-    '08': [{ id: 'return', name: 'Village Path', x: 560, y: 620, r: 45 }]
+    '08': [{ id: 'returnGate', name: 'Village Gate', x: 830, y: 645, r: 55 }]
   };
 
   const clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
@@ -121,7 +121,7 @@
     else if (s.vinesStarted && s.alchemistTalked && !s.potion && !s.thorns) {
       const count = requiredFlowers.filter((id) => s.flowers[id]).length;
       quest = count < 3
-        ? `<strong>Quest</strong>${requiredFlowers.map((id) => `${flowerNames[id]} ${s.flowers[id] ? '1/1' : '0/1'}`).join(' · ')}`
+        ? `<strong>Quest</strong>${requiredFlowers.map((id) => `1 ${flowerNames[id]} ${s.flowers[id] ? '1/1' : '0/1'}`).join(' · ')}`
         : '<strong>Quest</strong>Talk to the Alchemist for the potion.';
     }
     else if (s.vinesStarted && s.potion && !s.thorns) quest = '<strong>Quest</strong>Use the potion on the Vines.';
@@ -164,6 +164,15 @@
     openModal(title, emoji, `<p>${text}</p>`, () => makeButton('Got it!', closeModal), true);
   }
 
+  function objectOptions(title, emoji, description, actions = []) {
+    openModal(title, emoji, '<p>Choose an action.</p>', () => {
+      makeButton('LOOK', () => simpleModal(title, emoji, description), true);
+      for (const action of actions) {
+        makeButton(action.label, () => { closeModal(); action.run(); });
+      }
+    }, true);
+  }
+
   function enterInterior(type) {
     s.outsideX = s.x; s.outsideY = s.y;
     s.scene = 'interior'; s.interior = type;
@@ -190,10 +199,13 @@
   function talkToAlchemist() {
     s.alchemistTalked = true;
     const count = requiredFlowers.filter((id) => s.flowers[id]).length;
-    const requested = requiredFlowers.map((id) => `${flowerNames[id]} (1 needed)`).join(', ');
+    const ingredients = requiredFlowers.map((id) => `1 ${flowerNames[id]}`);
+    const requested = ingredients.length < 2
+      ? ingredients[0]
+      : `${ingredients.slice(0, -1).join(', ')} and ${ingredients[ingredients.length - 1]}`;
     updateHud();
     if (count < 3) {
-      openModal('The Alchemist', '🧙', `<p>I can make a potion to clear the Vines. Please bring me these flowers: ${requested}.</p>`, () => makeButton('I’ll look for them', closeModal), true);
+      openModal('The Alchemist', '🧙', `<p>Please bring me ${requested}.</p>`, () => makeButton('I’ll look for them', closeModal), true);
       return;
     }
     openModal('The Alchemist', '🧙', '<p>You found all three flowers. I’ll brew the potion for you.</p>', () => {
@@ -245,7 +257,7 @@
     updateHud();
     if (id === '13' && s.giantDown && !s.returned) {
       s.returned = true;
-      setTimeout(() => simpleModal('Back in the Village', '🏘️', 'The Giant is defeated, but thorny vines have spread through the village. To Be Continued…'), 180);
+      setTimeout(() => simpleModal('Back in the Village', '🏘️', 'The Giant is defeated, but thorny vines have overtaken the village.'), 180);
     }
   }
 
@@ -256,6 +268,7 @@
       if (object.id in s.flowers) return !requiredFlowers.includes(object.id) || !s.flowers[object.id];
       if (object.id === 'boulders') return !s.boulders;
       if (object.id === 'cave') return !s.giantDown;
+      if (object.id === 'returnGate') return s.giantDown;
       return true;
     });
   }
@@ -271,48 +284,86 @@
   function interact(object = nearestObject()) {
     if (!object) { toast('Move closer to an object first.'); return; }
     switch (object.id) {
-      case 'home': enterInterior('home'); break;
-      case 'grandpa': enterInterior('grandpa'); break;
+      case 'home':
+        objectOptions('Your Home', '🏠', 'A small house in the village.', [{ label: 'ENTER', run: () => enterInterior('home') }]);
+        break;
+      case 'grandpa':
+        objectOptions('Grandfather’s House', '🏠', 'Grandfather lives here.', [{ label: 'ENTER', run: () => enterInterior('grandpa') }]);
+        break;
       case 'gate':
-        if (s.gateOpen) toast('The West Gate is open.');
-        else if (!s.key) simpleModal('The West Gate is locked', '🚪', 'Grandfather may have a key.');
-        else { s.key = false; s.gateOpen = true; toast('The key opens the West Gate.'); updateHud(); }
+        objectOptions('West Gate', '🚪', 'A wooden gate marks the western exit from the village.', s.gateOpen ? [] : [{
+          label: s.key ? 'UNLOCK' : 'TRY GATE',
+          run: () => {
+            if (!s.key) simpleModal('The West Gate is locked', '🚪', 'The gate is locked. You need a key.');
+            else { s.key = false; s.gateOpen = true; toast('The key opens the West Gate.'); updateHud(); }
+          }
+        }]);
         break;
       case 'northGate':
-        if (s.giantDown) toast('The gate is open. Follow the path home.');
-        else simpleModal('North Gate', '🚪', 'The gate is locked from the other side.');
+        objectOptions('Gate', '🚪', 'A sturdy gate blocks the path back to the village.', s.giantDown ? [] : [{
+          label: 'TRY GATE',
+          run: () => simpleModal('Gate', '🚪', 'The gate is locked from the other side.')
+        }]);
         break;
       case 'thorns':
         s.vinesStarted = true;
-        if (!s.potion) simpleModal('Thorny Vines', '🌿', 'The Vines block the path. Find a way to remove them.');
-        else { s.potion = false; s.thorns = true; toast('The potion clears the Vines. The sky grows dim…'); updateHud(); }
+        updateHud();
+        objectOptions('Thorny Vines', '🌿', 'A dense wall of thorny vines covers the path. The tangled stems cannot be pulled apart by hand.', [{
+          label: 'USE POTION',
+          run: () => {
+            if (!s.potion) { simpleModal('Thorny Vines', '🌿', 'You need a Vine Potion to clear the Vines.'); return; }
+            s.potion = false; s.thorns = true;
+            toast('The potion clears the Vines. The sky grows dim…');
+            updateHud();
+          }
+        }]);
         break;
-      case 'hut': enterInterior('hut'); break;
-      case 'sunpetal': case 'bluebell': case 'mooncap': case 'lavender': case 'amberleaf': case 'fern':
-        if (requiredFlowers.includes(object.id) && s.alchemistTalked) { s.flowers[object.id] = true; toast(`${object.name} collected.`); updateHud(); }
-        else simpleModal(object.name, object.id === 'fern' ? '🌿' : '🌸', 'A bit of local plant life.');
+      case 'hut':
+        objectOptions('Alchemist’s Hut', '⚗️', 'A small hut where the Alchemist brews potions.', [{ label: 'ENTER', run: () => enterInterior('hut') }]);
         break;
+      case 'sunpetal': case 'bluebell': case 'mooncap': case 'lavender': case 'amberleaf': case 'fern': {
+        const description = flowerDetails[object.id] || 'A little piece of local plant life.';
+        const actions = requiredFlowers.includes(object.id) && s.alchemistTalked && !s.flowers[object.id]
+          ? [{ label: 'PICK', run: () => { s.flowers[object.id] = true; toast(`${object.name} collected.`); updateHud(); } }]
+          : [];
+        objectOptions(object.name, object.id === 'fern' ? '🌿' : '🌸', description, actions);
+        break;
+      }
       case 'shrine':
-        simpleModal('A Quiet Clearing', '⛩️', 'A white shrine stands in the trees. A small blue fountain bubbles nearby.');
+        objectOptions('White Shrine', '⛩️', 'A quiet white shrine stands in a secluded clearing.');
         break;
       case 'fountain':
-        if (!s.strength) openModal('The Shrine Fountain', '💧', '<p>The blue liquid sparkles in the light. Do you drink it?</p>', () => {
-          makeButton('Drink', () => { s.strength = true; closeModal(); toast('You feel much stronger!'); updateHud(); });
-          makeButton('Not yet', closeModal, true);
-        }, true);
-        else simpleModal('The Shrine Fountain', '💧', 'You feel strong enough to push the boulders.');
+        objectOptions('Shrine Fountain', '💧', 'A small fountain holds clear blue liquid.', !s.strength ? [{
+          label: 'DRINK',
+          run: () => openModal('The Shrine Fountain', '💧', '<p>The blue liquid sparkles in the light. Do you drink it?</p>', () => {
+            makeButton('Drink', () => { s.strength = true; closeModal(); toast('You feel much stronger!'); updateHud(); });
+            makeButton('Not yet', closeModal, true);
+          }, true)
+        }] : []);
         break;
       case 'boulders':
-        if (!s.strength) simpleModal('Heavy Boulders', '🪨', 'They won’t budge. Drink from the shrine fountain first.');
-        else { s.boulders = true; toast('Super strength! You push the boulders aside.'); updateHud(); }
+        objectOptions('Heavy Boulders', '🪨', 'A wall of boulders blocks the path to the east.', [{
+          label: 'PUSH',
+          run: () => {
+            if (!s.strength) { simpleModal('Heavy Boulders', '🪨', 'They won’t budge. Drink from the shrine fountain first.'); return; }
+            s.boulders = true; toast('Super strength! You push the boulders aside.'); updateHud();
+          }
+        }]);
         break;
       case 'cave':
-        if (!s.boulders) simpleModal('Giant’s Cave', '🕳️', 'The boulders block the cave entrance.');
-        else startGiantFight();
+        objectOptions('Giant’s Cave', '🕳️', 'A dark cave entrance opens beyond the boulder path.', [{
+          label: 'ENTER',
+          run: () => {
+            if (!s.boulders) simpleModal('Giant’s Cave', '🕳️', 'The boulders block the cave entrance.');
+            else startGiantFight();
+          }
+        }]);
         break;
-      case 'return':
-        if (s.giantDown) enterRoom('13', 'north');
-        else simpleModal('The Path Home', '🌳', 'The Giant is still in the cave.');
+      case 'returnGate':
+        objectOptions('Village Gate', '🚪', 'A wooden gate stands at the end of the path back to the village.', !s.returnGateOpen ? [{
+          label: 'UNLOCK',
+          run: () => { s.returnGateOpen = true; toast('The gate opens.'); updateHud(); }
+        }] : []);
         break;
     }
   }
@@ -363,8 +414,9 @@
     }
     if (s.screen === '11' && direction === 'east' && s.logGone) { toast('The log is gone. The crossing is one-way.'); return false; }
     if (s.screen === '11' && direction === 'north' && !s.thorns) { toast('The thorny vines block the north path.'); return false; }
-    if (s.screen === '01' && direction === 'east' && !s.boulders) { toast('The boulders block the path to the cave.'); return false; }
+    if (s.screen === '02' && direction === 'east' && !s.boulders) { toast('The boulders block the path to the cave.'); return false; }
     if (s.screen === '03' && direction === 'south' && !s.giantDown) { toast('The cave exits are blocked while the Giant is awake.'); return false; }
+    if (s.screen === '08' && direction === 'south' && !s.returnGateOpen) { toast('Unlock the gate to return to the village.'); return false; }
     let entering = { west: 'east', east: 'west', north: 'south', south: 'north' }[direction];
     enterRoom(next, entering);
     return true;
@@ -407,17 +459,17 @@
     ctx.fillStyle = color; ctx.beginPath(); ctx.arc(x, y, 3, 0, Math.PI * 2); ctx.fill();
   }
 
-  function drawPath(points, width = 88) {
+  function drawPath(points, width = 88, colors = ['#8eaa69', '#e0c991', '#efdfb4']) {
     ctx.save(); ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-    ctx.strokeStyle = '#8eaa69'; ctx.lineWidth = width + 18;
+    ctx.strokeStyle = colors[0]; ctx.lineWidth = width + 18;
     ctx.beginPath(); ctx.moveTo(points[0][0], points[0][1]);
     for (let i = 1; i < points.length - 1; i++) {
       const current = points[i], next = points[i + 1];
       ctx.quadraticCurveTo(current[0], current[1], (current[0] + next[0]) / 2, (current[1] + next[1]) / 2);
     }
     ctx.lineTo(points[points.length - 1][0], points[points.length - 1][1]);
-    ctx.stroke(); ctx.strokeStyle = '#e0c991'; ctx.lineWidth = width; ctx.stroke();
-    ctx.strokeStyle = '#efdfb4'; ctx.lineWidth = width - 14; ctx.stroke(); ctx.restore();
+    ctx.stroke(); ctx.strokeStyle = colors[1]; ctx.lineWidth = width; ctx.stroke();
+    ctx.strokeStyle = colors[2]; ctx.lineWidth = width - 14; ctx.stroke(); ctx.restore();
   }
 
   function drawHouse(x, y, roof, label, scale = 1, peaked = false) {
@@ -497,7 +549,7 @@
         drawPath([[570, 390], [470, 425], [370, 500], [350, 600], [420, 675], [560, 680]], 126);
         break;
       case '16': drawPath([[560, 35], [470, 150], [340, 230], [245, 350], [270, 490], [390, 585], [485, 650], [560, 685]], 142); break;
-      case '21': drawPath([[560, 40], [520, 170], [460, 285], [370, 370], [260, 390]], 144); break;
+      case '21': drawPath([[560, 40], [520, 170], [460, 285], [370, 370], [260, 390]], 430, ['#254c31', '#315d39', '#3d6d43']); break;
       case '06':
         drawPath([[220, 680], [255, 560], [335, 455], [420, 350], [500, 255], [560, 40]], 142);
         [[700,85],[1040,100],[1080,255],[690,300],[1030,650],[620,120]].forEach((p,i)=>tree(...p,1.15+(i%2)*.14));
@@ -539,6 +591,17 @@
         ctx.fillStyle='#8c663e';ctx.fillRect(-23,-28,46,9);
         if(!s.giantDown){ctx.strokeStyle='#d8bd83';ctx.lineWidth=4;for(let x=-14;x<=14;x+=14){ctx.beginPath();ctx.moveTo(x,-18);ctx.lineTo(x,27);ctx.stroke();}}
         break;
+      case 'returnGate':
+        ctx.fillStyle='#775332';ctx.fillRect(-50,-22,12,44);ctx.fillRect(38,-22,12,44);
+        ctx.fillStyle='#ad8154';
+        if (s.returnGateOpen) {
+          ctx.save(); ctx.rotate(-.55); ctx.fillRect(-42,-8,35,10); ctx.restore();
+          ctx.save(); ctx.rotate(.55); ctx.fillRect(7,-8,35,10); ctx.restore();
+        } else {
+          ctx.fillRect(-38,-13,76,9); ctx.fillRect(-38,4,76,9);
+          ctx.fillStyle='#8c663e'; for(let x=-25;x<=25;x+=25) ctx.fillRect(x-3,-13,6,26);
+        }
+        break;
       case 'thorns':
         if (!s.thorns) { for (let i = 0; i < 8; i++) { ctx.strokeStyle = i % 2 ? '#465e39' : '#607343'; ctx.lineWidth = 8; ctx.beginPath(); ctx.moveTo(-43 + i * 12, 25); ctx.bezierCurveTo(-25 + i * 8, -24, 8 + i * 4, 40, 39 - i * 8, -28); ctx.stroke(); } }
         break;
@@ -550,13 +613,12 @@
       case 'fountain':
         ctx.fillStyle = '#b8dbe1'; ctx.beginPath(); ctx.ellipse(0, 0, 43, 23, 0, 0, Math.PI * 2); ctx.fill(); ctx.strokeStyle = '#f5f2de'; ctx.lineWidth = 5; ctx.stroke(); ctx.fillStyle = '#71b8c4'; ctx.beginPath(); ctx.ellipse(0, -3, 27, 12, 0, 0, Math.PI * 2); ctx.fill(); break;
       case 'boulders':
-        if (!s.boulders) for (let i = 0; i < 5; i++) { ctx.fillStyle = ['#8a8b78', '#777d70', '#9d9b83', '#747b70'][i % 4]; ctx.beginPath(); ctx.ellipse(-52 + i * 24, Math.sin(i) * 9, 23, 22, 0, 0, Math.PI * 2); ctx.fill(); ctx.strokeStyle = '#bbc0a5'; ctx.lineWidth = 2; ctx.stroke(); }
+        if (!s.boulders) [-72,-48,-24,0,24,48,72].forEach((y,i) => { ctx.fillStyle = ['#8a8b78', '#777d70', '#9d9b83', '#747b70'][i % 4]; ctx.beginPath(); ctx.ellipse(Math.sin(i) * 5, y, 24, 23, 0, 0, Math.PI * 2); ctx.fill(); ctx.strokeStyle = '#bbc0a5'; ctx.lineWidth = 2; ctx.stroke(); });
         break;
       case 'cave':
         ctx.fillStyle = '#574d46'; ctx.beginPath(); ctx.ellipse(0, 0, 88, 65, 0, Math.PI, 0); ctx.closePath(); ctx.fill(); ctx.fillStyle = '#233c36'; ctx.beginPath(); ctx.ellipse(0, 10, 65, 46, 0, Math.PI, 0); ctx.closePath(); ctx.fill();
         if (!s.giantDown) { ctx.font = '52px serif'; ctx.textAlign = 'center'; ctx.fillText('👹', 0, 18); }
         break;
-      case 'return': ctx.fillStyle = '#456f49'; ctx.beginPath(); ctx.arc(0, 0, 35, 0, Math.PI * 2); ctx.fill(); break;
     }
     ctx.restore();
   }
@@ -624,10 +686,10 @@
       if(Math.hypot(s.x-805,s.y-335)<125){ctx.strokeStyle='#fff1b9';ctx.lineWidth=5;ctx.beginPath();ctx.ellipse(805,350,39,52,0,0,Math.PI*2);ctx.stroke();}
     } else if (s.interior === 'hut') {
       drawHutGuide();
-      ctx.fillStyle='#74563d';ctx.beginPath();ctx.ellipse(585,300,86,42,0,0,Math.PI*2);ctx.fill();
-      ctx.fillStyle='#508b7c';ctx.beginPath();ctx.ellipse(585,290,68,31,0,0,Math.PI*2);ctx.fill();
-      ctx.fillStyle='#d7c091';ctx.fillRect(565,260,40,42);
-      if(Math.hypot(s.x-585,s.y-300)<105){ctx.strokeStyle='#fff1b9';ctx.lineWidth=5;ctx.beginPath();ctx.ellipse(585,300,96,52,0,0,Math.PI*2);ctx.stroke();}
+      ctx.fillStyle='#74563d';ctx.beginPath();ctx.ellipse(820,240,86,42,0,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle='#508b7c';ctx.beginPath();ctx.ellipse(820,230,68,31,0,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle='#d7c091';ctx.fillRect(800,200,40,42);
+      if(Math.hypot(s.x-820,s.y-240)<105){ctx.strokeStyle='#fff1b9';ctx.lineWidth=5;ctx.beginPath();ctx.ellipse(820,240,96,52,0,0,Math.PI*2);ctx.stroke();}
       if(Math.hypot(s.x-820,s.y-345)<110){ctx.strokeStyle='#fff1b9';ctx.lineWidth=5;ctx.beginPath();ctx.ellipse(820,355,35,49,0,0,Math.PI*2);ctx.stroke();}
       drawInteriorPerson(820,345,'#716483');
     }
@@ -749,14 +811,17 @@
     for (const [x,y] of [...groundTrees,...sceneTrees]) {
       if (x > 80 && x < W-80 && y > 80 && y < H-80) treeEdges.push([x,y,29]);
     }
+    const boulderWall = s.boulders ? [] : [-72,-48,-24,0,24,48,72].map((offset) => [560,360+offset,24]);
+    const returnGate = s.screen === '08' && s.giantDown && !s.returnGateOpen ? [[830,645,36]] : [];
     const fixed = {
       '13': [[560,280,47],[850,520,48],[265,205,43]],
       '11': s.thorns ? [] : [[225,155,48]],
       '21': [[250,390,58]],
-      '06': [[850,195,48],[850,315,30]],
-      '01': s.boulders ? [] : [[1000,360,47]],
+      '06': [],
+      '01': [[850,195,48],[850,315,30]],
+      '02': boulderWall,
       '03': [[750,360,55]],
-      '08': []
+      '08': returnGate
     };
     const objects = fixed[s.screen] || [];
     const gate = s.screen === '13' && !s.gateOpen ? [[100,360,30]] : [];
@@ -774,7 +839,7 @@
         ? [[340,185,63],[815,500,54],[560,180,35],[805,335,30]]
         : s.interior === 'home'
           ? [[335,225,82],[810,198,45],[392,480,57]]
-          : [[585,300,55],[820,345,30],...hutGuideCards.map((c)=>[c.x,c.y,34])];
+          : [[820,240,55],[820,345,30],...hutGuideCards.map((c)=>[c.x,c.y,34])];
       if (circleHits(x,y,furniture,13)) return true;
     }
     if (s.scene === 'basement') {
@@ -848,7 +913,7 @@
       s.x = W - 34; toast('The log is gone. The crossing is one-way.'); return;
     }
     if (s.screen === '11' && !s.thorns && s.y <= 112 && s.x > 115 && s.x < 335) { s.y = 112; toast('The Vines block the north path.'); }
-    if (s.screen === '01' && !s.boulders && s.x >= 920 && s.y > 280 && s.y < 440) { s.x = 920; toast('The boulders block the east path.'); }
+    if (s.screen === '02' && !s.boulders && s.x >= 920 && s.y > 280 && s.y < 440) { s.x = 920; toast('The boulders block the east path.'); }
 
     const reachedEdge = (s.x <= minX && dx < 0) || (s.x >= maxX && dx > 0) || (s.y <= minY && dy < 0) || (s.y >= maxY && dy > 0);
     if (reachedEdge) {
@@ -884,19 +949,17 @@
         return;
       }
       if (s.interior === 'grandpa' && Math.hypot(x-805,y-335)<58) {
-        if (near(805,335,125)) openHouseTalk();
+        if (near(805,335,125)) objectOptions('Grandfather', '🧓', 'Grandfather is waiting to hear how the basement is going.', [{ label: 'TALK', run: openHouseTalk }]);
         return;
       }
       if (s.interior === 'hut' && Math.hypot(x-820,y-345)<58) {
-        if (near(820,345,110)) talkToAlchemist();
+        if (near(820,345,110)) objectOptions('The Alchemist', '🧙', 'The Alchemist studies plants and brews potions.', [{ label: 'TALK', run: talkToAlchemist }]);
         return;
       }
       if (s.interior === 'hut') {
         const card = hutGuideCards.find((entry) => Math.abs(x-entry.x)<48 && Math.abs(y-entry.y)<41);
         if (card && near(card.x,card.y,86)) {
-          const requested = requiredFlowers.includes(card.id);
-          const status = requested ? (s.flowers[card.id] ? 'This is one of the Alchemist’s requested ingredients, and you have collected it.' : 'This is one of the Alchemist’s requested ingredients.') : 'This flower is in the field guide, but is not on the Alchemist’s list this time.';
-          simpleModal(flowerNames[card.id], card.id==='fern'?'🌿':'🌸', `${flowerDetails[card.id]} ${status}`);
+          simpleModal(flowerNames[card.id], card.id==='fern'?'🌿':'🌸', flowerDetails[card.id]);
         }
         return;
       }
@@ -904,8 +967,8 @@
         if (near(335,225,130)) simpleModal('A Cozy Bed', '🛏️', 'A soft place to rest.');
         return;
       }
-      if (s.interior === 'hut' && x > 500 && x < 670 && y > 245 && y < 350) {
-        if (near(585,300,105)) simpleModal('Bubbling Cauldron', '⚗️', 'The cauldron is ready for a potion.');
+      if (s.interior === 'hut' && x > 735 && x < 910 && y > 155 && y < 325) {
+        if (near(820,240,105)) simpleModal('Bubbling Cauldron', '⚗️', 'A heavy cauldron bubbles with a bright green brew.');
         return;
       }
       return;
