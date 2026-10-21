@@ -55,7 +55,7 @@
     bakerQuestStarted: false, berriesPicked: false, bakerQuestComplete: false, muffin: false,
     waterQuestStarted: false, carryingWater: false, grandmaHelped: false, grandmaHouseKey: false, grandparentsHouseUnlocked: false,
     returnX: 0, returnY: 0, outsideX: 0, outsideY: 0,
-    flowers: { sunpetal: false, bluebell: false, mooncap: false, lavender: false, amberleaf: false, fern: false }, alchemistTalked: false, vinesStarted: false,
+    flowers: { sunpetal: false, bluebell: false, mooncap: false, lavender: false, amberleaf: false, fern: false }, alchemistTalked: false, alchemyMushroomRequested: false, alchemyMushroomCollected: false, alchemyMushroomDelivered: false, vinesStarted: false,
     key: false, gateOpen: false, logGone: false, logCrossingStarted: false, returnGateOpen: false, potion: false,
     thorns: false, returned: false
   };
@@ -115,8 +115,8 @@
       { id: 'gate', name: 'West Gate', x: 90, y: 360, r: 44 },
       { id: 'northGate', name: 'North Gate', x: 830, y: 80, r: 48, description: 'A weathered gate with little brass stars hammered into its posts.' },
       { id: 'well', name: 'Wishing Well', x: 710, y: 245, r: 34, description: 'Coins glimmer beneath the clear water. Someone wished for a safe journey.' },
-      { id: 'garden', name: 'Grandma’s Herb Garden', x: 450, y: 330, r: 48, description: 'Mint, thyme, and tiny blue flowers grow together in the sunny garden.' },
-      { id: 'berryBush', name: 'Berry Bush', x: 785, y: 545, r: 38, description: 'Glossy leaves hide clusters of plump blue berries. The bush grows beside Grandpa and Grandma’s house.' },
+      { id: 'garden', name: 'Grandma’s Herb Garden', x: 960, y: 520, r: 48, description: 'Mint, thyme, and tiny blue flowers grow together in Grandma’s sunny garden beside her home.' },
+      { id: 'berryBush', name: 'Berry Bush', x: 450, y: 330, r: 38, description: 'Glossy leaves hide clusters of plump blue berries. The bush grows beside the village path.' },
       { id: 'villageOak', name: 'Old Village Oak', x: 140, y: 510, r: 48, description: 'The oak’s knotted roots make a perfect seat. A tiny wooden bird is tucked into its bark.' }
     ],
     '12': [
@@ -127,6 +127,7 @@
     '11': [
       { id: 'thorns', name: 'Thorny Vines', x: 225, y: 155, r: 125, description: 'A towering, tangled hedge of hooked briars blocks the northern trail. The fresh green shoots look as if they appeared overnight.' },
       { id: 'fallenLog', name: 'Fallen Log', x: 815, y: 560, r: 44, description: 'Moss covers the fallen log. Little white mushrooms peek out from underneath.' },
+      { id: 'logMushroom', name: 'Glowcap Mushroom', x: 842, y: 533, r: 30, description: 'A rare Glowcap Mushroom glimmers beneath a shelf of bark. Its pale blue cap grows in the cool, damp shade of the fallen log.' },
       { id: 'mossyMarker', name: 'Mossy Waystone', x: 660, y: 205, r: 34, description: 'An old waystone bears a faded arrow and a carving of a crescent moon.' },
       { id: 'forestOak', name: 'Bent Forest Oak', x: 945, y: 485, r: 48, description: 'One crooked branch points north, as if the old tree is showing the way.' },
       { id: 'scaredVillager', name: 'Worried Traveler', x: 475, y: 270, r: 38, description: 'A traveler keeps glancing toward the thorny wall. Their walking stick is scratched with fresh green sap.' },
@@ -190,6 +191,7 @@
     if (s.potion) inventory.push('🧪 Vine Potion');
     if (s.berriesPicked) inventory.push('🫐 Blueberries');
     if (s.muffin) inventory.push('Blueberry Muffin');
+    if (s.alchemyMushroomCollected) inventory.push('Glowcap Mushroom');
     itemsEl.textContent = inventory.length ? inventory.join(' · ') : 'Empty';
 
     let quest = '';
@@ -206,7 +208,11 @@
       const count = requiredFlowers.filter((id) => s.flowers[id]).length;
       quest = count < 3
         ? `<strong>Quest</strong>${requiredFlowers.map((id) => `1 ${flowerNames[id]} ${s.flowers[id] ? '1/1' : '0/1'}`).join(' · ')}`
-        : '<strong>Quest</strong>Talk to the Alchemist for the potion.';
+        : !s.alchemyMushroomRequested
+          ? '<strong>Quest</strong>Talk to the Alchemist.'
+          : !s.alchemyMushroomCollected
+            ? '<strong>Quest</strong>Find the Glowcap Mushroom on the fallen log.'
+            : '<strong>Quest</strong>Bring the Glowcap Mushroom to the Alchemist.';
     }
     else if (s.vinesStarted && s.potion && !s.thorns) quest = '<strong>Quest</strong>Use the potion on the Vines.';
     else if (s.thorns && !s.returned) quest = `<strong>Quest</strong>${s.returnGateOpen ? 'Follow the path back to the village.' : 'Find and unlock the gate back to the village.'}`;
@@ -295,7 +301,7 @@
     if (!s.bakerQuestStarted) {
       s.bakerQuestStarted = true;
       updateHud();
-      openModal('Tomas the Baker', '🥖', '<p>I’m baking something seasonal for the village. Could you pick a handful of blueberries from the bush by Grandpa’s house?</p>', () => makeButton('I’ll look for berries', closeModal), true);
+      openModal('Tomas the Baker', '🥖', '<p>I’m baking something seasonal for the village. Could you pick a handful of blueberries from the bush beside the village path?</p>', () => makeButton('I’ll look for berries', closeModal), true);
       return;
     }
     if (s.berriesPicked && !s.bakerQuestComplete) {
@@ -307,7 +313,7 @@
       return;
     }
     if (!s.bakerQuestComplete) {
-      openModal('Tomas the Baker', '🥖', '<p>Those blueberry bushes grow beside Grandpa’s house. A handful of ripe berries will do nicely.</p>', () => makeButton('I’ll find them', closeModal), true);
+      openModal('Tomas the Baker', '🥖', '<p>That berry bush beside the village path should have a handful of ripe berries.</p>', () => makeButton('I’ll find them', closeModal), true);
       return;
     }
     openModal('Tomas the Baker', '🥖', '<p>I hope you enjoy that muffin. Blueberries make the best seasonal treats!</p>', () => makeButton('Thanks again', closeModal), true);
@@ -336,17 +342,33 @@
     const requested = ingredients.length < 2
       ? ingredients[0]
       : `${ingredients.slice(0, -1).join(', ')} and ${ingredients[ingredients.length - 1]}`;
-    updateHud();
+    if (s.potion || s.thorns) {
+      openModal('The Alchemist', '🧙', '<p>The Glowcap gave the potion its final spark. I hope it helps on your journey.</p>', () => makeButton('Thanks', closeModal), true);
+      return;
+    }
     if (count < 3) {
+      updateHud();
       openModal('The Alchemist', '🧙', `<p>Please bring me ${requested}.</p>`, () => makeButton('I’ll look for them', closeModal), true);
       return;
     }
-    openModal('The Alchemist', '🧙', '<p>You found all three flowers. I’ll brew the potion for you.</p>', () => {
-      makeButton('Take the potion', () => { s.potion = true; closeModal(); toast('You received a Vine Potion.'); updateHud(); });
+    if (!s.alchemyMushroomRequested) {
+      s.alchemyMushroomRequested = true;
+      updateHud();
+      openModal('The Alchemist', '🧙', '<p>These flowers are perfect. Before I brew the potion, I need one more rare ingredient: a Glowcap Mushroom. They grow beneath fallen logs, and there is one near the thorny vines.</p>', () => makeButton('I’ll find it', closeModal), true);
+      return;
+    }
+    if (!s.alchemyMushroomCollected) {
+      updateHud();
+      openModal('The Alchemist', '🧙', '<p>Please bring me the Glowcap Mushroom from beneath the fallen log near the vines.</p>', () => makeButton('I’ll look for it', closeModal), true);
+      return;
+    }
+    updateHud();
+    openModal('The Alchemist', '🧙', '<p>You found the Glowcap! Its gentle light will give the potion the strength it needs. I’ll brew it now.</p>', () => {
+      makeButton('Take the potion', () => { s.alchemyMushroomCollected = false; s.alchemyMushroomDelivered = true; s.potion = true; closeModal(); toast('You received a Vine Potion.'); updateHud(); });
     }, true);
   }
 
-  function showBasement() {
+    function showBasement() {
     s.scene = 'basement';
     s.interior = 'basement';
     s.x = 560; s.y = 490;
@@ -399,6 +421,7 @@
     return (roomObjects[s.screen] || []).filter((object) => {
       if (object.id === 'gate') return true;
       if (object.id === 'thorns') return !s.thorns;
+      if (object.id === 'logMushroom') return s.alchemyMushroomRequested && !s.alchemyMushroomCollected;
       if (object.id in s.flowers) return !requiredFlowers.includes(object.id) || !s.flowers[object.id];
       return true;
     });
@@ -468,7 +491,10 @@
           : []);
         break;
       case 'berryBush':
-        objectOptions('Berry Bush', '🫐', s.berriesPicked ? 'The bush is resting after giving up its ripe berries. New fruit will grow in time.' : 'Glossy leaves hide clusters of plump blue berries. The bush grows beside Grandpa and Grandma’s house.', s.bakerQuestStarted && !s.berriesPicked && !s.bakerQuestComplete ? [{ label: 'PICK BERRIES', run: () => { s.berriesPicked = true; toast('You picked a handful of blueberries.'); updateHud(); } }] : []);
+        objectOptions('Berry Bush', '🫐', s.berriesPicked ? 'The bush is resting after giving up its ripe berries. New fruit will grow in time.' : 'Glossy leaves hide clusters of plump blue berries. The bush grows beside the village path.', s.bakerQuestStarted && !s.berriesPicked && !s.bakerQuestComplete ? [{ label: 'PICK BERRIES', run: () => { s.berriesPicked = true; toast('You picked a handful of blueberries.'); updateHud(); } }] : []);
+        break;
+      case 'logMushroom':
+        objectOptions('Glowcap Mushroom', '🍄', object.description, s.alchemyMushroomRequested && !s.alchemyMushroomCollected ? [{ label: 'GATHER MUSHROOM', run: () => { s.alchemyMushroomCollected = true; toast('You gathered a Glowcap Mushroom.'); updateHud(); } }] : []);
         break;
       case 'garden': case 'riverReeds': case 'riverStone': case 'fallenLog': case 'mossyMarker': case 'oldOak': case 'stoneRing': case 'pond': case 'mushrooms': case 'signpost': case 'ruin': case 'villageOak': case 'riverWillow': case 'forestOak': case 'moonTree': case 'appleTree': case 'trailLantern': case 'fireflies': case 'meadowStone': case 'meadowLantern':
         objectOptions(object.name, object.id==='pond'?'💧':object.id==='mushrooms'?'🍄':'✦', object.description);
@@ -819,6 +845,7 @@
       ctx.fillStyle='#668457';ctx.beginPath();ctx.ellipse(0,3,21,11,0,0,Math.PI*2);ctx.fill();ctx.fillStyle='#e5d48a';for(let i=0;i<5;i++){const a=i*1.25;ctx.beginPath();ctx.arc(Math.cos(a)*15,Math.sin(a)*8,2.3,0,Math.PI*2);ctx.fill();}
     }
     else if(id==='riverStone'||id==='mossyMarker'){ctx.fillStyle='#3e6148';ctx.beginPath();ctx.ellipse(0,14,30,10,0,0,Math.PI*2);ctx.fill();ctx.fillStyle='#8c9581';ctx.beginPath();ctx.moveTo(-23,12);ctx.lineTo(-18,-14);ctx.lineTo(-6,-23);ctx.lineTo(19,-17);ctx.lineTo(25,12);ctx.closePath();ctx.fill();ctx.strokeStyle='#c7c5a2';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(-12,-6);ctx.quadraticCurveTo(2,-16,13,-5);ctx.stroke();ctx.fillStyle='#6f9660';ctx.beginPath();ctx.ellipse(-7,-16,7,3,-.5,0,Math.PI*2);ctx.fill();}
+    else if(id==='logMushroom'){ctx.fillStyle='#40533f';ctx.beginPath();ctx.ellipse(0,11,21,7,0,0,Math.PI*2);ctx.fill();ctx.fillStyle='#dce8cb';ctx.beginPath();ctx.moveTo(-5,8);ctx.quadraticCurveTo(-7,-3,-3,-12);ctx.lineTo(4,-12);ctx.quadraticCurveTo(8,-1,5,8);ctx.closePath();ctx.fill();const cap=ctx.createRadialGradient(-4,-18,2,0,-16,19);cap.addColorStop(0,'#e9f5d3');cap.addColorStop(.62,'#a8d7ce');cap.addColorStop(1,'#5d9ca1');ctx.fillStyle=cap;ctx.beginPath();ctx.moveTo(-19,-13);ctx.quadraticCurveTo(-16,-31,0,-31);ctx.quadraticCurveTo(17,-29,19,-13);ctx.quadraticCurveTo(1,-7,-19,-13);ctx.fill();ctx.strokeStyle='#d9f0dd';ctx.lineWidth=2;ctx.beginPath();ctx.ellipse(0,-14,14,3,0,0,Math.PI);ctx.stroke();ctx.fillStyle='#f3edc8';ctx.beginPath();ctx.arc(-7,-21,2,0,Math.PI*2);ctx.arc(5,-24,1.6,0,Math.PI*2);ctx.fill();}
     else if(id==='fallenLog'||id==='oldOak'){ctx.fillStyle='#435744';ctx.beginPath();ctx.ellipse(0,16,42,12,0,0,Math.PI*2);ctx.fill();ctx.fillStyle='#80583b';ctx.beginPath();ctx.ellipse(0,0,39,15,-.2,0,Math.PI*2);ctx.fill();ctx.fillStyle='#bb8a58';ctx.beginPath();ctx.ellipse(28,-1,8,13,-.2,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#56754c';ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(-22,-8);ctx.quadraticCurveTo(0,-20,19,-7);ctx.stroke();}
     else if(id==='pond'){ctx.fillStyle='#31543e70';ctx.beginPath();ctx.ellipse(0,15,97,59,-.12,0,Math.PI*2);ctx.fill();const shore=ctx.createLinearGradient(0,-48,0,52);shore.addColorStop(0,'#8c9a66');shore.addColorStop(.4,'#567657');shore.addColorStop(1,'#344f43');ctx.fillStyle=shore;ctx.beginPath();ctx.ellipse(0,0,92,55,-.12,0,Math.PI*2);ctx.fill();const water=ctx.createLinearGradient(-30,-35,35,38);water.addColorStop(0,'#9dd9cf');water.addColorStop(.52,'#4f9da2');water.addColorStop(1,'#357882');ctx.fillStyle=water;ctx.beginPath();ctx.ellipse(-2,-5,77,42,-.12,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#c3ece0';ctx.lineWidth=3;ctx.beginPath();ctx.ellipse(-12,-10,37,14,.12,0,Math.PI*2);ctx.stroke();ctx.strokeStyle='#d8efcf99';ctx.lineWidth=2;ctx.beginPath();ctx.ellipse(22,2,16,6,-.2,0,Math.PI*2);ctx.stroke();
       for(const [x,y] of [[-96,-10],[98,2],[-42,-58],[48,54]]){ctx.fillStyle='#507a4e';ctx.beginPath();ctx.ellipse(x,y,9,4,x*.01,0,Math.PI*2);ctx.fill();ctx.fillStyle='#74a45a';ctx.beginPath();ctx.ellipse(x+3,y-3,5,3,-.5,0,Math.PI*2);ctx.fill();}
