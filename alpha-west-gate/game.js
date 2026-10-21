@@ -445,6 +445,20 @@
       .sort((a, b) => a.distance - b.distance)[0] || null;
   }
 
+  function tryUnlockVillageGate() {
+    if (!s.healingWater && !s.grandpaHealed) {
+      simpleModal(
+        'Grandpa Needs the Remedy',
+        '💧',
+        'Grandpa still needs help. Find the Moonwell and fill the healing cup first, then you can open the gate and bring the remedy home.'
+      );
+      return;
+    }
+    s.returnGateOpen = true;
+    toast('The village gate swings open.');
+    updateHud();
+  }
+
   function interact(object = nearestObject()) {
     if (!object) return;
     switch (object.id) {
@@ -480,10 +494,10 @@
         }]);
         break;
       case 'northGate':
-        objectOptions('Village Gate', '🚪', 'A sturdy gate marks the path back toward the village.', s.returnGateOpen ? [] : s.thorns ? [{ label: 'UNLOCK', run: () => { s.returnGateOpen = true; toast('The village gate swings open.'); updateHud(); } }] : [{ label: 'TRY GATE', run: () => simpleModal('Village Gate', '🚪', 'The gate is locked fast. Clear the thorny vines to release its latch.') }]);
+        objectOptions('Village Gate', '🚪', 'A sturdy gate marks the path back toward the village.', s.returnGateOpen ? [] : s.thorns ? [{ label: 'UNLOCK', run: tryUnlockVillageGate }] : [{ label: 'TRY GATE', run: () => simpleModal('Village Gate', '🚪', 'The gate is locked fast. Clear the thorny vines to release its latch.') }]);
         break;
       case 'returnGate':
-        objectOptions('Old Village Gate', '🚪', s.returnGateOpen ? 'The old gate stands open, revealing the familiar path home.' : 'The gate is latched from this side. Beyond it, the path winds back to the village.', s.returnGateOpen ? [] : s.thorns ? [{ label: 'UNLOCK', run: () => { s.returnGateOpen = true; toast('The village gate swings open.'); updateHud(); } }] : [{ label: 'TRY GATE', run: () => simpleModal('Old Village Gate', '🚪', 'The gate is locked fast. Clear the thorny vines to release its latch.') }]);
+        objectOptions('Old Village Gate', '🚪', s.returnGateOpen ? 'The old gate stands open, revealing the familiar path home.' : 'The gate is latched from this side. Beyond it, the path winds back to the village.', s.returnGateOpen ? [] : s.thorns ? [{ label: 'UNLOCK', run: tryUnlockVillageGate }] : [{ label: 'TRY GATE', run: () => simpleModal('Old Village Gate', '🚪', 'The gate is locked fast. Clear the thorny vines to release its latch.') }]);
         break;
       case 'thorns':
         s.vinesStarted = true;
@@ -501,7 +515,10 @@
           : []);
         break;
       case 'healingSpring':
-        objectOptions(object.name,'💧',object.description,s.grandpaRemedyStarted&&s.thorns&&s.returnGateOpen&&!s.healingWater&&!s.grandpaHealed?[{label:'FILL HEALING CUP',run:()=>{s.healingWater=true;toast('You filled a cup with healing spring water.');updateHud();}}]:[]);
+        objectOptions(object.name, '💧', object.description,
+          s.grandpaRemedyStarted && !s.healingWater && !s.grandpaHealed
+            ? [{ label: 'FILL HEALING CUP', run: () => { s.healingWater = true; toast('You filled the healing cup with Moonwell water.'); updateHud(); } }]
+            : []);
         break;
       case 'berryBush':
         objectOptions('Berry Bush', '🫐', s.berriesPicked ? 'The bush is resting after giving up its ripe berries. New fruit will grow in time.' : 'Glossy leaves hide clusters of plump blue berries. The bush grows beside the village path.', s.bakerQuestStarted && !s.berriesPicked && !s.bakerQuestComplete ? [{ label: 'PICK BERRIES', run: () => { s.berriesPicked = true; toast('You picked a handful of blueberries.'); updateHud(); } }] : []);
