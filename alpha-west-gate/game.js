@@ -59,7 +59,7 @@
     returnX: 0, returnY: 0, outsideX: 0, outsideY: 0,
     flowers: { sunpetal: false, bluebell: false, mooncap: false, lavender: false, amberleaf: false, fern: false }, alchemistTalked: false, alchemyMushroomRequested: false, alchemyMushroomCollected: false, alchemyMushroomDelivered: false, vinesStarted: false,
     key: false, gateOpen: false, logGone: false, logCrossingStarted: false, returnGateOpen: false, potion: false,
-    thorns: false, returned: false
+    thorns: false, returned: false, moonwellClue: false
   };
 
   const flowerNames = { sunpetal: 'Sunpetal', bluebell: 'Bluebell', mooncap: 'Mooncap', lavender: 'Lavender', amberleaf: 'Amberleaf', fern: 'Fern' };
@@ -195,32 +195,32 @@
     if(s.alchemyMushroomCollected)inventory.push('Glowcap Mushroom');
     if(s.healingWater)inventory.push('💧 Healing Water');
     itemsEl.textContent=inventory.length?inventory.join(' · '):'Empty';
-    let quest='';
-    if(!s.waterQuestStarted)quest='<strong>First Steps</strong>Explore the Village';
-    else if(!s.grandmaHelped&&!s.carryingWater)quest='<strong>Grandma’s Request</strong>Fetch a cup of water.';
-    else if(!s.grandmaHelped)quest='<strong>Grandma’s Request</strong>Bring the water to Grandma.';
-    else if(!s.rodentQuestStarted)quest='<strong>Quest</strong>Talk to Grandpa inside.';
-    else if(!s.key&&s.rodents<5)quest='<strong>Quest</strong>Catch 5 rodents: '+s.rodents+'/5';
-    else if(!s.gateOpen&&!s.key&&s.rodents>=5)quest='<strong>Quest</strong>Talk to Grandfather.';
-    else if(s.key&&!s.gateOpen)quest='<strong>Quest</strong>Unlock the West Gate';
-    else if(s.alchemistTalked&&!s.potion&&!s.thorns){
-      const count=requiredFlowers.filter(id=>s.flowers[id]).length;
-      quest=count<3?'<strong>Alchemist’s Request</strong>'+requiredFlowers.map(id=>'1 '+flowerNames[id]+' '+(s.flowers[id]?'1/1':'0/1')).join(' · '):
-        !s.alchemyMushroomRequested?'<strong>Quest</strong>Talk to the Alchemist.':
-        !s.alchemyMushroomCollected?'<strong>Quest</strong>Find the Glowcap Mushroom on the fallen log.':'<strong>Quest</strong>Bring the Glowcap Mushroom to the Alchemist.';
-    }
-    else if(s.gateOpen&&!s.vinesStarted)quest='<strong>Quest</strong>Investigate the Vines';
-    else if(s.vinesStarted&&!s.alchemistTalked)quest='<strong>Quest</strong>Find a way to remove the Vines.';
-    else if(s.vinesStarted&&s.potion&&!s.thorns)quest='<strong>Quest</strong>Use the potion on the Vines.';
-    else if(s.thorns&&!s.returned&&!s.grandpaRemedyStarted)quest='<strong>Quest</strong>Find and unlock the gate back to the village.';
-    else if(s.grandpaHealed)quest='<strong>Quest Complete</strong>Grandpa is resting and recovering.';
-    else if(s.thorns&&s.healingWater)quest='<strong>Grandpa’s Remedy</strong>Bring the healing water to Grandpa.';
-    else if(s.thorns&&s.returnGateOpen)quest='<strong>Grandpa’s Remedy</strong>Find healing water at the Moonwell Fountain.';
-    else if(s.thorns&&!s.returned)quest='<strong>Quest</strong>Follow the path back to the village.';
-    const optionalQuest=s.bakerQuestStarted&&!s.bakerQuestComplete?'<div class="optional-quest"><strong>Optional Errand</strong>'+(s.berriesPicked?'Bring the berries to Tomas.':'Pick berries for Tomas.')+'</div>':'';
-    const remedyQuest=s.grandpaRemedyStarted&&!s.grandpaHealed?'<div class="optional-quest"><strong>Grandpa’s Remedy</strong>'+(!s.thorns?'Find a way through the vines to reach the healing spring.':!s.returnGateOpen?'Open the gate back to the village.':s.healingWater?'Bring the spring water to Grandpa.':'Fill a cup at the Moonwell Fountain beyond the arch.')+'</div>':'';
-    questEl.innerHTML=quest+optionalQuest+remedyQuest;
-    questEl.classList.toggle('empty',!quest&&!optionalQuest&&!remedyQuest);
+    const objectives=[];
+    if(!s.waterQuestStarted)objectives.push('Explore the Village');
+    else if(!s.grandmaHelped&&!s.carryingWater)objectives.push('Fetch a cup of water for Grandma');
+    else if(!s.grandmaHelped)objectives.push('Bring the water to Grandma');
+    else if(!s.rodentQuestStarted)objectives.push('Talk to Grandpa inside');
+    else if(!s.key&&s.rodents<5)objectives.push('Catch 5 rodents: '+s.rodents+'/5');
+    else if(!s.gateOpen&&!s.key&&s.rodents>=5)objectives.push('Talk to Grandpa');
+    else if(s.key&&!s.gateOpen)objectives.push('Unlock the West Gate');
+    if(s.alchemistTalked&&!s.potion&&!s.thorns){
+      const flowerCount=requiredFlowers.filter(id=>s.flowers[id]).length;
+      if(flowerCount<3)objectives.push('Gather the Alchemist’s flowers ('+flowerCount+'/3)');
+      else if(!s.alchemyMushroomRequested)objectives.push('Talk to the Alchemist');
+      else if(!s.alchemyMushroomCollected)objectives.push('Find the Glowcap Mushroom on the fallen log');
+      else objectives.push('Bring the Glowcap Mushroom to the Alchemist');
+    }else if(s.gateOpen&&!s.vinesStarted)objectives.push('Investigate the Vines');
+    else if(s.vinesStarted&&!s.alchemistTalked)objectives.push('Find the Alchemist');
+    else if(s.vinesStarted&&s.potion&&!s.thorns)objectives.push('Use the potion on the Vines');
+    if(s.thorns&&!s.returnGateOpen&&!s.returned)objectives.push('Unlock the gate back to the village');
+    if(s.grandpaRemedyStarted&&!s.grandpaHealed){
+      if(s.healingWater)objectives.push('Bring the healing water to Grandpa');
+      else if(!s.moonwellClue)objectives.push('Ask villagers for clues');
+      else objectives.push('Locate the Moonwell');
+    }else if(s.grandpaHealed)objectives.push('Grandpa is resting and recovering');
+    if(s.bakerQuestStarted&&!s.bakerQuestComplete)objectives.push(s.berriesPicked?'Bring the berries to Tomas':'Pick berries for Tomas');
+    questEl.innerHTML='<ul class="quest-list">'+objectives.map(objective=>'<li>'+objective+'</li>').join('')+'</ul>';
+    questEl.classList.toggle('empty',!objectives.length);
   }
 
   function makeButton(label, fn, secondary = false) {
@@ -322,13 +322,13 @@
   }
 
   function openHouseTalk() {
-    if (!s.rodentQuestStarted) { s.rodentQuestStarted=true; updateHud(); openModal('Grandfather','🧓','<p>I need a favor, if you have time. You can find me inside.</p>',()=>makeButton('I’ll help!',closeModal),true); return; }
+    if (!s.rodentQuestStarted) { s.rodentQuestStarted=true; updateHud(); openModal('Grandfather','🧓','<p>Could you clear the rodents out of the basement? There are five of them. Catch them all, and I’ll give you the West Gate key.</p>',()=>makeButton('I’ll help!',closeModal),true); return; }
     if (s.rodents<5) { openModal('Grandfather','🧓','<p>Catch all 5 rodents downstairs and I’ll give you the West Gate key.</p>',()=>makeButton('Okay',closeModal),true); return; }
     if (s.grandpaRemedyStarted && s.healingWater && !s.grandpaHealed) { s.healingWater=false;s.grandpaHealed=true;updateHud();openModal('Grandfather','🧓','<p>That cool spring water is just what I needed. I already feel stronger. I was bitten while clearing out the rodents, and you came through for me. The gates beyond our village are yours to explore whenever you are ready.</p>',()=>makeButton('I’m glad you’re better',closeModal),true);return; }
     if (s.grandpaHealed) { openModal('Grandfather','🧓','<p>I’m feeling much better now, thanks to you. The village feels a little bigger knowing you’ve explored beyond the gates.</p>',()=>makeButton('You’re welcome',closeModal),true);return; }
-    if (s.grandpaRemedyStarted) { openModal('Grandfather','🧓','<p>I’m still feeling weak from that bite. The Moonwell Fountain beyond the overgrown arch may hold the healing water I need.</p>',()=>makeButton('I’ll find it',closeModal),true);return; }
+    if (s.grandpaRemedyStarted) { openModal('Grandfather','🧓','<p>I’m still feeling weak from that bite. Ask around as you explore; someone may know a remedy.</p>',()=>makeButton('I’ll ask around',closeModal),true);return; }
     s.key=true;s.grandpaRemedyStarted=true;updateHud();
-    openModal('Grandfather','🧓','<p>Thank you for catching the rodents. Here is the West Gate key. One bit me while I was clearing the basement, and I’m suddenly feeling quite ill. An old Moonwell Fountain near an overgrown arch may hold healing water. You always wanted to escape the same village routine; now you have a real reason to explore and help your family.</p>',()=>makeButton('I’ll find a remedy',closeModal),true);
+    openModal('Grandfather','🧓','<p>Thank you for catching the rodents. Here is the West Gate key. One of them bit me, and I’m feeling quite poorly. I don’t know what will help, but perhaps someone along the road has heard of a remedy.</p>',()=>makeButton('I’ll ask around',closeModal),true);
   }
 
   function talkToAlchemist() {
@@ -500,13 +500,19 @@
         objectOptions(object.name, object.id==='pond'?'💧':object.id==='mushrooms'?'🍄':'✦', object.description);
         break;
       case 'scaredVillager':
-        objectOptions('Worried Traveler','❔',object.description,[{label:'TALK',run:()=>simpleModal('Worried Traveler','❔','“Those thorny vines sprang up overnight. I heard the Alchemist farther south might know what to do.”')}]);
+        objectOptions('Worried Traveler','❔',object.description,[{label:'TALK',run:()=>{
+          if(s.grandpaRemedyStarted){s.moonwellClue=true;updateHud();simpleModal('Worried Traveler','❔','“My grandmother told stories of a moonlit spring near an old ivy arch. She said its water could mend what ordinary remedies cannot.”');}
+          else simpleModal('Worried Traveler','❔','“Those thorny vines sprang up overnight. I heard the Alchemist farther south might know what to do.”');
+        }}]);
         break;
       case 'meadowFlowers':
         objectOptions('Windflower Patch','🌼',object.description);
         break;
       case 'trailKeeper':
-        objectOptions('Trail Keeper','🪶',object.description,[{label:'TALK',run:()=>simpleModal('Trail Keeper','🪶','“No one remembers seeing vines like those before. Keep to the path, and watch for thorns.”')}]);
+        objectOptions('Trail Keeper','🪶',object.description,[{label:'TALK',run:()=>{
+          if(s.grandpaRemedyStarted){s.moonwellClue=true;updateHud();simpleModal('Trail Keeper','🪶','“Follow the old stones beyond the ivy-covered arch. There is a quiet spring there, hidden from the main trail.”');}
+          else simpleModal('Trail Keeper','🪶','“No one remembers seeing vines like those before. Keep to the path, and watch for thorns.”');
+        }}]);
         break;
       case 'pathHermit':
         objectOptions('Meadow Walker','🧭',object.description,[{label:'TALK',run:()=>simpleModal('Meadow Walker','🧭','“The hermit has lived in the southern glade for many years. If anyone can help with the vines, they can.”')}]);
