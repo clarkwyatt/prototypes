@@ -257,6 +257,15 @@
     openModal(title, emoji, `<p>${text}</p>`, () => makeButton('Got it!', closeModal), true);
   }
 
+  function dialogueCards(title, emoji, cards, finishLabel = 'Continue', onFinish = closeModal) {
+    let page = 0;
+    const showPage = () => openModal(title, emoji, `<p>${cards[page]}</p>`, () => {
+      if (page < cards.length - 1) makeButton('Next', () => { page++; showPage(); });
+      else makeButton(finishLabel, onFinish);
+    }, true);
+    showPage();
+  }
+
   function objectOptions(title, emoji, description, actions = []) {
     openModal(title, emoji, '', () => {
       makeButton('EXAMINE', () => simpleModal(title, emoji, description), true);
@@ -325,31 +334,50 @@
     if (!s.waterQuestStarted) {
       s.waterQuestStarted = true;
       updateHud();
-      openModal('Grandma', '👵', '<p>I’m getting on in years, and my arthritis is really flaring up today. Could you bring me a fresh cup of water from the village well?</p>', () => makeButton('I’ll get some water', closeModal), true);
+      dialogueCards('Grandma', '👵', [
+        'You’re watching the West Gate again. I know how much you want to see what lies beyond it.',
+        'I understand, dear. But we need one another here at home, too. My arthritis is hurting today, and I can’t carry water from the well. Could you bring me a fresh cup?'
+      ], 'I’ll get some water');
       return;
     }
     if (s.carryingWater && !s.grandmaHelped) {
       s.carryingWater = false; s.grandmaHelped = true; s.grandmaHouseKey = true;
       updateHud();
-      openModal('Grandma', '👵', '<p>Thank you, dear. Here’s our house key. Your Grandpa could use a hand with the rodents in his basement. You can find him inside.</p>', () => makeButton('I’ll go see him', closeModal), true);
+      dialogueCards('Grandma', '👵', [
+        'Thank you, dear. That water helps more than you know.',
+        'Here’s our house key. Your Grandpa needs help with five rodents in the basement. They’re getting into the food we saved, and he can’t chase them all by himself.',
+        'I know you’re eager to get beyond the gate. Help Grandpa first, and then he’ll tell you what he needs.'
+      ], 'I’ll go see him');
       return;
     }
     if (!s.grandmaHelped) {
-      openModal('Grandma', '👵', '<p>The village well is nearby. Please bring me a cup of fresh water when you can.</p>', () => makeButton('Okay', closeModal), true);
+      dialogueCards('Grandma', '👵', [
+        'The village well is nearby, dear.',
+        'My arthritis is making it hard to carry water today. Please bring me a fresh cup when you can.'
+      ], 'Okay');
       return;
     }
-    openModal('Grandma', '👵', '<p>Thank you for the water, dear. Grandpa is inside and could use your help with the rodents in his basement.</p>', () => makeButton('I’ll go see him', closeModal), true);
+    dialogueCards('Grandma', '👵', [
+      'Thank you for helping me with the water. I’m feeling much better.',
+      'Grandpa is inside. Those rodents are still getting into the food stores, and he could use your help.'
+    ], 'I’ll go see him');
   }
 
   function talkToTomas() {
     if (s.villageOverrun && (!s.berriesPicked || s.bakerQuestComplete)) {
-      openModal('Tomas the Baker', '🥖', '<p>The vines wrapped right around my bakery! I managed to save the muffins, at least. We need to find a way to help everyone in the village.</p>', () => makeButton('We’ll save the village', closeModal), true);
+      dialogueCards('Tomas the Baker', '🥖', [
+        'The vines wrapped right around my bakery! I managed to save the muffins, at least.',
+        'The whole village needs help now. I hope we can keep everyone safe.'
+      ], 'We’ll save the village');
       return;
     }
     if (!s.bakerQuestStarted) {
       s.bakerQuestStarted = true;
       updateHud();
-      openModal('Tomas the Baker', '🥖', '<p>I’m baking something seasonal for the village. Could you pick a handful of blueberries from the bush beside the village path?</p>', () => makeButton('I’ll look for berries', closeModal), true);
+      dialogueCards('Tomas the Baker', '🥖', [
+        'I’m baking a special treat for everyone in the village. Blueberries make it taste just right.',
+        'Could you pick a handful from the bush beside the village path?'
+      ], 'I’ll look for berries');
       return;
     }
     if (s.berriesPicked && !s.bakerQuestComplete) {
@@ -357,67 +385,145 @@
       s.bakerQuestComplete = true;
       s.muffin = true;
       updateHud();
-      openModal('Tomas the Baker', '🥖', '<p>Perfect berries! Here’s a blueberry muffin, fresh from the oven. I hope you enjoy it!</p>', () => makeButton('Thanks, Tomas!', closeModal), true);
+      dialogueCards('Tomas the Baker', '🥖', [
+        'These berries are perfect! I’ll fold them into the batter.',
+        'Here’s a blueberry muffin, fresh from the oven. I hope you enjoy it!'
+      ], 'Thanks, Tomas!');
       return;
     }
     if (!s.bakerQuestComplete) {
-      openModal('Tomas the Baker', '🥖', '<p>That berry bush beside the village path should have a handful of ripe berries.</p>', () => makeButton('I’ll find them', closeModal), true);
+      dialogueCards('Tomas the Baker', '🥖', [
+        'I can almost smell those berries baking already.',
+        'The berry bush beside the village path should have a handful of ripe ones.'
+      ], 'I’ll find them');
       return;
     }
-    openModal('Tomas the Baker', '🥖', '<p>I hope you enjoy that muffin. Blueberries make the best seasonal treats!</p>', () => makeButton('Thanks again', closeModal), true);
+    dialogueCards('Tomas the Baker', '🥖', [
+      'I hope you enjoyed that muffin.',
+      'Blueberries make the best village treats!'
+    ], 'Thanks again');
   }
 
   function openHouseTalk() {
-    if (!s.rodentQuestStarted) { s.rodentQuestStarted=true; updateHud(); openModal('Grandfather','🧓','<p>Could you clear the rodents out of the basement? There are five of them. Catch them all, and I’ll give you the West Gate key.</p>',()=>makeButton('I’ll help!',closeModal),true); return; }
-    if (s.rodents<5) { openModal('Grandfather','🧓','<p>Catch all 5 rodents downstairs and I’ll give you the West Gate key.</p>',()=>makeButton('Okay',closeModal),true); return; }
-    if (s.grandpaRemedyStarted && s.healingWater && !s.grandpaHealed) {
-      s.healingWater=false;
-      s.grandpaHealed=true;
+    if (!s.rodentQuestStarted) {
+      s.rodentQuestStarted = true;
       updateHud();
-      const thanks=s.villageOverrun
-        ? '<p>That remedy worked. Thank you, dear. But what happened while you were out? The village is tangled in thorny vines! We need a savior now more than ever. You have already shown great courage beyond the gate; now we must find a way to save our home and help our neighbors.</p>'
-        : '<p>That cool spring water is just what I needed. I already feel stronger. Thank you for finding it and helping me.</p>';
-      openModal('Grandfather','🧓',thanks,()=>makeButton(s.villageOverrun?'I’ll help save the village':'I’m glad you’re better',closeModal),true);
+      dialogueCards('Grandfather', '🧓', [
+        'Grandma told me you helped her. I know you’re eager to see what’s beyond the West Gate.',
+        'But those five rodents are eating the food we saved in the basement. I can’t catch them all on my own.',
+        'Catch all five, and I’ll give you the West Gate key. Then you can explore beyond the village.'
+      ], 'I’ll help!');
       return;
     }
-    if (s.grandpaHealed) { openModal('Grandfather','🧓',s.villageOverrun?'<p>The remedy worked, and I’m feeling stronger. But the whole village is tangled in thorny vines. We need to find out where they came from and help our neighbors.</p>':'<p>I’m feeling much better now, thanks to you. The village feels a little bigger knowing you’ve explored beyond the gates.</p>',()=>makeButton(s.villageOverrun?'We’ll save our home':'You’re welcome',closeModal),true);return; }
-    if (s.grandpaRemedyStarted) { openModal('Grandfather','🧓','<p>I’m still feeling weak from that bite. Ask around as you explore; someone may know a remedy.</p>',()=>makeButton('I’ll ask around',closeModal),true);return; }
-    s.key=true;s.grandpaRemedyStarted=true;updateHud();
-    openModal('Grandfather','🧓','<p>Thank you for catching the rodents. Here is the West Gate key. One of them bit me, and I’m feeling quite poorly. I don’t know what will help, but perhaps someone along the road has heard of a remedy.</p>',()=>makeButton('I’ll ask around',closeModal),true);
+    if (s.rodents < 5) {
+      dialogueCards('Grandfather', '🧓', [
+        'I know you have your eyes on the West Gate. The food in our basement still needs protecting.',
+        'Catch all five rodents downstairs, and I’ll give you the key.'
+      ], 'Okay');
+      return;
+    }
+    if (s.grandpaRemedyStarted && s.healingWater && !s.grandpaHealed) {
+      s.healingWater = false;
+      s.grandpaHealed = true;
+      updateHud();
+      const cards = s.villageOverrun
+        ? [
+            'That water has helped. I can stand without feeling so weak again. Thank you, dear.',
+            'But what happened while you were out? Thorny vines have wrapped around the village!',
+            'You went beyond the gate to help me. Now our neighbors need help, too.'
+          ]
+        : [
+            'That cool spring water is just what I needed. I already feel stronger.',
+            'Thank you for finding it and helping me, dear. I’m proud of how you looked after everyone.'
+          ];
+      dialogueCards('Grandfather', '🧓', cards, s.villageOverrun ? 'I’ll help save the village' : 'I’m glad you’re better');
+      return;
+    }
+    if (s.grandpaHealed) {
+      const cards = s.villageOverrun
+        ? [
+            'I’m feeling stronger, thanks to you.',
+            'The whole village is tangled in thorny vines. We need to help our neighbors.'
+          ]
+        : [
+            'I’m feeling much better now, thanks to you.',
+            'The village feels a little bigger now that you’ve explored beyond the gates.'
+          ];
+      dialogueCards('Grandfather', '🧓', cards, s.villageOverrun ? 'We’ll save our home' : 'You’re welcome');
+      return;
+    }
+    if (s.grandpaRemedyStarted) {
+      dialogueCards('Grandfather', '🧓', [
+        'I’m still feeling weak from that bite.',
+        'Ask people you meet along the road. Someone may know what can help me.'
+      ], 'I’ll ask around');
+      return;
+    }
+    s.key = true;
+    s.grandpaRemedyStarted = true;
+    updateHud();
+    dialogueCards('Grandfather', '🧓', [
+      'You caught every rodent and kept our food stores safe. Here is the West Gate key. You’ve earned it.',
+      'One of the rodents bit me while I was chasing it. Since then, I’ve felt weaker and weaker.',
+      'I don’t know what will help. Ask people you meet along the road; someone may know a remedy.'
+    ], 'I’ll ask around');
   }
 
   function talkToAlchemist() {
     s.alchemistTalked = true;
     const count = requiredFlowers.filter((id) => s.flowers[id]).length;
-    const ingredients = requiredFlowers.map((id) => `1 ${flowerNames[id]}`);
+    const ingredients = requiredFlowers.map((id) => flowerNames[id]);
     const requested = ingredients.length < 2
       ? ingredients[0]
       : `${ingredients.slice(0, -1).join(', ')} and ${ingredients[ingredients.length - 1]}`;
     if (s.potion || s.thorns) {
-      openModal('The Alchemist', '🧙', '<p>The Glowcap gave the potion its final spark. I hope it helps on your journey.</p>', () => makeButton('Thanks', closeModal), true);
+      dialogueCards('The Alchemist', '🧙', [
+        'The Glowcap gave the potion its final spark.',
+        'I hope it helps on your journey.'
+      ], 'Thanks');
       return;
     }
     if (count < 3) {
       updateHud();
-      const intro=s.vinesStarted?'I’ve heard about the thorny vines. I can brew a potion to help.':'I haven’t seen the vines myself, but I can prepare a potion in case they threaten the trail.';
-      openModal('The Alchemist','🧙','<p>'+intro+' Please bring me '+requested+'.</p>',()=>makeButton('I’ll look for them',closeModal),true);
+      const intro = s.vinesStarted
+        ? 'I’ve heard about the thorny vines. I can brew a potion to help.'
+        : 'I haven’t seen the vines myself, but I can prepare a potion in case they threaten the trail.';
+      dialogueCards('The Alchemist', '🧙', [
+        'A good potion begins with plants gathered at the right time.',
+        `${intro} Please bring me one ${requested}.`
+      ], 'I’ll look for them');
       return;
     }
     if (!s.alchemyMushroomRequested) {
       s.alchemyMushroomRequested = true;
       updateHud();
-      openModal('The Alchemist', '🧙', '<p>These flowers are perfect. Before I brew the potion, I need one more rare ingredient: a Glowcap Mushroom. They grow beneath fallen logs, and there is one near the thorny vines.</p>', () => makeButton('I’ll find it', closeModal), true);
+      dialogueCards('The Alchemist', '🧙', [
+        'These flowers are perfect. I can almost see their colors glowing in the potion already.',
+        'Before I brew it, I need one more rare ingredient: a Glowcap Mushroom.',
+        'It grows beneath fallen logs. There is one near the thorny vines.'
+      ], 'I’ll find it');
       return;
     }
     if (!s.alchemyMushroomCollected) {
       updateHud();
-      openModal('The Alchemist', '🧙', '<p>Please bring me the Glowcap Mushroom from beneath the fallen log near the vines.</p>', () => makeButton('I’ll look for it', closeModal), true);
+      dialogueCards('The Alchemist', '🧙', [
+        'The Glowcap’s pale blue light is easy to spot in a shady place.',
+        'Please bring me the mushroom beneath the fallen log near the vines.'
+      ], 'I’ll look for it');
       return;
     }
     updateHud();
-    openModal('The Alchemist', '🧙', '<p>You found the Glowcap! Its gentle light will give the potion the strength it needs. I’ll brew it now.</p>', () => {
-      makeButton('Take the potion', () => { s.alchemyMushroomCollected = false; s.alchemyMushroomDelivered = true; s.potion = true; closeModal(); toast('You received a Vine Potion.'); updateHud(); });
-    }, true);
+    dialogueCards('The Alchemist', '🧙', [
+      'You found the Glowcap! Its gentle light will give the potion the strength it needs.',
+      'I’ll finish brewing it now.'
+    ], 'Take the potion', () => {
+      s.alchemyMushroomCollected = false;
+      s.alchemyMushroomDelivered = true;
+      s.potion = true;
+      closeModal();
+      toast('You received a Vine Potion.');
+      updateHud();
+    });
   }
 
     function showBasement() {
@@ -516,13 +622,22 @@
           : [{ label: 'TRY DOOR', run: () => simpleModal('The house is locked', '🏠', 'The door will not open. Grandma is outside and may have a key.') }]);
         break;
       case 'villageGrandma':
-        objectOptions('Grandma', '👵', object.description, [{ label: 'TALK', run: s.villageOverrun?()=>simpleModal('Grandma','👵','The vines crept over the village while you were away. Please help us protect our homes!'):talkToGrandma }]);
+        objectOptions('Grandma', '👵', object.description, [{ label: 'TALK', run: s.villageOverrun
+          ? () => dialogueCards('Grandma', '👵', [
+              'The vines crept over the village while you were away. We are frightened, but we’re staying together.',
+              'Your Grandpa is inside. Please go see him when you can.'
+            ], 'I’ll check on him')
+          : talkToGrandma }]);
         break;
       case 'villagerMara':
-        objectOptions('Mara the Gardener', '🌼', 'Mara tends the village garden and knows every flower along the paths.', [{ label: 'TALK', run: () => simpleModal('Mara the Gardener', '🌼', s.villageOverrun?'The thorns have swallowed my garden overnight. I don’t know how much longer the homes will be safe.':'The meadow flowers are prettiest where the morning sun reaches them.') }]);
+        objectOptions('Mara the Gardener', '🌼', 'Mara tends the village garden and knows every flower along the paths.', [{ label: 'TALK', run: () => dialogueCards('Mara the Gardener', '🌼', s.villageOverrun
+          ? ['I have cared for this garden for years. I’ve never seen vines grow so fast.', 'They have covered my flower beds and reached the homes. I hope everyone stays safe.']
+          : ['I see you looking toward the gate, dreaming about the road beyond it.', 'There are wonders out there, but this garden has little wonders, too. The meadow flowers are prettiest in the morning sun.'], 'Thanks, Mara') }]);
         break;
       case 'villagerPip':
-        objectOptions('Pip', '🧢', 'A young villager with a pocket full of interesting things.', [{ label: 'TALK', run: () => simpleModal('Pip', '🧢', s.villageOverrun?'The vines are covering the paths! I found a safe spot behind the well.':'I found a shiny pebble by the river. I’m saving it for my collection!') }]);
+        objectOptions('Pip', '🧢', 'A young villager with a pocket full of interesting things.', [{ label: 'TALK', run: () => dialogueCards('Pip', '🧢', s.villageOverrun
+          ? ['The vines are covering the paths! I found a safe spot behind the well.', 'I brought my shiny pebble with me. It makes me feel a little less scared.']
+          : ['I found a shiny pebble by the river. It’s the brightest one in my collection!', 'I want to explore, too. Maybe one day I’ll find a pebble from beyond the gate.'], 'See you, Pip') }]);
         break;
       case 'villagerTomas':
         objectOptions('Tomas the Baker', '🥖', 'Tomas is planning a batch of seasonal pastries and is checking the village berry bushes.', [{ label: 'TALK', run: talkToTomas }]);
@@ -573,25 +688,51 @@
         objectOptions(object.name, object.id==='pond'?'💧':object.id==='mushrooms'?'🍄':'✦', object.description);
         break;
       case 'scaredVillager':
-        objectOptions('Worried Traveler','❔',object.description,[{label:'TALK',run:()=>{
-          if(s.grandpaRemedyStarted){s.moonwellClue=true;updateHud();simpleModal('Worried Traveler','❔','“My grandmother told stories of a moonlit spring near an old ivy arch. She said its water could mend what ordinary remedies cannot.”');}
-          else simpleModal('Worried Traveler','❔','“Those thorny vines sprang up overnight. I heard the Alchemist farther south might know what to do.”');
-        }}]);
+        objectOptions('Worried Traveler', '❔', object.description, [{ label: 'TALK', run: () => {
+          if (s.grandpaRemedyStarted) {
+            s.moonwellClue = true; updateHud();
+            dialogueCards('Worried Traveler', '❔', [
+              'My grandmother told stories about a spring that shines under the moon.',
+              'She said it was near an old ivy arch, and its water could help with a bad bite.'
+            ], 'Thank you');
+          } else {
+            dialogueCards('Worried Traveler', '❔', [
+              'Those thorny vines sprang up overnight. I’ve never seen anything like them.',
+              'The Alchemist farther south knows more about plants than anyone. Perhaps they can help.'
+            ], 'Thank you');
+          }
+        } }]);
         break;
       case 'meadowFlowers':
         objectOptions('Windflower Patch','🌼',object.description);
         break;
       case 'trailKeeper':
-        objectOptions('Trail Keeper','🪶',object.description,[{label:'TALK',run:()=>{
-          if(s.grandpaRemedyStarted){s.moonwellClue=true;updateHud();simpleModal('Trail Keeper','🪶','“Follow the old stones beyond the ivy-covered arch. There is a quiet spring there, hidden from the main trail.”');}
-          else simpleModal('Trail Keeper','🪶','“No one remembers seeing vines like those before. Keep to the path, and watch for thorns.”');
-        }}]);
+        objectOptions('Trail Keeper', '🪶', object.description, [{ label: 'TALK', run: () => {
+          if (s.grandpaRemedyStarted) {
+            s.moonwellClue = true; updateHud();
+            dialogueCards('Trail Keeper', '🪶', [
+              'These old stones have guided travelers through the woods for a long time.',
+              'Follow them beyond the ivy-covered arch. A quiet spring is hidden there, away from the main trail.'
+            ], 'Thank you');
+          } else {
+            dialogueCards('Trail Keeper', '🪶', [
+              'No one remembers seeing vines like those before.',
+              'Keep to the path and watch where you step. Those thorns look sharp.'
+            ], 'I will');
+          }
+        } }]);
         break;
       case 'pathHermit':
-        objectOptions('Meadow Walker','🧭',object.description,[{label:'TALK',run:()=>simpleModal('Meadow Walker','🧭','“The hermit has lived in the southern glade for many years. If anyone can help with the vines, they can.”')}]);
+        objectOptions('Meadow Walker', '🧭', object.description, [{ label: 'TALK', run: () => dialogueCards('Meadow Walker', '🧭', [
+          'I have walked these trails for many years. The forest is full of quiet places if you take your time.',
+          'The hermit in the southern glade knows more about plants than anyone I’ve met. They may know how to help with the vines.'
+        ], 'Thank you') }]);
         break;
       case 'trailRanger':
-        objectOptions('Forest Rambler','🧺',object.description,[{label:'TALK',run:()=>simpleModal('Forest Rambler','🧺','“The woods are peaceful today. I could follow these old paths all afternoon.”')}]);
+        objectOptions('Forest Rambler', '🧺', object.description, [{ label: 'TALK', run: () => dialogueCards('Forest Rambler', '🧺', [
+          'I never get tired of following a path to see where it leads.',
+          'Sometimes I find a new bird, a funny-shaped rock, or just a nice place to rest.'
+        ], 'Happy trails') }]);
         break;
       case 'sunpetal': case 'bluebell': case 'mooncap': case 'lavender': case 'amberleaf': case 'fern': {
         const description = flowerDetails[object.id] || 'A little piece of local plant life.';
