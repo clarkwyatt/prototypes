@@ -563,8 +563,19 @@
     else {ctx.arc(0,-11,11,Math.PI,Math.PI*2);ctx.fill();ctx.fillRect(-10,-12,4,10);}
     ctx.fillStyle='#3e342e';ctx.beginPath();ctx.arc(-3,-5,1.2,0,Math.PI*2);ctx.arc(4,-5,1.2,0,Math.PI*2);ctx.fill();
     ctx.strokeStyle='#b76f61';ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(.5,-1,3,.15,Math.PI-.15);ctx.stroke();
-    ctx.fillStyle=palettes.coat;ctx.beginPath();ctx.moveTo(-13,6);ctx.quadraticCurveTo(-18,9,-18,23);ctx.quadraticCurveTo(0,30,18,23);ctx.quadraticCurveTo(17,9,13,6);ctx.quadraticCurveTo(0,13,-13,6);ctx.fill();
+    ctx.fillStyle=palettes.coat;ctx.beginPath();
+    if(style===1||style===5||style===7){ctx.moveTo(-11,5);ctx.lineTo(-22,10);ctx.lineTo(-20,24);ctx.quadraticCurveTo(0,34,20,24);ctx.lineTo(22,10);ctx.lineTo(11,5);ctx.quadraticCurveTo(0,12,-11,5);}
+    else if(style===4){ctx.moveTo(-12,6);ctx.quadraticCurveTo(-19,7,-18,18);ctx.lineTo(-22,29);ctx.quadraticCurveTo(0,37,22,29);ctx.lineTo(18,18);ctx.quadraticCurveTo(18,7,12,6);ctx.quadraticCurveTo(0,13,-12,6);}
+    else if(style===3){ctx.moveTo(-11,5);ctx.quadraticCurveTo(-17,7,-16,19);ctx.quadraticCurveTo(0,26,16,19);ctx.lineTo(11,5);ctx.closePath();}
+    else {ctx.moveTo(-13,6);ctx.quadraticCurveTo(-18,9,-18,23);ctx.quadraticCurveTo(0,30,18,23);ctx.quadraticCurveTo(17,9,13,6);ctx.quadraticCurveTo(0,13,-13,6);}
+    ctx.closePath();ctx.fill();
     ctx.fillStyle=palettes.trim;ctx.beginPath();ctx.ellipse(0,21,17,4,0,0,Math.PI*2);ctx.fill();
+    if(style===0){ctx.fillStyle='#f4ead0';ctx.beginPath();ctx.moveTo(-8,8);ctx.lineTo(8,8);ctx.lineTo(11,24);ctx.lineTo(-11,24);ctx.closePath();ctx.fill();ctx.strokeStyle='#c1b38f';ctx.lineWidth=1;ctx.stroke();ctx.fillStyle='#c77b54';ctx.beginPath();ctx.arc(0,17,2,0,Math.PI*2);ctx.fill();}
+    if(style===1||style===5){ctx.fillStyle=style===5?'#54475e':'#665944';ctx.beginPath();ctx.moveTo(-12,5);ctx.lineTo(-21,10);ctx.lineTo(-24,27);ctx.lineTo(-12,23);ctx.lineTo(-8,9);ctx.closePath();ctx.fill();ctx.beginPath();ctx.moveTo(12,5);ctx.lineTo(21,10);ctx.lineTo(24,27);ctx.lineTo(12,23);ctx.lineTo(8,9);ctx.closePath();ctx.fill();ctx.strokeStyle='#c8b987';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(0,7);ctx.lineTo(0,28);ctx.stroke();}
+    if(style===2){ctx.fillStyle='#f0dfbd';ctx.beginPath();ctx.moveTo(-8,10);ctx.lineTo(8,10);ctx.lineTo(10,25);ctx.lineTo(-10,25);ctx.closePath();ctx.fill();ctx.strokeStyle='#8b714c';ctx.lineWidth=1;ctx.stroke();ctx.fillStyle='#d2b079';ctx.beginPath();ctx.arc(0,19,2,0,Math.PI*2);ctx.fill();}
+    if(style===4){ctx.fillStyle='#756c83';ctx.beginPath();ctx.moveTo(-13,4);ctx.lineTo(0,11);ctx.lineTo(13,4);ctx.lineTo(18,18);ctx.lineTo(0,14);ctx.lineTo(-18,18);ctx.closePath();ctx.fill();}
+    if(style===6){ctx.fillStyle='#d2b58f';ctx.beginPath();ctx.moveTo(-8,-1);ctx.lineTo(7,-1);ctx.lineTo(11,5);ctx.lineTo(0,13);ctx.lineTo(-11,5);ctx.closePath();ctx.fill();}
+    if(style===7){ctx.fillStyle='#314d66';ctx.beginPath();ctx.moveTo(-11,4);ctx.lineTo(0,10);ctx.lineTo(11,4);ctx.lineTo(20,26);ctx.quadraticCurveTo(0,35,-20,26);ctx.closePath();ctx.fill();ctx.strokeStyle='#a9c1b0';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(0,11);ctx.lineTo(0,31);ctx.stroke();}
     ctx.fillStyle='#80533a';ctx.fillRect(-11,24,8,5);ctx.fillRect(4,24,8,5);
     if(tallHat){
       ctx.fillStyle=palettes.hat;ctx.beginPath();ctx.ellipse(0,-16,17,5,0,Math.PI,Math.PI*2);ctx.fill();ctx.fillRect(-10,-21,20,6);
@@ -574,11 +585,11 @@
     else if(style===3){ctx.fillStyle=palettes.hat;ctx.beginPath();ctx.ellipse(0,-15,18,8,0,Math.PI,Math.PI*2);ctx.fill();ctx.fillRect(-7,-20,14,6);}
     else {ctx.fillStyle=palettes.hat;ctx.beginPath();ctx.ellipse(0,-15,16,5,0,Math.PI,Math.PI*2);ctx.fill();ctx.fillRect(-10,-20,20,5);}
     // Each villager carries a different tool or keepsake, so their silhouettes read apart.
-    if(style===0){ctx.fillStyle='#c58c4b';ctx.fillRect(14,5,5,20);ctx.fillStyle='#6d4c35';ctx.fillRect(12,5,9,5);}
+    if(style===0){ctx.fillStyle='#f5f1e0';ctx.beginPath();ctx.roundRect(-8,-27,16,7,4);ctx.fill();ctx.beginPath();ctx.arc(-5,-27,4,Math.PI,Math.PI*2);ctx.arc(0,-29,5,Math.PI,Math.PI*2);ctx.arc(5,-27,4,Math.PI,Math.PI*2);ctx.fill();ctx.fillStyle='#c58c4b';ctx.fillRect(14,5,5,20);ctx.fillStyle='#6d4c35';ctx.fillRect(12,5,9,5);}
     if(style===1){ctx.strokeStyle='#9a7147';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(-18,7);ctx.lineTo(-20,29);ctx.stroke();ctx.fillStyle='#d8b56d';ctx.beginPath();ctx.arc(-20,5,4,0,Math.PI*2);ctx.fill();}
-    if(style===2){ctx.fillStyle='#658b50';ctx.beginPath();ctx.ellipse(-17,10,7,3,-.5,0,Math.PI*2);ctx.ellipse(17,13,7,3,.5,0,Math.PI*2);ctx.fill();}
+    if(style===2){ctx.fillStyle='#658b50';ctx.beginPath();ctx.ellipse(-17,10,7,3,-.5,0,Math.PI*2);ctx.ellipse(17,13,7,3,.5,0,Math.PI*2);ctx.fill();ctx.fillStyle='#e9c978';ctx.beginPath();ctx.arc(10,-22,3,0,Math.PI*2);ctx.fill();ctx.fillStyle='#f0dfbd';for(let i=0;i<4;i++){const a=i*Math.PI/2;ctx.beginPath();ctx.arc(10+Math.cos(a)*4,-22+Math.sin(a)*4,2,0,Math.PI*2);ctx.fill();}}
     if(style===3){ctx.fillStyle='#a86c46';ctx.beginPath();ctx.roundRect(12,8,12,15,3);ctx.fill();ctx.fillStyle='#e9cf91';ctx.beginPath();ctx.arc(18,11,2,0,Math.PI*2);ctx.fill();}
-    if(style===4){ctx.fillStyle='#b88852';ctx.beginPath();ctx.ellipse(-18,17,8,4,-.2,0,Math.PI*2);ctx.fill();}
+    if(style===4){ctx.fillStyle='#b88852';ctx.beginPath();ctx.ellipse(-18,17,9,6,-.2,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#ead5a6';ctx.lineWidth=1.5;ctx.beginPath();ctx.ellipse(-18,17,6,3,-.2,0,Math.PI*2);ctx.stroke();ctx.strokeStyle='#e1d2b4';ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(-4,-5,4,0,Math.PI*2);ctx.arc(5,-5,4,0,Math.PI*2);ctx.moveTo(0,-5);ctx.lineTo(1,-5);ctx.stroke();}
     if(style===5){ctx.fillStyle='#e4d7b1';ctx.fillRect(-13,10,4,15);ctx.fillStyle='#9b7651';ctx.beginPath();ctx.arc(-11,9,4,0,Math.PI*2);ctx.fill();}
     if(style===6){ctx.fillStyle='#b5b5a0';ctx.beginPath();ctx.arc(-11,-4,3,0,Math.PI*2);ctx.arc(11,-4,3,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#d7d0b8';ctx.lineWidth=2;ctx.beginPath();ctx.arc(0,6,6,.2,Math.PI-.2);ctx.stroke();}
     if(style===7){ctx.fillStyle='#7690aa';ctx.beginPath();ctx.moveTo(-17,9);ctx.lineTo(-23,28);ctx.lineTo(-15,25);ctx.closePath();ctx.fill();}
