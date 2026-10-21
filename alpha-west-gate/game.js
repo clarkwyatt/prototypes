@@ -53,7 +53,7 @@
   const s = {
     screen: '13', x: 605, y: 335, face: 'down', speed: 215,
     scene: 'outside', interior: '', rodents: 0, rodentQuestStarted: false, mice: [], activeCatchTarget: null, basementEntered: false,
-    grandpaRemedyStarted: false, healingWater: false, grandpaHealed: false,
+    grandpaRemedyStarted: false, healingWater: false, grandpaHealed: false, villageOverrun: false,
     bakerQuestStarted: false, berriesPicked: false, bakerQuestComplete: false, muffin: false,
     waterQuestStarted: false, carryingWater: false, grandmaHelped: false, grandmaHouseKey: false, grandparentsHouseUnlocked: false,
     returnX: 0, returnY: 0, outsideX: 0, outsideY: 0,
@@ -196,7 +196,8 @@
     if(s.healingWater)inventory.push('💧 Healing Water');
     itemsEl.textContent=inventory.length?inventory.join(' · '):'Empty';
     const objectives=[];
-    if(!s.waterQuestStarted)objectives.push('Explore the Village');
+    if(s.villageOverrun)objectives.push('Help the Village');
+    else if(!s.waterQuestStarted)objectives.push('Explore the Village');
     else if(!s.grandmaHelped&&!s.carryingWater)objectives.push('Fetch a cup of water for Grandma');
     else if(!s.grandmaHelped)objectives.push('Bring the water to Grandma');
     else if(!s.rodentQuestStarted)objectives.push('Talk to Grandpa inside');
@@ -217,7 +218,7 @@
       if(s.healingWater)objectives.push('Bring the healing water to Grandpa');
       else if(!s.moonwellClue)objectives.push('Ask villagers for clues');
       else objectives.push('Locate the Moonwell');
-    }else if(s.grandpaHealed)objectives.push('Grandpa is resting and recovering');
+    }else if(s.grandpaHealed&&!s.villageOverrun)objectives.push('Grandpa is resting and recovering');
     if(s.bakerQuestStarted&&!s.bakerQuestComplete)objectives.push(s.berriesPicked?'Bring the berries to Tomas':'Pick berries for Tomas');
     questEl.innerHTML='<ul class="quest-list">'+objectives.map(objective=>'<li>'+objective+'</li>').join('')+'</ul>';
     questEl.classList.toggle('empty',!objectives.length);
@@ -274,8 +275,15 @@
   }
 
   function leaveInterior() {
-    s.scene = 'outside'; s.interior = '';
-    s.x = s.outsideX || 560; s.y = s.outsideY || 335;
+    const leavingGrandpaHouse=s.interior==='grandpa';
+    s.scene='outside';s.interior='';
+    s.x=s.outsideX||560;s.y=s.outsideY||335;
+    if(leavingGrandpaHouse&&s.grandpaHealed&&!s.villageOverrun){
+      s.villageOverrun=true;
+      updateHud();
+      setTimeout(()=>simpleModal('Grandfather','🧓','That remedy worked. Thank you—I feel like myself again. But what happened while you were out? Thorny vines have spread across the village! Our neighbors need help, and we have to save our home. You have already faced the unknown beyond the gate; now you need to be braver than ever.',),180);
+      return;
+    }
     updateHud();
   }
 
@@ -325,7 +333,7 @@
     if (!s.rodentQuestStarted) { s.rodentQuestStarted=true; updateHud(); openModal('Grandfather','🧓','<p>Could you clear the rodents out of the basement? There are five of them. Catch them all, and I’ll give you the West Gate key.</p>',()=>makeButton('I’ll help!',closeModal),true); return; }
     if (s.rodents<5) { openModal('Grandfather','🧓','<p>Catch all 5 rodents downstairs and I’ll give you the West Gate key.</p>',()=>makeButton('Okay',closeModal),true); return; }
     if (s.grandpaRemedyStarted && s.healingWater && !s.grandpaHealed) { s.healingWater=false;s.grandpaHealed=true;updateHud();openModal('Grandfather','🧓','<p>That cool spring water is just what I needed. I already feel stronger. I was bitten while clearing out the rodents, and you came through for me. The gates beyond our village are yours to explore whenever you are ready.</p>',()=>makeButton('I’m glad you’re better',closeModal),true);return; }
-    if (s.grandpaHealed) { openModal('Grandfather','🧓','<p>I’m feeling much better now, thanks to you. The village feels a little bigger knowing you’ve explored beyond the gates.</p>',()=>makeButton('You’re welcome',closeModal),true);return; }
+    if (s.grandpaHealed) { openModal('Grandfather','🧓',s.villageOverrun?'<p>The remedy worked, and I’m feeling stronger. But the whole village is tangled in thorny vines. We need to find out where they came from and help our neighbors.</p>':'<p>I’m feeling much better now, thanks to you. The village feels a little bigger knowing you’ve explored beyond the gates.</p>',()=>makeButton(s.villageOverrun?'We’ll save our home':'You’re welcome',closeModal),true);return; }
     if (s.grandpaRemedyStarted) { openModal('Grandfather','🧓','<p>I’m still feeling weak from that bite. Ask around as you explore; someone may know a remedy.</p>',()=>makeButton('I’ll ask around',closeModal),true);return; }
     s.key=true;s.grandpaRemedyStarted=true;updateHud();
     openModal('Grandfather','🧓','<p>Thank you for catching the rodents. Here is the West Gate key. One of them bit me, and I’m feeling quite poorly. I don’t know what will help, but perhaps someone along the road has heard of a remedy.</p>',()=>makeButton('I’ll ask around',closeModal),true);
@@ -446,13 +454,13 @@
           : [{ label: 'TRY DOOR', run: () => simpleModal('The house is locked', '🏠', 'The door will not open. Grandma is outside and may have a key.') }]);
         break;
       case 'villageGrandma':
-        objectOptions('Grandma', '👵', object.description, [{ label: 'TALK', run: talkToGrandma }]);
+        objectOptions('Grandma', '👵', object.description, [{ label: 'TALK', run: s.villageOverrun?()=>simpleModal('Grandma','👵','The vines crept over the village while you were away. Please help us protect our homes!'):talkToGrandma }]);
         break;
       case 'villagerMara':
-        objectOptions('Mara the Gardener', '🌼', 'Mara tends the village garden and knows every flower along the paths.', [{ label: 'TALK', run: () => simpleModal('Mara the Gardener', '🌼', 'The meadow flowers are prettiest where the morning sun reaches them.') }]);
+        objectOptions('Mara the Gardener', '🌼', 'Mara tends the village garden and knows every flower along the paths.', [{ label: 'TALK', run: () => simpleModal('Mara the Gardener', '🌼', s.villageOverrun?'The thorns have swallowed my garden overnight. I don’t know how much longer the homes will be safe.':'The meadow flowers are prettiest where the morning sun reaches them.') }]);
         break;
       case 'villagerPip':
-        objectOptions('Pip', '🧢', 'A young villager with a pocket full of interesting things.', [{ label: 'TALK', run: () => simpleModal('Pip', '🧢', 'I found a shiny pebble by the river. I’m saving it for my collection!') }]);
+        objectOptions('Pip', '🧢', 'A young villager with a pocket full of interesting things.', [{ label: 'TALK', run: () => simpleModal('Pip', '🧢', s.villageOverrun?'The vines are covering the paths! I found a safe spot behind the well.':'I found a shiny pebble by the river. I’m saving it for my collection!') }]);
         break;
       case 'villagerTomas':
         objectOptions('Tomas the Baker', '🥖', 'Tomas is planning a batch of seasonal pastries and is checking the village berry bushes.', [{ label: 'TALK', run: talkToTomas }]);
@@ -829,6 +837,61 @@
       ctx.fillStyle=['#5c9656','#75a95f','#4b844d'][i%3];ctx.beginPath();ctx.arc(x,y,14,0,Math.PI*2);ctx.arc(x+12,y+3,10,0,Math.PI*2);ctx.fill();
       ctx.fillStyle='#b7cc82';ctx.beginPath();ctx.ellipse(x-4,y-4,5,2,-.5,0,Math.PI*2);ctx.fill();
     });
+  }
+
+  function drawBriarTrail(points, width=12) {
+    ctx.save();
+    ctx.lineCap='round';ctx.lineJoin='round';
+    ctx.beginPath();ctx.moveTo(points[0][0],points[0][1]);
+    for(let i=1;i<points.length-1;i++)ctx.quadraticCurveTo(points[i][0],points[i][1],(points[i][0]+points[i+1][0])/2,(points[i][1]+points[i+1][1])/2);
+    const last=points[points.length-1];ctx.lineTo(last[0],last[1]);
+    ctx.strokeStyle='#29492f';ctx.lineWidth=width+5;ctx.stroke();
+    ctx.strokeStyle='#557a3d';ctx.lineWidth=width;ctx.stroke();
+    ctx.strokeStyle='#93a958';ctx.lineWidth=2.2;ctx.stroke();
+
+    for(let i=0;i<points.length-1;i++){
+      const [x1,y1]=points[i],[x2,y2]=points[i+1],dx=x2-x1,dy=y2-y1,len=Math.hypot(dx,dy),angle=Math.atan2(dy,dx);
+      for(let d=12;d<len;d+=28){
+        const x=x1+dx*d/len,y=y1+dy*d/len,side=(Math.floor(d/28)+i)%2?1:-1;
+        ctx.save();ctx.translate(x,y);ctx.rotate(angle);
+        ctx.fillStyle=side>0?'#719348':'#63863e';
+        ctx.beginPath();ctx.ellipse(0,side*8,9,3.5,side*.28,0,Math.PI*2);ctx.fill();
+        ctx.fillStyle='#a1b968';ctx.beginPath();ctx.ellipse(2,side*7,3,1,-.25,0,Math.PI*2);ctx.fill();
+        ctx.fillStyle='#304c30';ctx.beginPath();ctx.moveTo(5,-4);ctx.lineTo(12,-10);ctx.lineTo(10,-2);ctx.closePath();ctx.fill();
+        ctx.beginPath();ctx.moveTo(-4,4);ctx.lineTo(-11,10);ctx.lineTo(-9,2);ctx.closePath();ctx.fill();
+        ctx.restore();
+      }
+    }
+    ctx.restore();
+  }
+
+  function drawVillageOvergrowth() {
+    if(!s.villageOverrun||s.screen!=='13')return;
+    const runners=[
+      [[125,108],[205,94],[280,112],[360,100],[440,111],[520,99],[620,108],[720,98],[760,108]],
+      [[900,105],[960,96],[1015,111]],
+      [[108,605],[200,620],[285,601],[370,618],[455,604],[550,620],[635,603],[730,620],[820,602],[910,617],[1014,603]],
+      [[108,445],[122,500],[112,555],[130,600]],
+      [[1012,170],[1028,245],[1011,310],[1025,382],[1012,448],[1026,530],[1014,595]],
+      [[165,300],[195,325],[225,375],[270,420],[300,475]],
+      [[380,300],[435,328],[470,375],[485,430]],
+      [[570,584],[650,596],[710,575],[760,558],[805,555]],
+      [[690,350],[735,326],[775,300],[804,260],[840,240],[820,195],[840,155]],
+      [[790,552],[814,530],[805,500],[826,474],[862,468],[900,490],[912,525],[940,548]],
+      [[215,248],[226,218],[247,200],[250,165],[290,156],[320,176],[327,218],[350,242]]
+    ];
+    runners.forEach((points,i)=>drawBriarTrail(points,i<3?10:12));
+    // A few thicker bramble knots make the overtake read at a glance.
+    for(const [x,y,r] of [[204,374,19],[470,375,17],[760,326,20],[815,482,22],[905,523,19],[302,171,18],[645,602,17]]){
+      ctx.fillStyle='#314d32';ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill();
+      for(let n=0;n<7;n++){
+        const a=n*Math.PI*2/7,px=x+Math.cos(a)*r*.68,py=y+Math.sin(a)*r*.68;
+        ctx.save();ctx.translate(px,py);ctx.rotate(a);
+        ctx.fillStyle=n%2?'#6e9145':'#86a34e';ctx.beginPath();ctx.ellipse(0,0,10,4,.2,0,Math.PI*2);ctx.fill();
+        ctx.fillStyle='#30482e';ctx.beginPath();ctx.moveTo(-3,-2);ctx.lineTo(-9,-9);ctx.lineTo(-1,-6);ctx.closePath();ctx.fill();
+        ctx.restore();
+      }
+    }
   }
 
   function riverCenter(y) { return 560 + Math.sin((y - 105) / 118) * 42 + Math.sin(y / 71) * 12; }
@@ -1239,15 +1302,61 @@
   }
 
   function drawBasementMouse(mouse) {
-    const distance = Math.hypot(mouse.x - s.x, mouse.y - s.y);
-    ctx.save(); ctx.translate(mouse.x, mouse.y); ctx.rotate(mouse.face || 0);
-    if (distance < 76) { const pulse=(Math.sin(performance.now()/230)+1)/2;ctx.save();ctx.strokeStyle=`rgba(100,255,130,${.76+pulse*.18})`;ctx.lineWidth=2.5+pulse;ctx.shadowColor='#5dff7e';ctx.shadowBlur=8+pulse*11;ctx.beginPath();ctx.moveTo(-25,7);ctx.quadraticCurveTo(-25,-9,-4,-11);ctx.lineTo(7,-8);ctx.lineTo(13,-17);ctx.quadraticCurveTo(22,-20,25,-8);ctx.quadraticCurveTo(36,1,24,9);ctx.lineTo(-18,17);ctx.quadraticCurveTo(-27,15,-25,7);ctx.closePath();ctx.stroke();ctx.restore(); }
-    ctx.strokeStyle = '#b77d76'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(-19, 4); ctx.quadraticCurveTo(-35, 12, -38, 24); ctx.stroke();
-    ctx.fillStyle = '#777a78'; ctx.beginPath(); ctx.ellipse(-2, 4, 22, 16, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = '#929594'; ctx.beginPath(); ctx.ellipse(15, 1, 12, 10, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = '#bc8785'; ctx.beginPath(); ctx.arc(10, -8, 6, 0, Math.PI * 2); ctx.arc(20, -7, 5, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = '#3a3735'; ctx.beginPath(); ctx.arc(20, -1, 2, 0, Math.PI * 2); ctx.fill();
-    ctx.strokeStyle = '#eee4d6'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(23, 3); ctx.lineTo(34, -2); ctx.moveTo(23, 5); ctx.lineTo(35, 7); ctx.stroke();
+    const distance=Math.hypot(mouse.x-s.x,mouse.y-s.y);
+    const now=performance.now();
+    const bob=mouse.moving?Math.sin(now/75+mouse.id)*1.1:Math.sin(now/340+mouse.id)*.35;
+    ctx.save();
+    ctx.translate(mouse.x,mouse.y+bob);
+    ctx.rotate(mouse.face||0);
+
+    if(distance<76){
+      const pulse=(Math.sin(now/230)+1)/2;
+      ctx.save();
+      ctx.strokeStyle='rgba(98,235,116,'+(.72+pulse*.2)+')';
+      ctx.lineWidth=2.2+pulse*.6;
+      ctx.shadowColor='#64e878';
+      ctx.shadowBlur=4+pulse*6;
+      ctx.beginPath();
+      ctx.moveTo(-18,1);
+      ctx.quadraticCurveTo(-22,-7,-15,-12);
+      ctx.quadraticCurveTo(-7,-18,2,-13);
+      ctx.quadraticCurveTo(8,-20,15,-13);
+      ctx.quadraticCurveTo(22,-11,24,-4);
+      ctx.quadraticCurveTo(31,-1,27,5);
+      ctx.quadraticCurveTo(23,12,13,10);
+      ctx.quadraticCurveTo(2,17,-12,11);
+      ctx.quadraticCurveTo(-20,9,-18,1);
+      ctx.closePath();
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // Fine tail, tucked behind the body rather than reading as a long pink cord.
+    ctx.strokeStyle='#aa7977';ctx.lineWidth=2.1;ctx.lineCap='round';
+    ctx.beginPath();ctx.moveTo(-12,5);ctx.bezierCurveTo(-23,6,-26,15,-34,12);ctx.stroke();
+
+    // Soft pear-shaped body and warm belly.
+    const fur=ctx.createLinearGradient(-12,-7,12,12);
+    fur.addColorStop(0,'#b1aaa0');fur.addColorStop(.48,'#8b877f');fur.addColorStop(1,'#6e6c68');
+    ctx.fillStyle=fur;ctx.beginPath();ctx.ellipse(-2,4,17,12,-.12,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#c9b9a6';ctx.beginPath();ctx.ellipse(0,10,9,4,.1,0,Math.PI*2);ctx.fill();
+
+    // Rounded head, ears, and a tiny expressive face.
+    const head=ctx.createRadialGradient(14,-8,1,14,-1,13);
+    head.addColorStop(0,'#c5bcb1');head.addColorStop(1,'#827d75');
+    ctx.fillStyle=head;ctx.beginPath();ctx.ellipse(13,-2,10,9,.16,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#b77e7d';ctx.beginPath();ctx.arc(8,-10,4.6,0,Math.PI*2);ctx.arc(17,-10,4.2,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#e4b3aa';ctx.beginPath();ctx.arc(8,-10,2.3,0,Math.PI*2);ctx.arc(17,-10,2,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#282a28';ctx.beginPath();ctx.arc(18,-3,1.45,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#b87976';ctx.beginPath();ctx.ellipse(23,1,2.2,1.7,.1,0,Math.PI*2);ctx.fill();
+
+    // Subtle whiskers, short enough to keep the face readable at game scale.
+    ctx.strokeStyle='#e3d8ca';ctx.lineWidth=.85;ctx.lineCap='round';
+    ctx.beginPath();ctx.moveTo(20,1);ctx.quadraticCurveTo(27,-3,31,-4);ctx.moveTo(20,3);ctx.quadraticCurveTo(27,3,31,4);ctx.stroke();
+
+    // Tiny paws ground the silhouette.
+    ctx.fillStyle='#b28c80';
+    ctx.beginPath();ctx.ellipse(-10,13,3.2,1.8,-.2,0,Math.PI*2);ctx.ellipse(4,14,3,1.7,.12,0,Math.PI*2);ctx.fill();
     ctx.restore();
   }
 
@@ -1403,7 +1512,7 @@
   function treeOverlapsTrail(screen,x,y){return(trailLayouts[screen]||[]).some(route=>{const w=route[route.length-1],pts=route.slice(0,-1);for(let i=0;i<pts.length-1;i++)if(pointSegmentDistance(x,y,...pts[i],...pts[i+1])<w/2+28)return true;return false;});}
   function draw() {
     drawGround(); drawRoomPath();
-    if (s.screen === '13') { drawVillageFence(); drawVillageHomes(); }
+    if (s.screen === '13') { drawVillageFence(); drawVillageHomes(); drawVillageOvergrowth(); }
     if (s.scene === 'outside') {
       const visible=(roomObjects[s.screen]||[]).filter(o=>getAvailableObjects().some(active=>active.id===o.id));
       const trees=[[34,54],[1082,52],[32,657],[1080,652],[340,35],[780,676],[1020,215],[140,510],[250,80],[900,660]].filter(([x,y])=>!(s.screen==='09'&&x>700&&y>600));
