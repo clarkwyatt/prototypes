@@ -849,8 +849,12 @@
         break;
       case 'juniper':
         objectOptions('Juniper', '🌙', object.description, [{ label: 'TALK', run: () => {
-          if (s.grandpaRemedyStarted) { s.moonwellClue = true; updateHud(); }
-          dialogueCards('Juniper', '🌙', [
+          const heardMoonwellRumor = s.grandpaRemedyStarted;
+          if (heardMoonwellRumor) { s.moonwellClue = true; updateHud(); }
+          dialogueCards('Juniper', '🌙', heardMoonwellRumor ? [
+            'An old story tells of the Moonwell, hidden near the ivy-covered arch. Some say its water can help a hurt body heal.',
+            'The stones along that trail always feel cool, even on the warmest days.'
+          ] : [
             'The stones on this trail stay cool, even after a warm day.',
             'Once, near the old ivy arch, I saw a silver circle shimmer on the ground. It was gone by morning.'
           ], 'Thank you');
@@ -858,8 +862,12 @@
         break;
       case 'birdWatcher':
         objectOptions('Ivo the Birdwatcher', '🐦', object.description, [{ label: 'TALK', run: () => {
-          if (s.grandpaRemedyStarted) { s.moonwellClue = true; updateHud(); }
-          dialogueCards('Ivo the Birdwatcher', '🐦', [
+          const heardMoonwellRumor = s.grandpaRemedyStarted;
+          if (heardMoonwellRumor) { s.moonwellClue = true; updateHud(); }
+          dialogueCards('Ivo the Birdwatcher', '🐦', heardMoonwellRumor ? [
+            'The birds go quiet near the ivy arch, and I hear water trickling beneath the stones.',
+            'An old rhyme calls that hidden spring the Moonwell. It says the water can help an ache or a wound mend.'
+          ] : [
             'The birds go quiet near the ivy-covered arch just before sunset.',
             'Then I hear a tiny trickle, though I can never find a stream. Perhaps it runs under the stones.'
           ], 'Thank you');
