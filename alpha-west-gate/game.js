@@ -65,6 +65,11 @@
   let introState = 'splash';
   let introPanelIndex = 0;
   let introOverlay = null;
+  const endingPanels = [
+    { caption: 'The boy looked from his overgrown village to the road beyond the gate.', image: 'assets/intro/05_village_overrun.webp', alt: 'Thorny vines overrun the village as the boy looks toward the road.' },
+    { caption: 'He had dreamed of seeing the world. Now, his home needed his help.', image: 'assets/intro/06_choosing_to_investigate.webp', alt: 'The boy pauses on the path, deciding to investigate the vines.' },
+    { caption: 'His knees trembled, but he stood tall. He would find a way to save the village.', image: 'assets/intro/07_setting_out_to_save_village.webp', alt: 'The boy sets out beyond the gate toward distant mountains beneath a dark storm.' }
+  ];
 
   const introPanels = [
     {
@@ -356,12 +361,14 @@
       </section>`;
       return;
     }
-    const panel = introPanels[introPanelIndex];
-    introOverlay.innerHTML = `<section class="intro-story" role="dialog" aria-label="Opening story">
-      <div class="story-art"><img src="${panel.image}" alt="${panel.alt}" decoding="async"></div>
-      <p class="story-caption" aria-live="polite">${panel.caption}</p>
-      <div class="story-controls"><span class="story-hint">Press any key or click to continue</span></div>
-    </section>`;
+    const panels = introState === 'ending-cutscene' ? endingPanels : introPanels;
+    const panel = panels[introPanelIndex];
+    const label = introState === 'ending-cutscene' ? 'The village story' : 'Opening story';
+    introOverlay.innerHTML = '<section class="intro-story" role="dialog" aria-label="' + label + '">' +
+      '<div class="story-art"><img src="' + panel.image + '" alt="' + panel.alt + '" decoding="async"></div>' +
+      '<p class="story-caption" aria-live="polite">' + panel.caption + '</p>' +
+      '<div class="story-controls"><span class="story-hint">Press any key or click to continue</span></div>' +
+      '</section>';
   }
 
   function finishIntro() {
@@ -380,14 +387,16 @@
   }
 
   function advanceIntro() {
+    const panels = introState === 'ending-cutscene' ? endingPanels : introPanels;
     if (introState === 'splash') {
       introState = 'cutscene';
       introPanelIndex = 0;
       renderIntro();
-    } else if (introState === 'cutscene' && introPanelIndex < introPanels.length - 1) {
+    } else if ((introState === 'cutscene' || introState === 'ending-cutscene') && introPanelIndex < panels.length - 1) {
       introPanelIndex++;
       renderIntro();
-    } else if (introState === 'cutscene') finishIntro();
+    } else if (introState === 'ending-cutscene') finishEndingCutscene();
+    else if (introState === 'cutscene') finishIntro();
   }
 
   function setupIntro() {
@@ -404,9 +413,33 @@
     renderIntro();
   }
 
+  function finishEndingCutscene() {
+    introState = 'game';
+    game.classList.remove('intro-mode');
+    introOverlay.remove();
+    introOverlay = null;
+    updateHud();
+    showToBeContinued();
+  }
+
   function beginEnding() {
     if (s.endingShown) return;
     s.endingShown = true;
+    introState = 'ending-cutscene';
+    introPanelIndex = 0;
+    game.classList.add('intro-mode');
+    introOverlay = document.createElement('div');
+    introOverlay.id = 'village-tale-intro';
+    introOverlay.addEventListener('pointerdown', (event) => {
+      event.preventDefault();
+      advanceIntro();
+    });
+    introOverlay.addEventListener('contextmenu', (event) => event.preventDefault());
+    game.appendChild(introOverlay);
+    renderIntro();
+  }
+
+  function showToBeContinued() {
 
     const style = document.createElement('style');
     style.textContent = `
