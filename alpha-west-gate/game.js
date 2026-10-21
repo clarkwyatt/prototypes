@@ -62,6 +62,29 @@
     thorns: false, returned: false, moonwellClue: false
   };
 
+  let introState = 'splash';
+  let introPanelIndex = 0;
+  let introOverlay = null;
+
+  const introPanels = [
+    {
+      caption: 'Every morning, the boy watched the road beyond the West Gate.',
+      art: `<svg viewBox="0 0 960 460" role="img" aria-label="The boy looks toward the West Gate from his home"><defs><linearGradient id="sky1" x2="0" y2="1"><stop stop-color="#f6d890"/><stop offset="1" stop-color="#c7e3c0"/></linearGradient></defs><rect width="960" height="460" fill="url(#sky1)"/><circle cx="790" cy="90" r="47" fill="#fff3c6"/><path d="M0 270 Q180 200 360 270 T720 245 T960 260 V460 H0Z" fill="#93bd7c"/><path d="M0 345 Q260 295 470 350 T960 330 V460 H0Z" fill="#6c9c68"/><path d="M0 375 Q260 300 490 360 T960 330" fill="none" stroke="#d5b783" stroke-width="82"/><path d="M0 375 Q260 300 490 360 T960 330" fill="none" stroke="#7e6449" stroke-width="5" stroke-dasharray="12 18"/><g stroke="#503f32" stroke-width="12" fill="#9b7049"><path d="M630 264v120M740 245v128"/><path d="M632 282h108M632 327h108"/><path d="M680 250v135"/></g><path d="M615 244h140" stroke="#e0be7f" stroke-width="12"/><path d="M620 246l26-30 24 30 25-34 28 34" fill="#356a4c" stroke="#294b3c" stroke-width="7"/><g stroke="#4c3c30" stroke-width="8"><path d="M155 230h300v190H155z" fill="#c28b58"/><path d="M125 238l180-118 180 118Z" fill="#80534a"/><path d="M220 270h75v65h-75zM330 270h75v65h-75z" fill="#8ed0d4"/><path d="M220 300h75M257 270v65M330 300h75M367 270v65" fill="none"/></g><g stroke="#3d352d" stroke-width="8"><circle cx="510" cy="303" r="27" fill="#f0c69d"/><path d="M481 300q29-54 58 0" fill="#543e32"/><path d="M480 332q30-24 60 0v82h-60z" fill="#6d8c64"/><path d="M506 329v72" stroke="#f2d39a"/></g><path d="M536 291h84" stroke="#4b483d" stroke-width="4" stroke-dasharray="8 10"/><path d="M558 275l20 16-20 16" fill="none" stroke="#4b483d" stroke-width="4"/></svg>`
+    },
+    {
+      caption: 'He knew every path, every fence, and every familiar turn by heart.',
+      art: `<svg viewBox="0 0 960 460" role="img" aria-label="The boy walks the same village path again"><defs><linearGradient id="sky2" x2="0" y2="1"><stop stop-color="#b7d9df"/><stop offset="1" stop-color="#f3e2ae"/></linearGradient></defs><rect width="960" height="460" fill="url(#sky2)"/><circle cx="155" cy="94" r="44" fill="#fff2c6"/><path d="M0 260Q200 205 400 255T960 235V460H0Z" fill="#8eb879"/><path d="M0 350Q220 270 460 345T960 300V460H0Z" fill="#6f9f68"/><path d="M-20 390Q240 320 490 365T1000 315" fill="none" stroke="#d0b385" stroke-width="105"/><path d="M-20 390Q240 320 490 365T1000 315" fill="none" stroke="#8e7556" stroke-width="5" stroke-dasharray="13 17"/><g opacity=".28" stroke="#4a3a31" stroke-width="8"><circle cx="300" cy="275" r="22" fill="#edc39b"/><path d="M277 301q23-16 46 0v66h-46z" fill="#6c8e69"/><circle cx="460" cy="307" r="22" fill="#edc39b"/><path d="M437 333q23-16 46 0v66h-46z" fill="#6c8e69"/></g><g stroke="#493a31" stroke-width="8"><circle cx="615" cy="277" r="25" fill="#edc39b"/><path d="M588 274q27-50 54 0" fill="#543e32"/><path d="M585 307q30-22 60 0v76h-60z" fill="#6c8e69"/><path d="M585 381l-16 45M645 381l16 45"/></g><g fill="#e6c76f"><circle cx="170" cy="332" r="7"/><circle cx="210" cy="316" r="6"/><circle cx="780" cy="320" r="7"/><circle cx="825" cy="304" r="6"/></g><path d="M675 260q50-55 100-4" fill="none" stroke="#fff8e3" stroke-width="6" stroke-dasharray="8 12"/></svg>`
+    },
+    {
+      caption: 'He loved his home. But each day felt just like the last.',
+      art: `<svg viewBox="0 0 960 460" role="img" aria-label="The boy dreams of places beyond the village"><defs><linearGradient id="sky3" x2="0" y2="1"><stop stop-color="#aecde0"/><stop offset="1" stop-color="#f6d9a2"/></linearGradient></defs><rect width="960" height="460" fill="url(#sky3)"/><circle cx="790" cy="95" r="38" fill="#fff4cb"/><path d="M0 300l160-140 130 105 150-180 175 205 135-125 210 130v165H0Z" fill="#789a80" stroke="#3f694f" stroke-width="8"/><path d="M288 265l152-180 170 205-85-44-47 24-54-46-47 32-46-40Z" fill="#e7e0c5"/><path d="M0 350Q280 285 500 355T960 310V460H0Z" fill="#719d68"/><path d="M90 415Q290 315 470 365" fill="none" stroke="#d4b481" stroke-width="66"/><g stroke="#493a31" stroke-width="8"><circle cx="485" cy="321" r="25" fill="#edc39b"/><path d="M460 318q25-48 50 0" fill="#543e32"/><path d="M455 352q30-23 60 0v76h-60z" fill="#705a7c"/></g><g fill="#fff8e3" stroke="#7f6550" stroke-width="6"><path d="M615 110c-48-25-62 33-20 40 18 3 31-2 41-13 18 13 44 10 49-9 5-23-23-33-40-16-8-16-30-19-40-2Z"/><path d="M760 205c-35-20-48 22-15 30 17 4 29-2 35-13 20 10 38 4 37-12-2-20-24-25-38-10-7-12-19-11-19 5Z"/></g><g fill="#dfb95e"><path d="M660 125l5 12 13 1-10 8 3 13-11-7-11 7 3-13-10-8 13-1Z"/><path d="M800 214l4 10 11 1-8 6 2 11-9-6-9 6 2-11-8-6 11-1Z"/></g></svg>`
+    },
+    {
+      caption: 'Beyond the gate waited forests, mountains, and places he had only imagined. One day, he would see the world for himself.',
+      art: `<svg viewBox="0 0 960 460" role="img" aria-label="The boy stands at the gate and looks toward the distant world"><defs><linearGradient id="sky4" x2="0" y2="1"><stop stop-color="#f3c987"/><stop offset="1" stop-color="#f5e6bd"/></linearGradient></defs><rect width="960" height="460" fill="url(#sky4)"/><circle cx="785" cy="88" r="42" fill="#fff1c0"/><path d="M0 265l145-98 120 82 160-142 185 165 130-104 220 110v182H0Z" fill="#708f76" stroke="#456449" stroke-width="8"/><path d="M268 249l157-142 184 165-77-39-55 25-55-47-47 37-53-38Z" fill="#e9dfbd"/><path d="M0 333Q280 290 490 348T960 315V460H0Z" fill="#7ea66d"/><path d="M450 460Q474 383 475 325T500 250" fill="none" stroke="#d4b280" stroke-width="112"/><g stroke="#483a30" stroke-width="13" fill="#906b48"><path d="M310 188v206M442 172v220M310 226h132M310 292h132"/><path d="M344 200v194M410 188v204"/></g><path d="M290 183h175" stroke="#e1c17c" stroke-width="15"/><g stroke="#493a31" stroke-width="9"><circle cx="516" cy="302" r="26" fill="#edc39b"/><path d="M488 298q28-50 56 0" fill="#543e32"/><path d="M485 334q31-23 62 0v85h-62z" fill="#6e8e67"/><path d="M500 413l-9 34M532 413l9 34"/></g><path d="M562 294q50-8 89 3" fill="none" stroke="#fff4d0" stroke-width="6" stroke-dasharray="7 13"/><path d="M638 285l16 12-17 9" fill="none" stroke="#fff4d0" stroke-width="6"/></svg>`
+    }
+  ];
+
   const flowerNames = { sunpetal: 'Sunpetal', bluebell: 'Bluebell', mooncap: 'Mooncap', lavender: 'Lavender', amberleaf: 'Amberleaf', fern: 'Fern' };
   const flowerDetails = {
     sunpetal: 'A golden flower with bright, round petals.', bluebell: 'A blue, bell-shaped flower growing on a curved stem.',
@@ -292,6 +315,88 @@
     s.y = s.outsideY || 335;
     updateHud();
     if (s.grandpaHealed && s.villageOverrun) beginEnding();
+  }
+
+  function addIntroStyles() {
+    const style = document.createElement('style');
+    style.textContent = `
+      #game.intro-mode .hud, #game.intro-mode .music-toggle, #game.intro-mode .controls-help, #game.intro-mode .touch { display:none !important; }
+      #village-tale-intro { position:absolute; inset:0; z-index:20; display:grid; place-items:center; color:#fff7df; font-family:Georgia,serif; background:linear-gradient(180deg,#102d2722 0%,#102d2740 43%,#102d27d9 100%); }
+      #village-tale-intro * { box-sizing:border-box; }
+      #village-tale-intro .intro-title-screen { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; padding:clamp(34px,8vh,82px) 18px 0; text-align:center; }
+      #village-tale-intro .intro-title { margin:0; color:#fff4d2; font-size:clamp(42px,8vw,92px); line-height:.96; font-weight:700; letter-spacing:.015em; text-shadow:0 4px 0 #284638,0 8px 26px #132d24b8; }
+      #village-tale-intro .intro-title-rule { width:min(250px,44vw); height:3px; margin:18px auto 0; background:linear-gradient(90deg,transparent,#f0d48f,transparent); }
+      #village-tale-intro .intro-start { position:absolute; left:50%; bottom:11%; transform:translateX(-50%); width:min(430px,88%); padding:16px 22px; border:2px solid #f4d995; border-radius:999px; color:#fff7df; background:linear-gradient(#477f5d,#27543f); box-shadow:0 6px 0 #183a2c,0 14px 30px #071d18a8,inset 0 1px #ffffff55; font:900 clamp(15px,2.2vw,21px) system-ui,sans-serif; letter-spacing:.1em; text-transform:uppercase; cursor:pointer; animation:intro-pulse 1.8s ease-in-out infinite; }
+      #village-tale-intro .intro-start:hover, #village-tale-intro .intro-next:hover { filter:brightness(1.08); transform:translateY(-2px); }
+      #village-tale-intro .intro-story { width:min(900px,92%); height:min(640px,91%); display:grid; grid-template-rows:auto minmax(0,1fr) auto auto; gap:14px; padding:clamp(14px,2.5vw,24px); border:5px solid #324a3a; border-radius:22px; color:#263d36; background:radial-gradient(ellipse at 50% 0,#fffef7,#fff8e7 55%,#eddfbf); box-shadow:0 20px 60px #071b17b8,inset 0 0 0 2px #d7bd7e; }
+      #village-tale-intro .story-topline { display:flex; justify-content:space-between; align-items:center; gap:12px; color:#43634b; font:900 12px system-ui,sans-serif; letter-spacing:.13em; text-transform:uppercase; }
+      #village-tale-intro .story-art { min-height:0; overflow:hidden; border:4px solid #3e4b3e; border-radius:13px; background:#d8e3cc; box-shadow:inset 0 0 0 2px #fff8dc; }
+      #village-tale-intro .story-art svg { width:100%; height:100%; display:block; }
+      #village-tale-intro .story-caption { margin:0; max-width:780px; justify-self:center; color:#2b4939; text-align:center; font-size:clamp(18px,2.6vw,27px); line-height:1.25; font-weight:700; }
+      #village-tale-intro .story-controls { display:flex; justify-content:center; align-items:center; gap:16px; flex-wrap:wrap; }
+      #village-tale-intro .story-hint { color:#62715d; font:700 12px system-ui,sans-serif; }
+      #village-tale-intro .intro-next { min-width:150px; padding:10px 20px; border:2px solid #a7c882; border-radius:12px; color:#fff8e8; background:linear-gradient(#5cac72,#347951); box-shadow:0 4px 0 #28613f; font:900 14px system-ui,sans-serif; cursor:pointer; transition:transform .15s,filter .15s; }
+      @keyframes intro-pulse { 0%,100% { box-shadow:0 6px 0 #183a2c,0 14px 30px #071d18a8,inset 0 1px #ffffff55; } 50% { box-shadow:0 6px 0 #183a2c,0 14px 34px #071d18c9,0 0 22px #f2d48c70,inset 0 1px #ffffff55; } }
+      @media(max-width:700px) { #village-tale-intro .intro-title-screen { padding-top:10vh; } #village-tale-intro .intro-start { bottom:13%; } #village-tale-intro .intro-story { width:96%; height:94%; gap:10px; padding:12px; border-width:4px; border-radius:16px; grid-template-rows:auto minmax(0,1fr) auto auto; } #village-tale-intro .story-topline { font-size:10px; } #village-tale-intro .story-art { border-width:3px; } #village-tale-intro .story-caption { font-size:clamp(16px,4.4vw,21px); } #village-tale-intro .story-hint { width:100%; text-align:center; } }
+      @media(prefers-reduced-motion:reduce) { #village-tale-intro .intro-start { animation:none; } }
+    `;
+    document.head.appendChild(style);
+  }
+
+  function renderIntro() {
+    if (!introOverlay) return;
+    if (introState === 'splash') {
+      introOverlay.innerHTML = `<section class="intro-title-screen" aria-label="A Village Tale title screen">
+        <h1 class="intro-title">A Village Tale</h1><div class="intro-title-rule" aria-hidden="true"></div>
+        <button class="intro-start" type="button">Press Any Key To Start</button>
+      </section>`;
+      return;
+    }
+    const panel = introPanels[introPanelIndex];
+    const lastPanel = introPanelIndex === introPanels.length - 1;
+    introOverlay.innerHTML = `<section class="intro-story" role="dialog" aria-label="Opening story">
+      <div class="story-topline"><span>A Village Tale</span><span>Panel ${introPanelIndex + 1} of ${introPanels.length}</span></div>
+      <div class="story-art">${panel.art}</div>
+      <p class="story-caption" aria-live="polite">${panel.caption}</p>
+      <div class="story-controls"><span class="story-hint">Press any key to continue</span><button class="intro-next" type="button">${lastPanel ? 'Enter the House' : 'Next Panel'}</button></div>
+    </section>`;
+  }
+
+  function finishIntro() {
+    introState = 'game';
+    s.scene = 'interior';
+    s.interior = 'home';
+    s.screen = '13';
+    s.x = 560; s.y = 520;
+    s.outsideX = 560; s.outsideY = 335;
+    keys.ArrowUp = keys.ArrowDown = keys.ArrowLeft = keys.ArrowRight = false;
+    keys.w = keys.a = keys.s = keys.d = keys.W = keys.A = keys.S = keys.D = false;
+    game.classList.remove('intro-mode');
+    introOverlay.remove();
+    updateHud();
+  }
+
+  function advanceIntro() {
+    if (introState === 'splash') {
+      introState = 'cutscene';
+      introPanelIndex = 0;
+      renderIntro();
+    } else if (introState === 'cutscene' && introPanelIndex < introPanels.length - 1) {
+      introPanelIndex++;
+      renderIntro();
+    } else if (introState === 'cutscene') finishIntro();
+  }
+
+  function setupIntro() {
+    addIntroStyles();
+    game.classList.add('intro-mode');
+    introOverlay = document.createElement('div');
+    introOverlay.id = 'village-tale-intro';
+    introOverlay.addEventListener('click', (event) => {
+      if (event.target.closest('button')) advanceIntro();
+    });
+    game.appendChild(introOverlay);
+    renderIntro();
   }
 
   function beginEnding() {
@@ -1961,10 +2066,19 @@
   }
 
   let last = performance.now();
-  function loop(now) { if (s.endingShown) { last = now; requestAnimationFrame(loop); return; } const dt = Math.min((now - last) / 1000, .04); last = now; move(dt); updateMice(now, dt); requestAnimationFrame(loop); }
+  function loop(now) {
+    if (s.endingShown || introState !== 'game') { last = now; requestAnimationFrame(loop); return; }
+    const dt = Math.min((now - last) / 1000, .04);
+    last = now; move(dt); updateMice(now, dt); requestAnimationFrame(loop);
+  }
   requestAnimationFrame(loop); draw();
 
   window.addEventListener('keydown', (event) => {
+    if (introState !== 'game') {
+      event.preventDefault();
+      if (!event.repeat) advanceIntro();
+      return;
+    }
     if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(event.key)) event.preventDefault();
     keys[event.key] = true;
     if (event.key === 'Escape' && modal.classList.contains('open')) closeModal();
@@ -2068,6 +2182,7 @@
   });
   setMusicButton(false);
   updateHud();
+  setupIntro();
 })();
 
 
