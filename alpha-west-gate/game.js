@@ -52,6 +52,7 @@
   const s = {
     screen: '13', x: 605, y: 335, face: 'down', speed: 215,
     scene: 'outside', interior: '', rodents: 0, rodentQuestStarted: false, mice: [], basementEntered: false,
+    bakerQuestStarted: false, berriesPicked: false, bakerQuestComplete: false, muffin: false,
     waterQuestStarted: false, carryingWater: false, grandmaHelped: false, grandmaHouseKey: false, grandparentsHouseUnlocked: false,
     returnX: 0, returnY: 0, outsideX: 0, outsideY: 0,
     flowers: { sunpetal: false, bluebell: false, mooncap: false, lavender: false, amberleaf: false, fern: false }, alchemistTalked: false, vinesStarted: false,
@@ -186,6 +187,8 @@
     if (s.carryingWater) inventory.push('🥤 Cup of Water');
     if (s.key) inventory.push('🗝 West Gate Key');
     if (s.potion) inventory.push('🧪 Vine Potion');
+    if (s.berriesPicked) inventory.push('🫐 Blueberries');
+    if (s.muffin) inventory.push('🫐 Blueberry Muffin');
     itemsEl.textContent = inventory.length ? inventory.join(' · ') : 'Empty';
 
     let quest = '';
@@ -206,8 +209,11 @@
     }
     else if (s.vinesStarted && s.potion && !s.thorns) quest = '<strong>Quest</strong>Use the potion on the Vines.';
     else if (s.thorns && !s.returned) quest = '<strong>Quest</strong>Follow the path back to the village.';
-    questEl.innerHTML = quest;
-    questEl.classList.toggle('empty', !quest);
+    const optionalQuest = s.bakerQuestStarted && !s.bakerQuestComplete
+      ? `<div class="optional-quest"><strong>Optional Errand</strong>${s.berriesPicked ? 'Bring the berries to Tomas.' : 'Pick berries for Tomas.'}</div>`
+      : '';
+    questEl.innerHTML = quest + optionalQuest;
+    questEl.classList.toggle('empty', !quest && !optionalQuest);
   }
 
   function makeButton(label, fn, secondary = false) {
@@ -282,6 +288,28 @@
       return;
     }
     openModal('Grandma', '👵', '<p>Thank you for the water, dear. Grandpa is inside and could use your help with the rats in his basement.</p>', () => makeButton('I’ll go see him', closeModal), true);
+  }
+
+  function talkToTomas() {
+    if (!s.bakerQuestStarted) {
+      s.bakerQuestStarted = true;
+      updateHud();
+      openModal('Tomas the Baker', '🥖', '<p>I’m baking something seasonal for the village. Could you pick a handful of blueberries from the bush by Grandpa’s house?</p>', () => makeButton('I’ll look for berries', closeModal), true);
+      return;
+    }
+    if (s.berriesPicked && !s.bakerQuestComplete) {
+      s.berriesPicked = false;
+      s.bakerQuestComplete = true;
+      s.muffin = true;
+      updateHud();
+      openModal('Tomas the Baker', '🥖', '<p>Perfect berries! Here’s a blueberry muffin, fresh from the oven. Keep it for a tough moment ahead; if you save this errand for later, you’ll need another way through.</p>', () => makeButton('Thanks, Tomas!', closeModal), true);
+      return;
+    }
+    if (!s.bakerQuestComplete) {
+      openModal('Tomas the Baker', '🥖', '<p>Those blueberry bushes grow beside Grandpa’s house. A handful of ripe berries will do nicely.</p>', () => makeButton('I’ll find them', closeModal), true);
+      return;
+    }
+    openModal('Tomas the Baker', '🥖', '<p>I hope you enjoy that muffin. Blueberries make the best seasonal treats!</p>', () => makeButton('Thanks again', closeModal), true);
   }
 
   function openHouseTalk() {
@@ -406,7 +434,7 @@
         objectOptions('Pip', '🧢', 'A young villager with a pocket full of interesting things.', [{ label: 'TALK', run: () => simpleModal('Pip', '🧢', 'I found a shiny pebble by the river. I’m saving it for my collection!') }]);
         break;
       case 'villagerTomas':
-        objectOptions('Tomas the Baker', '🥖', 'The village baker is taking a break outside the bakery.', [{ label: 'TALK', run: () => simpleModal('Tomas the Baker', '🥖', 'The berry buns are still warm. I hope you get to try one!') }]);
+        objectOptions('Tomas the Baker', '🥖', 'Tomas is planning a batch of seasonal pastries and is checking the village berry bushes.', [{ label: 'TALK', run: talkToTomas }]);
         break;
       case 'gate':
         objectOptions('West Gate', '🚪', 'Thick oak planks and iron bands hold the gate shut. A star-shaped keyhole is set into its latch.', s.gateOpen ? [] : [{
@@ -438,7 +466,10 @@
           ? [{ label: 'FILL CUP', run: () => { s.carryingWater = true; toast('You filled a cup with fresh water.'); updateHud(); } }]
           : []);
         break;
-      case 'garden': case 'berryBush': case 'riverReeds': case 'riverStone': case 'fallenLog': case 'mossyMarker': case 'oldOak': case 'stoneRing': case 'pond': case 'mushrooms': case 'signpost': case 'ruin': case 'villageOak': case 'riverWillow': case 'forestOak': case 'moonTree': case 'appleTree': case 'trailLantern': case 'fireflies': case 'meadowStone': case 'meadowLantern':
+      case 'berryBush':
+        objectOptions('Berry Bush', '🫐', s.berriesPicked ? 'The bush is resting after giving up its ripe berries. New fruit will grow in time.' : 'Glossy leaves hide clusters of plump blue berries. The bush grows beside Grandpa and Grandma’s house.', s.bakerQuestStarted && !s.berriesPicked && !s.bakerQuestComplete ? [{ label: 'PICK BERRIES', run: () => { s.berriesPicked = true; toast('You picked a handful of blueberries.'); updateHud(); } }] : []);
+        break;
+      case 'garden': case 'riverReeds': case 'riverStone': case 'fallenLog': case 'mossyMarker': case 'oldOak': case 'stoneRing': case 'pond': case 'mushrooms': case 'signpost': case 'ruin': case 'villageOak': case 'riverWillow': case 'forestOak': case 'moonTree': case 'appleTree': case 'trailLantern': case 'fireflies': case 'meadowStone': case 'meadowLantern':
         objectOptions(object.name, object.id==='pond'?'💧':object.id==='mushrooms'?'🍄':'✦', object.description);
         break;
       case 'scaredVillager':
@@ -656,7 +687,13 @@
       ctx.fillStyle=palettes.hat;ctx.beginPath();ctx.ellipse(0,-16,17,5,0,Math.PI,Math.PI*2);ctx.fill();ctx.fillRect(-10,-21,20,6);
       if(style===5){ctx.beginPath();ctx.moveTo(-9,-20);ctx.lineTo(0,-39);ctx.lineTo(11,-20);ctx.closePath();ctx.fill();}
       if(style===7){ctx.beginPath();ctx.ellipse(0,-28,4,12,-.18,0,Math.PI*2);ctx.fill();}
-    } else if(style===4){ctx.fillStyle=palettes.hair;ctx.beginPath();ctx.arc(10,-13,5,0,Math.PI*2);ctx.fill();ctx.fillStyle=palettes.hat;ctx.beginPath();ctx.ellipse(0,-15,16,5,0,Math.PI,Math.PI*2);ctx.fill();ctx.fillRect(-10,-20,20,5);ctx.fillStyle='#d8b779';ctx.beginPath();ctx.arc(0,-18,2.4,0,Math.PI*2);ctx.fill();}
+    } else if(style===4){
+      // A soft, fitted bonnet follows Grandma’s head instead of hovering above it.
+      ctx.fillStyle=palettes.hair;ctx.beginPath();ctx.arc(10,-10,5,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle=palettes.hat;ctx.beginPath();ctx.moveTo(-14,-8);ctx.quadraticCurveTo(-17,-21,-6,-23);ctx.quadraticCurveTo(3,-27,12,-20);ctx.quadraticCurveTo(16,-16,14,-8);ctx.quadraticCurveTo(0,-12,-14,-8);ctx.closePath();ctx.fill();
+      ctx.beginPath();ctx.ellipse(0,-11,15,3,0,0,Math.PI*2);ctx.fill();
+      ctx.strokeStyle='#5f704d';ctx.lineWidth=1.4;ctx.beginPath();ctx.moveTo(-11,-12);ctx.quadraticCurveTo(0,-17,11,-12);ctx.stroke();
+      ctx.fillStyle='#d8b779';ctx.beginPath();ctx.arc(6,-19,2.4,0,Math.PI*2);ctx.fill();}
     else if(style===3){ctx.fillStyle=palettes.hat;ctx.beginPath();ctx.ellipse(0,-15,18,8,0,Math.PI,Math.PI*2);ctx.fill();ctx.fillRect(-7,-20,14,6);}
     else {ctx.fillStyle=palettes.hat;ctx.beginPath();ctx.ellipse(0,-15,16,5,0,Math.PI,Math.PI*2);ctx.fill();ctx.fillRect(-10,-20,20,5);}
     // Each villager carries a different tool or keepsake, so their silhouettes read apart.
@@ -896,7 +933,7 @@
     ctx.fillStyle='#b97855';ctx.beginPath();ctx.ellipse(side?dir:0,-6,side?10:11,11,0,0,Math.PI*2);ctx.fill();
     ctx.fillStyle='#f3c99d';ctx.beginPath();ctx.ellipse(side?dir*1.5:0,-5,side?7.5:8,9,0,0,Math.PI*2);ctx.fill();
     if(s.face==='up'){ctx.fillStyle='#704c36';ctx.beginPath();ctx.ellipse(0,-8,11,10,0,Math.PI,Math.PI*2);ctx.fill();ctx.fillStyle='#574434';ctx.beginPath();ctx.ellipse(0,-8,9,7,0,0,Math.PI*2);ctx.fill();}
-    else if(side){ctx.fillStyle='#704c36';ctx.beginPath();ctx.ellipse(-dir*2,-12,10,6,0,Math.PI,Math.PI*2);ctx.fill();ctx.fillRect(dir<0?-12:8,-12,4,8);ctx.fillStyle='#4a3830';ctx.beginPath();ctx.ellipse(dir*-2.5,-6,1.35,1.8,0,0,Math.PI*2);ctx.fill();ctx.fillStyle='#e6b88c';ctx.beginPath();ctx.moveTo(dir*7,-4);ctx.lineTo(dir*12,-2);ctx.lineTo(dir*7,1);ctx.closePath();ctx.fill();ctx.strokeStyle='#b96f60';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(dir*1,2);ctx.quadraticCurveTo(dir*4,4,dir*7,2);ctx.stroke();}
+    else if(side){ctx.fillStyle='#704c36';ctx.beginPath();ctx.ellipse(-dir*2,-12,10,6,0,Math.PI,Math.PI*2);ctx.fill();ctx.fillRect(dir>0?-12:8,-12,4,8);ctx.fillStyle='#4a3830';ctx.beginPath();ctx.ellipse(dir*2.5,-6,1.35,1.8,0,0,Math.PI*2);ctx.fill();ctx.fillStyle='#e6b88c';ctx.beginPath();ctx.moveTo(dir*7,-4);ctx.lineTo(dir*12,-2);ctx.lineTo(dir*7,1);ctx.closePath();ctx.fill();ctx.strokeStyle='#b96f60';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(dir*1,2);ctx.quadraticCurveTo(dir*4,4,dir*7,2);ctx.stroke();}
     else{ctx.fillStyle='#704c36';ctx.beginPath();ctx.arc(0,-11,10,Math.PI,Math.PI*2);ctx.fill();ctx.fillStyle='#4a3830';ctx.beginPath();ctx.arc(-3,-6,1.4,0,Math.PI*2);ctx.arc(3,-6,1.4,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#b96f60';ctx.lineWidth=1;ctx.beginPath();ctx.arc(0,-2,2.6,.2,Math.PI-.2);ctx.stroke();}
     ctx.fillStyle='#43513c';ctx.beginPath();ctx.ellipse(0,-14,11,4,0,0,Math.PI*2);ctx.fill();ctx.fillRect(-7,-20,14,6);ctx.fillStyle='#d5b365';ctx.fillRect(-3,-18,6,2);
     ctx.fillStyle='#b8714e';ctx.fillRect(s.face==='left'?8:-14,5,4,9);
@@ -1382,7 +1419,7 @@
         return;
       }
       if (s.interior === 'grandpa' && Math.hypot(x-805,y-335)<58) {
-        if (near(805,335,125)) objectOptions('Grandfather', '🧓', 'Grandfather is waiting to hear how the basement is going.', [{ label: 'TALK', run: openHouseTalk }]);
+        if (near(805,335,125)) objectOptions('Grandfather', '🧓', s.rodentQuestStarted ? 'Grandfather is waiting to hear how the basement is going.' : 'Grandpa’s warm smile makes every visit feel like coming home. He always has a story to share and time to listen.', [{ label: 'TALK', run: openHouseTalk }]);
         return;
       }
       if (s.interior === 'hut' && Math.hypot(x-820,y-345)<58) {
