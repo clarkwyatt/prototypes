@@ -346,7 +346,7 @@
       dialogueCards('Grandma', '👵', [
         'Thank you, dear. That water helps more than you know.',
         'Here’s our house key. Your Grandpa needs help with five rodents in the basement. They’re getting into the food we saved, and he can’t chase them all by himself.',
-        'I know you’re eager to get beyond the gate. Help Grandpa first, and then he’ll tell you what he needs.'
+        'I know you’re eager to get beyond the gate. Please help Grandpa before setting off; he’ll be glad to see you.'
       ], 'I’ll go see him');
       return;
     }
@@ -490,7 +490,7 @@
         : 'I haven’t seen the vines myself, but I can prepare a potion in case they threaten the trail.';
       dialogueCards('The Alchemist', '🧙', [
         'A good potion begins with plants gathered at the right time.',
-        `${intro} Please bring me one ${requested}.`
+        `${intro} Please bring me some of these flowers: ${requested}.`
       ], 'I’ll look for them');
       return;
     }
@@ -693,7 +693,7 @@
             s.moonwellClue = true; updateHud();
             dialogueCards('Worried Traveler', '❔', [
               'My grandmother told stories about a spring that shines under the moon.',
-              'She said it was near an old ivy arch, and its water could help with a bad bite.'
+              'She said it was near an old ivy arch, and its water could help someone who had been bitten.'
             ], 'Thank you');
           } else {
             dialogueCards('Worried Traveler', '❔', [
