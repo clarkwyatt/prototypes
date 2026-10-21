@@ -9,6 +9,7 @@
   const W = 1120, H = 720;
   let dpr = 1, toastTimer = 0;
   const keys = {};
+  const catchStyle=document.createElement('style');catchStyle.textContent='#modal.catching #modal-buttons{display:flex;justify-content:center}#modal.catching .catch-button{width:min(360px,100%);min-height:78px;font-size:2rem;font-weight:900;letter-spacing:.1em;background:linear-gradient(#77bd59,#3d8748);color:#fff8dc;border:3px solid #a5e37b;border-radius:18px;box-shadow:0 0 18px #72dd7190;cursor:pointer}';document.head.appendChild(catchStyle);
 
   const musicButton = document.querySelector('#music-toggle');
   const audioVersion = new URL(document.currentScript?.src || window.location.href, window.location.href).searchParams.get('v') || Date.now().toString(36);
@@ -51,7 +52,8 @@
 
   const s = {
     screen: '13', x: 605, y: 335, face: 'down', speed: 215,
-    scene: 'outside', interior: '', rodents: 0, rodentQuestStarted: false, mice: [], basementEntered: false,
+    scene: 'outside', interior: '', rodents: 0, rodentQuestStarted: false, mice: [], activeCatchTarget: null, basementEntered: false,
+    grandpaRemedyStarted: false, healingWater: false, grandpaHealed: false,
     bakerQuestStarted: false, berriesPicked: false, bakerQuestComplete: false, muffin: false,
     waterQuestStarted: false, carryingWater: false, grandmaHelped: false, grandmaHouseKey: false, grandparentsHouseUnlocked: false,
     returnX: 0, returnY: 0, outsideX: 0, outsideY: 0,
@@ -129,7 +131,6 @@
       { id: 'fallenLog', name: 'Fallen Log', x: 815, y: 560, r: 44, description: 'Moss covers the fallen log. Little white mushrooms peek out from underneath.' },
       { id: 'logMushroom', name: 'Glowcap Mushroom', x: 842, y: 533, r: 30, description: 'A rare Glowcap Mushroom glimmers beneath a shelf of bark. Its pale blue cap grows in the cool, damp shade of the fallen log.' },
       { id: 'mossyMarker', name: 'Mossy Waystone', x: 660, y: 205, r: 34, description: 'An old waystone bears a faded arrow and a carving of a crescent moon.' },
-      { id: 'forestOak', name: 'Bent Forest Oak', x: 945, y: 485, r: 48, description: 'One crooked branch points north, as if the old tree is showing the way.' },
       { id: 'scaredVillager', name: 'Worried Traveler', x: 475, y: 270, r: 38, description: 'A traveler keeps glancing toward the thorny wall. Their walking stick is scratched with fresh green sap.' },
       { id: 'trailKeeper', name: 'Trail Keeper', x: 650, y: 510, r: 38, description: 'The keeper watches over this stretch of trail and listens to the forest.' }
     ],
@@ -153,8 +154,8 @@
       { id: 'moonTree', name: 'Silverleaf Tree', x: 700, y: 85, r: 48, description: 'Pale leaves catch the light like little pieces of the moon.' }
     ],
     '08': [
-      { id: 'signpost', name: 'Old Signpost', x: 390, y: 310, r: 36, description: 'The painted arrows point to the village, the meadow, and a place marked only with a star.' },
       { id: 'ruin', name: 'Overgrown Arch', x: 875, y: 245, r: 46, description: 'Thick ivy nearly swallows the broken stone arch. A warm breeze slips through its leafy opening.' },
+      { id: 'healingSpring', name: 'Moonwell Fountain', x: 735, y: 365, r: 48, description: 'A carved stone fountain curls around a pool of clear spring water. Silver leaves are etched into its rim, and the water glows softly in the shade of the arch.' },
       { id: 'appleTree', name: 'Wild Apple Tree', x: 945, y: 485, r: 48, description: 'Small red apples peek between the leaves. One has a tiny bite taken out of it.' }
     ],
     '07': [
@@ -184,43 +185,42 @@
   }
 
   function updateHud() {
-    const inventory = [];
-    if (s.grandmaHouseKey) inventory.push('🗝 House Key');
-    if (s.carryingWater) inventory.push('🥤 Cup of Water');
-    if (s.key) inventory.push('🗝 West Gate Key');
-    if (s.potion) inventory.push('🧪 Vine Potion');
-    if (s.berriesPicked) inventory.push('🫐 Blueberries');
-    if (s.muffin) inventory.push('Blueberry Muffin');
-    if (s.alchemyMushroomCollected) inventory.push('Glowcap Mushroom');
-    itemsEl.textContent = inventory.length ? inventory.join(' · ') : 'Empty';
-
-    let quest = '';
-    if (!s.waterQuestStarted) quest = '<strong>First Steps</strong>Explore the Village';
-    else if (!s.grandmaHelped && !s.carryingWater) quest = '<strong>Grandma’s Request</strong>Fetch a cup of water.';
-    else if (!s.grandmaHelped) quest = '<strong>Grandma’s Request</strong>Bring the water to Grandma.';
-    else if (!s.rodentQuestStarted) quest = '<strong>Quest</strong>Talk to Grandpa inside.';
-    else if (!s.key && s.rodents < 5) quest = `<strong>Quest</strong>Catch 5 rodents: ${s.rodents}/5`;
-    else if (!s.gateOpen && !s.key && s.rodents >= 5) quest = '<strong>Quest</strong>Talk to Grandfather.';
-    else if (s.key && !s.gateOpen) quest = '<strong>Quest</strong>Unlock the West Gate';
-    else if (s.gateOpen && !s.vinesStarted) quest = '<strong>Quest</strong>Investigate the Vines';
-    else if (s.vinesStarted && !s.alchemistTalked) quest = '<strong>Quest</strong>Find a way to remove the Vines.';
-    else if (s.vinesStarted && s.alchemistTalked && !s.potion && !s.thorns) {
-      const count = requiredFlowers.filter((id) => s.flowers[id]).length;
-      quest = count < 3
-        ? `<strong>Quest</strong>${requiredFlowers.map((id) => `1 ${flowerNames[id]} ${s.flowers[id] ? '1/1' : '0/1'}`).join(' · ')}`
-        : !s.alchemyMushroomRequested
-          ? '<strong>Quest</strong>Talk to the Alchemist.'
-          : !s.alchemyMushroomCollected
-            ? '<strong>Quest</strong>Find the Glowcap Mushroom on the fallen log.'
-            : '<strong>Quest</strong>Bring the Glowcap Mushroom to the Alchemist.';
+    const inventory=[];
+    if(s.grandmaHouseKey)inventory.push('🗝 House Key');
+    if(s.carryingWater)inventory.push('🥤 Cup of Water');
+    if(s.key)inventory.push('🗝 West Gate Key');
+    if(s.potion)inventory.push('🧪 Vine Potion');
+    if(s.berriesPicked)inventory.push('🫐 Blueberries');
+    if(s.muffin)inventory.push('Blueberry Muffin');
+    if(s.alchemyMushroomCollected)inventory.push('Glowcap Mushroom');
+    if(s.healingWater)inventory.push('💧 Healing Water');
+    itemsEl.textContent=inventory.length?inventory.join(' · '):'Empty';
+    let quest='';
+    if(!s.waterQuestStarted)quest='<strong>First Steps</strong>Explore the Village';
+    else if(!s.grandmaHelped&&!s.carryingWater)quest='<strong>Grandma’s Request</strong>Fetch a cup of water.';
+    else if(!s.grandmaHelped)quest='<strong>Grandma’s Request</strong>Bring the water to Grandma.';
+    else if(!s.rodentQuestStarted)quest='<strong>Quest</strong>Talk to Grandpa inside.';
+    else if(!s.key&&s.rodents<5)quest='<strong>Quest</strong>Catch 5 rodents: '+s.rodents+'/5';
+    else if(!s.gateOpen&&!s.key&&s.rodents>=5)quest='<strong>Quest</strong>Talk to Grandfather.';
+    else if(s.key&&!s.gateOpen)quest='<strong>Quest</strong>Unlock the West Gate';
+    else if(s.alchemistTalked&&!s.potion&&!s.thorns){
+      const count=requiredFlowers.filter(id=>s.flowers[id]).length;
+      quest=count<3?'<strong>Alchemist’s Request</strong>'+requiredFlowers.map(id=>'1 '+flowerNames[id]+' '+(s.flowers[id]?'1/1':'0/1')).join(' · '):
+        !s.alchemyMushroomRequested?'<strong>Quest</strong>Talk to the Alchemist.':
+        !s.alchemyMushroomCollected?'<strong>Quest</strong>Find the Glowcap Mushroom on the fallen log.':'<strong>Quest</strong>Bring the Glowcap Mushroom to the Alchemist.';
     }
-    else if (s.vinesStarted && s.potion && !s.thorns) quest = '<strong>Quest</strong>Use the potion on the Vines.';
-    else if (s.thorns && !s.returned) quest = `<strong>Quest</strong>${s.returnGateOpen ? 'Follow the path back to the village.' : 'Find and unlock the gate back to the village.'}`;
-    const optionalQuest = s.bakerQuestStarted && !s.bakerQuestComplete
-      ? `<div class="optional-quest"><strong>Optional Errand</strong>${s.berriesPicked ? 'Bring the berries to Tomas.' : 'Pick berries for Tomas.'}</div>`
-      : '';
-    questEl.innerHTML = quest + optionalQuest;
-    questEl.classList.toggle('empty', !quest && !optionalQuest);
+    else if(s.gateOpen&&!s.vinesStarted)quest='<strong>Quest</strong>Investigate the Vines';
+    else if(s.vinesStarted&&!s.alchemistTalked)quest='<strong>Quest</strong>Find a way to remove the Vines.';
+    else if(s.vinesStarted&&s.potion&&!s.thorns)quest='<strong>Quest</strong>Use the potion on the Vines.';
+    else if(s.thorns&&!s.returned&&!s.grandpaRemedyStarted)quest='<strong>Quest</strong>Find and unlock the gate back to the village.';
+    else if(s.grandpaHealed)quest='<strong>Quest Complete</strong>Grandpa is resting and recovering.';
+    else if(s.thorns&&s.healingWater)quest='<strong>Grandpa’s Remedy</strong>Bring the healing water to Grandpa.';
+    else if(s.thorns&&s.returnGateOpen)quest='<strong>Grandpa’s Remedy</strong>Find healing water at the Moonwell Fountain.';
+    else if(s.thorns&&!s.returned)quest='<strong>Quest</strong>Follow the path back to the village.';
+    const optionalQuest=s.bakerQuestStarted&&!s.bakerQuestComplete?'<div class="optional-quest"><strong>Optional Errand</strong>'+(s.berriesPicked?'Bring the berries to Tomas.':'Pick berries for Tomas.')+'</div>':'';
+    const remedyQuest=s.grandpaRemedyStarted&&!s.grandpaHealed?'<div class="optional-quest"><strong>Grandpa’s Remedy</strong>'+(!s.thorns?'Find a way through the vines to reach the healing spring.':!s.returnGateOpen?'Open the gate back to the village.':s.healingWater?'Bring the spring water to Grandpa.':'Fill a cup at the Moonwell Fountain beyond the arch.')+'</div>':'';
+    questEl.innerHTML=quest+optionalQuest+remedyQuest;
+    questEl.classList.toggle('empty',!quest&&!optionalQuest&&!remedyQuest);
   }
 
   function makeButton(label, fn, secondary = false) {
@@ -241,12 +241,14 @@
     buttons(buttonArea);
     document.querySelector('#modal-close').onclick = closeModal;
     modal.classList.toggle('compact', compact);
+    modal.classList.toggle('catching', title === 'Catch this rodent?');
     modal.classList.add('open');
   }
 
   function closeModal() {
     modal.classList.remove('open');
     modal.classList.remove('compact');
+    modal.classList.remove('catching'); s.activeCatchTarget=null;
     updateHud();
   }
 
@@ -320,19 +322,12 @@
   }
 
   function openHouseTalk() {
-    if (!s.rodentQuestStarted) {
-      s.rodentQuestStarted = true;
-      updateHud();
-      openModal('Grandfather', '🧓', '<p>Grandma said you might be able to help. Five cheeky rodents have gotten into my basement. Could you catch them for me?</p>', () => makeButton('I’ll help!', closeModal), true);
-      return;
-    }
-    if (s.rodents < 5) {
-      openModal('Grandfather', '🧓', '<p>Catch all 5 rodents downstairs and I’ll give you the West Gate key.</p>', () => makeButton('Okay', closeModal), true);
-    } else {
-      s.key = true;
-      openModal('Grandfather', '🧓', '<p>Thank you for catching the rodents. Here is the West Gate key.</p>', () => makeButton('Thanks', closeModal), true);
-      updateHud();
-    }
+    if (!s.rodentQuestStarted) { s.rodentQuestStarted=true; updateHud(); openModal('Grandfather','🧓','<p>I need a favor, if you have time. You can find me inside.</p>',()=>makeButton('I’ll help!',closeModal),true); return; }
+    if (s.rodents<5) { openModal('Grandfather','🧓','<p>Catch all 5 rodents downstairs and I’ll give you the West Gate key.</p>',()=>makeButton('Okay',closeModal),true); return; }
+    if (s.grandpaRemedyStarted && s.healingWater && !s.grandpaHealed) { s.healingWater=false;s.grandpaHealed=true;updateHud();openModal('Grandfather','🧓','<p>That cool spring water is just what I needed. I already feel stronger. I was bitten while clearing out the rodents, and you came through for me. The gates beyond our village are yours to explore whenever you are ready.</p>',()=>makeButton('I’m glad you’re better',closeModal),true);return; }
+    if (s.grandpaRemedyStarted) { openModal('Grandfather','🧓','<p>I’m still feeling weak from that bite. The Moonwell Fountain beyond the overgrown arch may hold the healing water I need.</p>',()=>makeButton('I’ll find it',closeModal),true);return; }
+    s.key=true;s.grandpaRemedyStarted=true;updateHud();
+    openModal('Grandfather','🧓','<p>Thank you for catching the rodents. Here is the West Gate key. One bit me while I was clearing the basement, and I’m suddenly feeling quite ill. An old Moonwell Fountain near an overgrown arch may hold healing water. You always wanted to escape the same village routine; now you have a real reason to explore and help your family.</p>',()=>makeButton('I’ll find a remedy',closeModal),true);
   }
 
   function talkToAlchemist() {
@@ -348,7 +343,8 @@
     }
     if (count < 3) {
       updateHud();
-      openModal('The Alchemist', '🧙', `<p>Please bring me ${requested}.</p>`, () => makeButton('I’ll look for them', closeModal), true);
+      const intro=s.vinesStarted?'I’ve heard about the thorny vines. I can brew a potion to help.':'I haven’t seen the vines myself, but I can prepare a potion in case they threaten the trail.';
+      openModal('The Alchemist','🧙','<p>'+intro+' Please bring me '+requested+'.</p>',()=>makeButton('I’ll look for them',closeModal),true);
       return;
     }
     if (!s.alchemyMushroomRequested) {
@@ -489,6 +485,9 @@
         objectOptions(object.name, '💧', object.description, s.waterQuestStarted && !s.carryingWater && !s.grandmaHelped
           ? [{ label: 'FILL CUP', run: () => { s.carryingWater = true; toast('You filled a cup with fresh water.'); updateHud(); } }]
           : []);
+        break;
+      case 'healingSpring':
+        objectOptions(object.name,'💧',object.description,s.grandpaRemedyStarted&&s.thorns&&s.returnGateOpen&&!s.healingWater&&!s.grandpaHealed?[{label:'FILL HEALING CUP',run:()=>{s.healingWater=true;toast('You filled a cup with healing spring water.');updateHud();}}]:[]);
         break;
       case 'berryBush':
         objectOptions('Berry Bush', '🫐', s.berriesPicked ? 'The bush is resting after giving up its ripe berries. New fruit will grow in time.' : 'Glossy leaves hide clusters of plump blue berries. The bush grows beside the village path.', s.bakerQuestStarted && !s.berriesPicked && !s.bakerQuestComplete ? [{ label: 'PICK BERRIES', run: () => { s.berriesPicked = true; toast('You picked a handful of blueberries.'); updateHud(); } }] : []);
@@ -858,7 +857,7 @@
         break;
       case '11':
         drawPath([[1200, 360], [890, 360], [730, 390], [570, 390], [430, 330], [330, 245], [225, 155], [220, 80], [220, -80]], 122);
-        drawPath([[570, 390], [470, 425], [370, 500], [350, 600], [420, 675], [560, 800]], 116);
+        drawPath([[570,390],[470,425],[390,490],[435,545],[520,595],[560,650],[560,800]],116);
         break;
       case '16': drawPath([[560, -80], [470, 150], [340, 230], [245, 350], [270, 490], [390, 585], [485, 650], [560, 800]], 122); break;
       case '21': drawPath([[560, -80], [520, 170], [460, 285], [370, 370], [260, 430], [250, 470]], 112); break;
@@ -874,7 +873,8 @@
 
   function drawWorldProp(id) {
     ctx.save();
-    if(id==='well') { ctx.fillStyle='#3a5844';ctx.beginPath();ctx.ellipse(0,12,40,19,0,0,Math.PI*2);ctx.fill();ctx.fillStyle='#786047';ctx.beginPath();ctx.ellipse(0,0,35,22,0,0,Math.PI*2);ctx.fill();ctx.fillStyle='#68a9a6';ctx.beginPath();ctx.ellipse(0,-4,27,13,0,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#dcc391';ctx.lineWidth=5;ctx.strokeRect(-30,-20,60,8);ctx.fillStyle='#795638';ctx.fillRect(-28,-29,5,32);ctx.fillRect(23,-29,5,32);ctx.fillRect(-35,-33,70,7); }
+    if(id==='healingSpring'){ctx.fillStyle='#29453855';ctx.beginPath();ctx.ellipse(0,19,51,20,0,0,Math.PI*2);ctx.fill();ctx.fillStyle='#9d9b80';ctx.beginPath();ctx.ellipse(0,6,47,26,0,0,Math.PI*2);ctx.fill();ctx.fillStyle='#6fc0bc';ctx.beginPath();ctx.ellipse(0,1,30,12,0,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#d9e6c0';ctx.lineWidth=2;ctx.beginPath();ctx.ellipse(0,1,30,12,0,0,Math.PI*2);ctx.stroke();ctx.fillStyle='#777b69';ctx.beginPath();ctx.moveTo(-12,-5);ctx.lineTo(-9,-39);ctx.lineTo(-4,-45);ctx.lineTo(5,-43);ctx.lineTo(11,-33);ctx.lineTo(11,-5);ctx.closePath();ctx.fill();ctx.fillStyle='#bac2a1';ctx.beginPath();ctx.moveTo(-8,-8);ctx.lineTo(-6,-36);ctx.lineTo(-2,-40);ctx.lineTo(5,-38);ctx.lineTo(7,-8);ctx.closePath();ctx.fill();ctx.strokeStyle='#d4e8c8';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(-1,-35);ctx.quadraticCurveTo(12,-26,2,-16);ctx.stroke();}
+    else if(id==='well') { ctx.fillStyle='#3a5844';ctx.beginPath();ctx.ellipse(0,12,40,19,0,0,Math.PI*2);ctx.fill();ctx.fillStyle='#786047';ctx.beginPath();ctx.ellipse(0,0,35,22,0,0,Math.PI*2);ctx.fill();ctx.fillStyle='#68a9a6';ctx.beginPath();ctx.ellipse(0,-4,27,13,0,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#dcc391';ctx.lineWidth=5;ctx.strokeRect(-30,-20,60,8);ctx.fillStyle='#795638';ctx.fillRect(-28,-29,5,32);ctx.fillRect(23,-29,5,32);ctx.fillRect(-35,-33,70,7); }
     else if(id==='garden'||id==='berryBush'||id==='mushrooms'||id==='riverReeds') { for(let i=0;i<6;i++){let x=(i-2.5)*12,y=(i%2)*5;ctx.fillStyle=id==='berryBush'?'#477a45':id==='mushrooms'?'#5c8047':'#4e8a55';ctx.beginPath();ctx.ellipse(x,y,12,18,(i%3-.8)*.35,0,Math.PI*2);ctx.fill();if(id==='berryBush'){ctx.fillStyle=i%2?'#3f6cbb':'#547fce';ctx.beginPath();ctx.arc(x+4,y-6,3.5,0,Math.PI*2);ctx.fill();ctx.fillStyle='#c6ddf5';ctx.beginPath();ctx.arc(x+3,y-7,1.1,0,Math.PI*2);ctx.fill();}if(id==='mushrooms'){ctx.fillStyle='#eee2c4';ctx.fillRect(x-2,y-4,4,13);ctx.fillStyle='#9e75b8';ctx.beginPath();ctx.ellipse(x,y-5,8,5,0,Math.PI,Math.PI*2);ctx.fill();}} }
     else if(id==='stoneRing'){
       ctx.fillStyle='#31523d55';ctx.beginPath();ctx.ellipse(0,12,62,38,-.12,0,Math.PI*2);ctx.fill();
@@ -946,6 +946,7 @@
         break;
       case 'meadowTree':
         tree(0,0,1.22);ctx.fillStyle='#c94c4d';[[-23,-34],[14,-51],[27,-25],[-4,-13],[3,-39]].forEach(([x,y])=>{ctx.beginPath();ctx.arc(x,y,4,0,Math.PI*2);ctx.fill();});break;
+      case 'healingSpring': drawWorldProp('healingSpring'); break;
       case 'meadowStone': drawWorldProp('riverStone'); break;
       case 'meadowLantern': drawWorldProp('trailLantern'); break;
       case 'meadowFlowers':
@@ -959,13 +960,13 @@
       case 'pathHermit': drawVillager(0,0,5,''); break;
       case 'trailRanger': drawVillager(0,0,7,''); break;
       case 'gate':
-        ctx.fillStyle='#4e3a2c';ctx.fillRect(-32,-49,13,100);ctx.fillRect(19,-49,13,100);
-        const gateWood=ctx.createLinearGradient(-18,0,18,0);gateWood.addColorStop(0,'#906440');gateWood.addColorStop(.5,'#c28e53');gateWood.addColorStop(1,'#845737');
-        ctx.fillStyle=s.gateOpen?'#b5cc84':gateWood;ctx.fillRect(-18,-38,36,76);
-        if(!s.gateOpen){ctx.strokeStyle='#67452f';ctx.lineWidth=2;for(let gx=-11;gx<=11;gx+=11){ctx.beginPath();ctx.moveTo(gx,-34);ctx.lineTo(gx,34);ctx.stroke();}ctx.strokeStyle='#e0bb78';ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(-17,-24);ctx.lineTo(17,-24);ctx.moveTo(-17,22);ctx.lineTo(17,22);ctx.stroke();}
-        ctx.fillStyle='#d8b477';ctx.beginPath();ctx.arc(-9,-17,2.5,0,Math.PI*2);ctx.arc(9,15,2.5,0,Math.PI*2);ctx.fill();
-        if (!s.gateOpen) { ctx.strokeStyle = '#f0d596'; ctx.lineWidth = 5; ctx.beginPath(); ctx.arc(0, -7, 9, Math.PI, 0); ctx.lineTo(9, 8); ctx.lineTo(-9, 8); ctx.closePath(); ctx.stroke(); ctx.fillStyle = '#f0d596'; ctx.beginPath(); ctx.arc(0, 4, 3, 0, Math.PI * 2); ctx.fill(); }
-        break;
+        ctx.fillStyle='#294235';ctx.beginPath();ctx.ellipse(0,48,46,11,0,0,Math.PI*2);ctx.fill();
+        ctx.fillStyle='#78664d';ctx.fillRect(-39,-47,12,98);ctx.fillRect(27,-47,12,98);ctx.fillStyle='#a69a76';ctx.fillRect(-44,-51,22,10);ctx.fillRect(22,-51,22,10);
+        ctx.fillStyle=s.gateOpen?'#b8c995':'#76553a';ctx.beginPath();ctx.moveTo(-27,44);ctx.lineTo(-27,-28);ctx.quadraticCurveTo(0,-53,27,-28);ctx.lineTo(27,44);ctx.closePath();ctx.fill();
+        ctx.strokeStyle='#c4a66e';ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(-22,-4);ctx.quadraticCurveTo(0,0,22,-4);ctx.moveTo(-22,29);ctx.quadraticCurveTo(0,33,22,29);ctx.stroke();
+        ctx.strokeStyle='#594331';ctx.lineWidth=3;for(let gx=-16;gx<=16;gx+=16){ctx.beginPath();ctx.moveTo(gx,-30);ctx.lineTo(gx,42);ctx.stroke();}
+        ctx.fillStyle='#c9a66c';ctx.beginPath();ctx.arc(0,11,5,0,Math.PI*2);ctx.fill();ctx.fillStyle='#5f4a35';ctx.beginPath();ctx.arc(0,11,2,0,Math.PI*2);ctx.fill();
+        ctx.fillStyle='#657d59';ctx.beginPath();ctx.ellipse(-35,44,13,8,-.3,0,Math.PI*2);ctx.ellipse(35,44,13,8,.3,0,Math.PI*2);ctx.fill();break;
       case 'returnGate': {
         ctx.fillStyle='#4d392c';ctx.fillRect(-58,-34,12,68);ctx.fillRect(46,-34,12,68);
         const returnWood=ctx.createLinearGradient(-46,0,46,0);returnWood.addColorStop(0,'#825837');returnWood.addColorStop(.45,'#c18c52');returnWood.addColorStop(1,'#755032');
@@ -974,12 +975,10 @@
         break;
       }
       case 'northGate':
-        ctx.fillStyle='#4d392c';ctx.fillRect(-35,-38,12,80);ctx.fillRect(23,-38,12,80);
-        const northWood=ctx.createLinearGradient(-23,0,23,0);northWood.addColorStop(0,'#8b6040');northWood.addColorStop(.5,'#bd8950');northWood.addColorStop(1,'#815536');
-        ctx.fillStyle=s.returnGateOpen?'#b5cc84':northWood;ctx.fillRect(-23,-28,46,62);
-        ctx.fillStyle='#6f4b34';ctx.fillRect(-29,-36,58,10);ctx.fillStyle='#d5aa69';ctx.fillRect(-29,-38,58,5);
-        if(!s.returnGateOpen){ctx.strokeStyle='#e0bb78';ctx.lineWidth=4;for(let x=-14;x<=14;x+=14){ctx.beginPath();ctx.moveTo(x,-19);ctx.lineTo(x,28);ctx.stroke();}}
-        break;
+        ctx.fillStyle='#294235';ctx.beginPath();ctx.ellipse(0,43,48,10,0,0,Math.PI*2);ctx.fill();ctx.fillStyle='#81735a';ctx.fillRect(-42,-47,14,93);ctx.fillRect(28,-47,14,93);
+        ctx.fillStyle='#b0a384';ctx.fillRect(-47,-51,24,10);ctx.fillRect(23,-51,24,10);ctx.fillStyle=s.returnGateOpen?'#b8c995':'#6e5239';ctx.beginPath();ctx.moveTo(-28,40);ctx.lineTo(-28,-29);ctx.quadraticCurveTo(0,-54,28,-29);ctx.lineTo(28,40);ctx.closePath();ctx.fill();
+        ctx.strokeStyle='#c5a976';ctx.lineWidth=4;for(let gy=-14;gy<34;gy+=24){ctx.beginPath();ctx.moveTo(-25,gy);ctx.quadraticCurveTo(0,gy+3,25,gy);ctx.stroke();}
+        ctx.fillStyle='#d7ba7e';ctx.beginPath();ctx.arc(0,7,5,0,Math.PI*2);ctx.fill();break;
       case 'thorns':
         if(!s.thorns){
           ctx.fillStyle='#263f2f66';ctx.beginPath();ctx.ellipse(0,38,124,23,-.08,0,Math.PI*2);ctx.fill();
@@ -1382,37 +1381,29 @@
       .sort((a, b) => a.y - b.y).forEach(layer => layer.draw());
   }
 
-  function updateMice(now, dt) {
-    if (s.scene !== 'basement' || modal.classList.contains('open')) return;
-    for (const mouse of s.mice) {
-      if (!mouse.moving && now >= mouse.pauseUntil) {
-        mouse.targetX = 235 + Math.random() * 650;
-        mouse.targetY = 245 + Math.random() * 285;
-        mouse.moving = true;
-      }
-      if (!mouse.moving) continue;
-      const dx = mouse.targetX - mouse.x, dy = mouse.targetY - mouse.y;
-      const distance = Math.hypot(dx, dy);
-      if (distance < 4) {
-        mouse.x = mouse.targetX; mouse.y = mouse.targetY; mouse.moving = false;
-        mouse.pauseUntil = now + 900 + Math.random() * 2300;
-      } else {
-        const step = Math.min(distance, (160 + (mouse.id % 3) * 44) * dt);
-        mouse.x += dx / distance * step; mouse.y += dy / distance * step;
-        mouse.face = Math.atan2(dy, dx);
-      }
+  function updateMice(now,dt){
+    if(s.scene!=='basement'||(modal.classList.contains('open')&&!modal.classList.contains('catching')))return;
+    for(const mouse of s.mice){
+      if(!mouse.moving&&now>=mouse.pauseUntil){mouse.targetX=235+Math.random()*650;mouse.targetY=245+Math.random()*285;mouse.moving=true;}
+      if(!mouse.moving)continue;const dx=mouse.targetX-mouse.x,dy=mouse.targetY-mouse.y,d=Math.hypot(dx,dy);
+      if(d<4){mouse.x=mouse.targetX;mouse.y=mouse.targetY;mouse.moving=false;mouse.pauseUntil=now+900+Math.random()*2300;}
+      else{const step=Math.min(d,(160+(mouse.id%3)*44)*dt);mouse.x+=dx/d*step;mouse.y+=dy/d*step;mouse.face=Math.atan2(dy,dx);}
     }
+    if(modal.classList.contains('catching')&&s.activeCatchTarget!=null){const m=s.mice.find(v=>v.id===s.activeCatchTarget);if(!m||Math.hypot(s.x-m.x,s.y-m.y)>112){closeModal();toast('The rodent scurried out of reach!');}}
   }
 
+  const trailLayouts={'05':[[[220,800],[285,560],[405,470],[600,410],[800,360],[1200,360],122]],'06':[[[560,610],[535,570],[540,460],[590,340],[680,230],[700,130],[560,-80],122],[[540,460],[430,420],[320,380],[200,360],[-80,360],112],[[600,360],[740,355],[900,350],[1200,360],112]],'07':[[[560,104],[525,160],[500,280],[545,400],[620,505],[560,800],122]],'08':[[[560,104],[525,150],[445,225],[390,310],[475,405],[625,470],[750,565],[830,800],122]],'09':[[[830,800],[750,570],[665,480],[625,380],[700,275],[780,180],[830,-80],122],[[-80,360],[220,360],[395,365],[515,420],[625,485],[700,535],112]],'11':[[[1200,360],[890,360],[730,390],[570,390],[430,330],[330,245],[225,155],[220,80],[220,-80],122],[[570,390],[470,425],[390,490],[435,545],[520,595],[560,650],[560,800],116]],'12':[[[1200,360],[900,360],[760,360],[660,360],[560,360],[460,360],[330,360],[180,360],[-80,360],122]],'13':[[[-80,360],[190,360],[320,520],[510,540],[700,500],[820,390],[790,265],[785,165],[830,-80],122]],'16':[[[560,-80],[470,150],[340,230],[245,350],[270,490],[390,585],[485,650],[560,800],122]],'21':[[[560,-80],[520,170],[460,285],[370,370],[260,430],[250,470],112]]};
+  function treeOverlapsTrail(screen,x,y){return(trailLayouts[screen]||[]).some(route=>{const w=route[route.length-1],pts=route.slice(0,-1);for(let i=0;i<pts.length-1;i++)if(pointSegmentDistance(x,y,...pts[i],...pts[i+1])<w/2+28)return true;return false;});}
   function draw() {
     drawGround(); drawRoomPath();
     if (s.screen === '13') { drawVillageFence(); drawVillageHomes(); }
     if (s.scene === 'outside') {
       const visible=(roomObjects[s.screen]||[]).filter(o=>getAvailableObjects().some(active=>active.id===o.id));
       const trees=[[34,54],[1082,52],[32,657],[1080,652],[340,35],[780,676],[1020,215],[140,510],[250,80],[900,660]].filter(([x,y])=>!(s.screen==='09'&&x>700&&y>600));
-      if(s.screen!=='13') trees.push([180,210],[945,485],[380,620]);
+      if(s.screen!=='13'&&s.screen!=='11') trees.push([180,210],[945,485],[380,620]);
       if(s.screen==='06') trees.push([700,85],[1040,100],[1080,255],[690,300],[1030,650],[620,120]);
-      const layers=[...trees.map(([x,y],i)=>({y:y+25,draw:()=>tree(x,y,1.15+(i%3)*.12)})),
+      const cleanTrees=trees.filter(([x,y])=>s.screen!=='11'&&!treeOverlapsTrail(s.screen,x,y));
+      const layers=[...cleanTrees.map(([x,y],i)=>({y:y+25,draw:()=>tree(x,y,1.15+(i%3)*.12)})),
         ...visible.map(object=>({y:object.y,draw:()=>drawObject(object)})),{y:s.y,draw:drawBoy}].sort((a,b)=>a.y-b.y);
       layers.forEach(layer=>layer.draw());
     } else if (s.scene === 'basement') { drawEdgeTrees(); drawBasement(); }
@@ -1452,10 +1443,10 @@
       ? [[700,85],[1040,100],[1080,255],[690,300],[1030,650],[620,120]]
       : s.screen === '09' ? [[180,210],[1030,170],[180,610],[1060,620]]
       : s.screen === '12' ? [[180,210]]
-      : s.screen === '11' || s.screen === '21' || s.screen === '08' ? [[945,485]]
+      : s.screen === '21' || s.screen === '08' ? [[945,485]]
       : s.screen === '16' ? [[835,190]] : [];
     for (const [x,y] of [...groundTrees,...sceneTrees]) {
-      if (x > 80 && x < W-80 && y > 80 && y < H-80) treeEdges.push([x,y,35]);
+      if (x > 80 && x < W-80 && y > 80 && y < H-80 && s.screen!=='11' && !treeOverlapsTrail(s.screen,x,y)) treeEdges.push([x,y,35]);
     }
     const fixed = {
       '13': [[560,280,58],[850,520,58],[265,205,52],[930,455,27],[405,245,27],[670,545,27],[320,405,27]],
@@ -1464,6 +1455,8 @@
       '07': [[610,540,24]],
       '09': [[950,450,38]],
       '21': [[250,390,68]],
+      '08': [[735,365,42]],
+      '08': [[735,365,42]],
       '06': [[730,200,20]]
     };
     const objects = fixed[s.screen] || [];
@@ -1661,10 +1654,8 @@
         .sort((a, b) => a.distance - b.distance)[0];
       if (mouse) {
         if (Math.hypot(s.x - mouse.x, s.y - mouse.y) < 76) {
-          openModal('Catch this rodent?', '🐭', '<p>It is close enough to catch!</p>', () => {
-            makeButton('CATCH', () => catchRodent(mouse.id));
-            makeButton('Not yet', closeModal, true);
-          }, true);
+          s.activeCatchTarget=mouse.id;mouse.moving=true;mouse.pauseUntil=0;mouse.targetX=235+Math.random()*650;mouse.targetY=245+Math.random()*285;
+          openModal('Catch this rodent?','🐭','<p>Catch it before it scurries off!</p>',()=>{const button=makeButton('CATCH!',()=>catchRodent(mouse.id));button.classList.add('catch-button');},true);
         }
         return;
       }
