@@ -275,15 +275,10 @@
   }
 
   function leaveInterior() {
-    const leavingGrandpaHouse=s.interior==='grandpa';
-    s.scene='outside';s.interior='';
-    s.x=s.outsideX||560;s.y=s.outsideY||335;
-    if(leavingGrandpaHouse&&s.grandpaHealed&&!s.villageOverrun){
-      s.villageOverrun=true;
-      updateHud();
-      setTimeout(()=>simpleModal('Grandfather','🧓','That remedy worked. Thank you—I feel like myself again. But what happened while you were out? Thorny vines have spread across the village! Our neighbors need help, and we have to save our home. You have already faced the unknown beyond the gate; now you need to be braver than ever.',),180);
-      return;
-    }
+    s.scene='outside';
+    s.interior='';
+    s.x=s.outsideX||560;
+    s.y=s.outsideY||335;
     updateHud();
   }
 
@@ -332,7 +327,16 @@
   function openHouseTalk() {
     if (!s.rodentQuestStarted) { s.rodentQuestStarted=true; updateHud(); openModal('Grandfather','🧓','<p>Could you clear the rodents out of the basement? There are five of them. Catch them all, and I’ll give you the West Gate key.</p>',()=>makeButton('I’ll help!',closeModal),true); return; }
     if (s.rodents<5) { openModal('Grandfather','🧓','<p>Catch all 5 rodents downstairs and I’ll give you the West Gate key.</p>',()=>makeButton('Okay',closeModal),true); return; }
-    if (s.grandpaRemedyStarted && s.healingWater && !s.grandpaHealed) { s.healingWater=false;s.grandpaHealed=true;updateHud();openModal('Grandfather','🧓','<p>That cool spring water is just what I needed. I already feel stronger. I was bitten while clearing out the rodents, and you came through for me. The gates beyond our village are yours to explore whenever you are ready.</p>',()=>makeButton('I’m glad you’re better',closeModal),true);return; }
+    if (s.grandpaRemedyStarted && s.healingWater && !s.grandpaHealed) {
+      s.healingWater=false;
+      s.grandpaHealed=true;
+      updateHud();
+      const thanks=s.villageOverrun
+        ? '<p>That remedy worked. Thank you, dear. But what happened while you were out? The village is tangled in thorny vines! We need a savior now more than ever. You have already shown great courage beyond the gate; now we must find a way to save our home and help our neighbors.</p>'
+        : '<p>That cool spring water is just what I needed. I already feel stronger. Thank you for finding it and helping me.</p>';
+      openModal('Grandfather','🧓',thanks,()=>makeButton(s.villageOverrun?'I’ll help save the village':'I’m glad you’re better',closeModal),true);
+      return;
+    }
     if (s.grandpaHealed) { openModal('Grandfather','🧓',s.villageOverrun?'<p>The remedy worked, and I’m feeling stronger. But the whole village is tangled in thorny vines. We need to find out where they came from and help our neighbors.</p>':'<p>I’m feeling much better now, thanks to you. The village feels a little bigger knowing you’ve explored beyond the gates.</p>',()=>makeButton(s.villageOverrun?'We’ll save our home':'You’re welcome',closeModal),true);return; }
     if (s.grandpaRemedyStarted) { openModal('Grandfather','🧓','<p>I’m still feeling weak from that bite. Ask around as you explore; someone may know a remedy.</p>',()=>makeButton('I’ll ask around',closeModal),true);return; }
     s.key=true;s.grandpaRemedyStarted=true;updateHud();
@@ -417,8 +421,9 @@
     updateHud();
     if (id === '13' && s.thorns && !s.returned) {
       s.returned = true;
+      s.villageOverrun = true;
       updateHud();
-      setTimeout(() => simpleModal('Back in the Village', '🏘️', 'The Vines have overtaken the village.'), 180);
+      setTimeout(() => simpleModal('The Village Under Siege', '🏘️', 'You step through the gate and find thorny vines tangled through the streets and wrapped around the homes. The sound you heard at the trail has reached the village.'), 180);
     }
   }
 
@@ -484,7 +489,7 @@
         s.vinesStarted = true;
         updateHud();
         objectOptions('Thorny Vines', '🌿', object.description, s.potion ? [{
-          label: 'USE POTION', run: () => { s.potion = false; s.thorns = true; toast('The potion clears the Vines. The sky grows dim…'); updateHud(); }
+          label: 'USE POTION', run: () => { s.potion = false; s.thorns = true; updateHud(); simpleModal('The Vines Flee', '🌿', 'The thorny vines writhe, then plunge into the earth with a thunderous rumble. The sound fades into the distance, racing toward the village.'); }
         }] : []);
         break;
       case 'hut':
