@@ -10,9 +10,36 @@
   let dpr = 1, toastTimer = 0;
   const keys = {};
 
+  const musicButton = document.querySelector('#music-toggle');
+  let audioContext = null, musicMaster = null, musicTimer = null, musicBeat = 0, musicStarted = false, musicEnabled = false, musicPads = [];
+  const melodyNotes = [523.25,659.25,783.99,659.25,587.33,783.99,1046.5,783.99,659.25,587.33,523.25,0,783.99,659.25,587.33,0];
+  const chordNotes = [[130.81,196.00,261.63],[174.61,261.63,349.23],[146.83,220.00,293.66],[196.00,293.66,392.00]];
+  function setMusicButton(enabled) { musicButton.textContent = enabled ? '♫ Music: On' : '♫ Music: Off'; musicButton.setAttribute('aria-pressed',String(enabled)); musicButton.setAttribute('aria-label',enabled?'Turn ambient music off':'Turn ambient music on'); }
+  function playMusicNote(frequency,at,duration=0.62) {
+    if (!frequency || !audioContext || !musicMaster) return;
+    const voice=audioContext.createOscillator(), envelope=audioContext.createGain(); voice.type='sine'; voice.frequency.setValueAtTime(frequency,at);
+    envelope.gain.setValueAtTime(0.0001,at); envelope.gain.exponentialRampToValueAtTime(0.22,at+0.035); envelope.gain.exponentialRampToValueAtTime(0.0001,at+duration);
+    voice.connect(envelope); envelope.connect(musicMaster); voice.start(at); voice.stop(at+duration+0.03);
+  }
+  function startAmbientMusic() {
+    const Audio=window.AudioContext||window.webkitAudioContext; if(!Audio)return;
+    if(!audioContext) {
+      audioContext=new Audio(); musicMaster=audioContext.createGain(); musicMaster.gain.value=0; musicMaster.connect(audioContext.destination);
+      chordNotes[0].forEach((frequency,index)=>{const voice=audioContext.createOscillator(),level=audioContext.createGain();voice.type=index===1?'sine':'triangle';voice.frequency.value=frequency;level.gain.value=index===0?0.045:0.025;voice.connect(level);level.connect(musicMaster);voice.start();musicPads.push(voice);});
+    }
+    audioContext.resume(); musicEnabled = true; musicMaster.gain.cancelScheduledValues(audioContext.currentTime); musicMaster.gain.setTargetAtTime(0.42,audioContext.currentTime,0.8);
+    if(!musicStarted) { musicStarted=true; musicTimer=window.setInterval(()=>{const now=audioContext.currentTime+0.04;playMusicNote(melodyNotes[musicBeat%melodyNotes.length],now,musicBeat%4===3?0.85:0.56);if(musicBeat%16===15){const chord=chordNotes[Math.floor(musicBeat/16)%chordNotes.length];musicPads.forEach((voice,index)=>voice.frequency.setTargetAtTime(chord[index],now,1.1));}musicBeat++;},720); }
+    setMusicButton(true);
+  }
+  function stopAmbientMusic() { musicEnabled = false; if(musicMaster&&audioContext)musicMaster.gain.setTargetAtTime(0,audioContext.currentTime,0.18);setMusicButton(false); }
+  musicButton.addEventListener('click',()=>{if(musicEnabled)stopAmbientMusic();else startAmbientMusic();});
+  const startMusicOnInput=(event)=>{if(!musicButton.contains(event.target))startAmbientMusic();};
+  document.addEventListener('pointerdown',startMusicOnInput,{once:true}); document.addEventListener('keydown',startMusicOnInput,{once:true});
+
   const s = {
     screen: '13', x: 605, y: 335, face: 'down', speed: 215,
     scene: 'outside', interior: '', rodents: 0, rodentQuestStarted: false, mice: [], basementEntered: false,
+    waterQuestStarted: false, carryingWater: false, grandmaHelped: false, grandmaHouseKey: false, grandparentsHouseUnlocked: false,
     returnX: 0, returnY: 0, outsideX: 0, outsideY: 0,
     flowers: { sunpetal: false, bluebell: false, mooncap: false, lavender: false, amberleaf: false, fern: false }, alchemistTalked: false, vinesStarted: false,
     key: false, gateOpen: false, logGone: false, logCrossingStarted: false, potion: false,
@@ -142,12 +169,17 @@
 
   function updateHud() {
     const inventory = [];
+    if (s.grandmaHouseKey) inventory.push('🗝 House Key');
+    if (s.carryingWater) inventory.push('🥤 Cup of Water');
     if (s.key) inventory.push('🗝 West Gate Key');
     if (s.potion) inventory.push('🧪 Vine Potion');
     itemsEl.textContent = inventory.length ? inventory.join(' · ') : 'Empty';
 
     let quest = '';
-    if (!s.rodentQuestStarted) quest = '<strong>First Steps</strong>Explore the Village';
+    if (!s.waterQuestStarted) quest = '<strong>First Steps</strong>Explore the Village';
+    else if (!s.grandmaHelped && !s.carryingWater) quest = '<strong>Grandma’s Request</strong>Fetch a cup of water.';
+    else if (!s.grandmaHelped) quest = '<strong>Grandma’s Request</strong>Bring the water to Grandma.';
+    else if (!s.rodentQuestStarted) quest = '<strong>Quest</strong>Talk to Grandpa inside.';
     else if (!s.key && s.rodents < 5) quest = `<strong>Quest</strong>Catch 5 rodents: ${s.rodents}/5`;
     else if (!s.gateOpen && !s.key && s.rodents >= 5) quest = '<strong>Quest</strong>Talk to Grandfather.';
     else if (s.key && !s.gateOpen) quest = '<strong>Quest</strong>Unlock the West Gate';
@@ -207,6 +239,7 @@
 
   function enterInterior(type) {
     s.outsideX = s.x; s.outsideY = s.y;
+    if (type === 'grandpa' && s.grandmaHouseKey) { s.grandmaHouseKey = false; s.grandparentsHouseUnlocked = true; toast('Grandma’s key unlocks the house.'); }
     s.scene = 'interior'; s.interior = type;
     s.x = 560; s.y = 520;
     updateHud();
@@ -218,11 +251,31 @@
     updateHud();
   }
 
+  function talkToGrandma() {
+    if (!s.waterQuestStarted) {
+      s.waterQuestStarted = true;
+      updateHud();
+      openModal('Grandma', '👵', '<p>I’m getting on in years, and my arthritis is really flaring up today. Could you bring me a fresh cup of water from the village well?</p>', () => makeButton('I’ll get some water', closeModal), true);
+      return;
+    }
+    if (s.carryingWater && !s.grandmaHelped) {
+      s.carryingWater = false; s.grandmaHelped = true; s.grandmaHouseKey = true;
+      updateHud();
+      openModal('Grandma', '👵', '<p>Thank you, dear. Here’s our house key. Your Grandpa could use a hand with the rats in his basement. You can find him inside.</p>', () => makeButton('I’ll go see him', closeModal), true);
+      return;
+    }
+    if (!s.grandmaHelped) {
+      openModal('Grandma', '👵', '<p>The village well is nearby. Please bring me a cup of fresh water when you can.</p>', () => makeButton('Okay', closeModal), true);
+      return;
+    }
+    openModal('Grandma', '👵', '<p>Thank you for the water, dear. Grandpa is inside and could use your help with the rats in his basement.</p>', () => makeButton('I’ll go see him', closeModal), true);
+  }
+
   function openHouseTalk() {
     if (!s.rodentQuestStarted) {
       s.rodentQuestStarted = true;
       updateHud();
-      openModal('Grandfather', '🧓', '<p>I need a favor, if you have time. You can find me inside.</p>', () => makeButton('I’ll help!', closeModal), true);
+      openModal('Grandfather', '🧓', '<p>Grandma said you might be able to help. Five cheeky rats have gotten into my basement. Could you catch them for me?</p>', () => makeButton('I’ll help!', closeModal), true);
       return;
     }
     if (s.rodents < 5) {
@@ -324,10 +377,14 @@
         objectOptions('Your Home', '🏠', 'A cozy cottage with a blue door and a little window box full of flowers. The path home is easy to spot from anywhere in the village.', [{ label: 'ENTER', run: () => enterInterior('home') }]);
         break;
       case 'grandpa':
-        objectOptions('Grandfather’s House', '🏠', 'Warm lamplight shines through the windows. A tiny brass star hangs above the door.', [{ label: 'ENTER', run: () => enterInterior('grandpa') }]);
+        objectOptions('Grandma and Grandpa’s House', '🏠', s.grandmaHouseKey || s.grandparentsHouseUnlocked
+          ? 'Warm lamplight shines through the windows. Grandma’s little brass key fits the front door.'
+          : 'The front door is locked. Grandma is outside and may have the key.', s.grandmaHouseKey || s.grandparentsHouseUnlocked
+          ? [{ label: 'ENTER', run: () => enterInterior('grandpa') }]
+          : [{ label: 'TRY DOOR', run: () => simpleModal('The house is locked', '🏠', 'The door will not open. Grandma is outside and may have a key.') }]);
         break;
       case 'villageGrandma':
-        objectOptions('Grandma', '👵', object.description, [{ label: 'TALK', run: () => simpleModal('Grandma', '👵', 'Your grandfather needs a favor. You can find him inside the house.') }]);
+        objectOptions('Grandma', '👵', object.description, [{ label: 'TALK', run: talkToGrandma }]);
         break;
       case 'villagerMara':
         objectOptions('Mara the Gardener', '🌼', 'Mara tends the village garden and knows every flower along the paths.', [{ label: 'TALK', run: () => simpleModal('Mara the Gardener', '🌼', 'The meadow flowers are prettiest where the morning sun reaches them.') }]);
@@ -363,7 +420,12 @@
       case 'hut':
         objectOptions('Alchemist’s Hut', '⚗️', 'A mossy green roof almost disappears beneath leaves. A little potion sign hangs above the crooked front door.', [{ label: 'ENTER', run: () => enterInterior('hut') }]);
         break;
-      case 'well': case 'garden': case 'berryBush': case 'riverReeds': case 'riverStone': case 'fallenLog': case 'mossyMarker': case 'oldOak': case 'stoneRing': case 'pond': case 'mushrooms': case 'signpost': case 'ruin': case 'villageOak': case 'riverWillow': case 'forestOak': case 'moonTree': case 'appleTree': case 'trailLantern': case 'fireflies': case 'meadowStone': case 'meadowLantern':
+      case 'well':
+        objectOptions(object.name, '💧', object.description, s.waterQuestStarted && !s.carryingWater && !s.grandmaHelped
+          ? [{ label: 'FILL CUP', run: () => { s.carryingWater = true; toast('You filled a cup with fresh water.'); updateHud(); } }]
+          : []);
+        break;
+      case 'garden': case 'berryBush': case 'riverReeds': case 'riverStone': case 'fallenLog': case 'mossyMarker': case 'oldOak': case 'stoneRing': case 'pond': case 'mushrooms': case 'signpost': case 'ruin': case 'villageOak': case 'riverWillow': case 'forestOak': case 'moonTree': case 'appleTree': case 'trailLantern': case 'fireflies': case 'meadowStone': case 'meadowLantern':
         objectOptions(object.name, object.id==='pond'?'💧':object.id==='mushrooms'?'🍄':'✦', object.description);
         break;
       case 'scaredVillager':
@@ -1379,6 +1441,7 @@
     button.addEventListener('pointerdown', (event) => { event.preventDefault(); keys[key] = true; });
     ['pointerup', 'pointercancel', 'pointerleave'].forEach((name) => button.addEventListener(name, () => { keys[key] = false; }));
   });
+  setMusicButton(false);
   updateHud();
 })();
 
