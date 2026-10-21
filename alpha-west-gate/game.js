@@ -97,6 +97,8 @@
   const roomObjects = {
     '05': [
       { id: 'mossyMarker', name: 'Mossy Trail Marker', x: 475, y: 265, r: 36, description: 'A small trail marker is nearly hidden beneath moss. A faded crescent is carved into its rounded stone face.' },
+      { id: 'juniper', name: 'Juniper', x: 610, y: 255, r: 38, description: 'Juniper rests beside the trail, turning a silver leaf over in one hand.' },
+      { id: 'birdWatcher', name: 'Ivo the Birdwatcher', x: 920, y: 250, r: 38, description: 'Ivo watches the treetops with a little wooden bird tucked into his coat.' },
       { id: 'fireflies', name: 'Firefly Ferns', x: 820, y: 505, r: 42, description: 'Ferns grow in a shady hollow. A few golden fireflies blink among their curled leaves.' },
       { id: 'riverStone', name: 'Rainworn Stone', x: 295, y: 500, r: 34, description: 'Rain has smoothed the stone until it feels like cool glass. A tiny spiral is carved on its top.' }
     ],
@@ -688,38 +690,36 @@
         objectOptions(object.name, object.id==='pond'?'💧':object.id==='mushrooms'?'🍄':'✦', object.description);
         break;
       case 'scaredVillager':
-        objectOptions('Worried Traveler', '❔', object.description, [{ label: 'TALK', run: () => {
-          if (s.grandpaRemedyStarted) {
-            s.moonwellClue = true; updateHud();
-            dialogueCards('Worried Traveler', '❔', [
-              'My grandmother told stories about a spring that shines under the moon.',
-              'She said it was near an old ivy arch, and its water could help someone who had been bitten.'
-            ], 'Thank you');
-          } else {
-            dialogueCards('Worried Traveler', '❔', [
-              'Those thorny vines sprang up overnight. I’ve never seen anything like them.',
-              'The Alchemist farther south knows more about plants than anyone. Perhaps they can help.'
-            ], 'Thank you');
-          }
-        } }]);
+        objectOptions('Worried Traveler', '❔', object.description, [{ label: 'TALK', run: () => dialogueCards('Worried Traveler', '❔', [
+          'Those thorny vines sprang up overnight. I’ve never seen anything like them.',
+          'The Alchemist lives in the glade to the south. They know how plants can be used to help people.'
+        ], 'Thank you') }]);
         break;
       case 'meadowFlowers':
         objectOptions('Windflower Patch','🌼',object.description);
         break;
       case 'trailKeeper':
-        objectOptions('Trail Keeper', '🪶', object.description, [{ label: 'TALK', run: () => {
-          if (s.grandpaRemedyStarted) {
-            s.moonwellClue = true; updateHud();
-            dialogueCards('Trail Keeper', '🪶', [
-              'These old stones have guided travelers through the woods for a long time.',
-              'Follow them beyond the ivy-covered arch. A quiet spring is hidden there, away from the main trail.'
-            ], 'Thank you');
-          } else {
-            dialogueCards('Trail Keeper', '🪶', [
-              'No one remembers seeing vines like those before.',
-              'Keep to the path and watch where you step. Those thorns look sharp.'
-            ], 'I will');
-          }
+        objectOptions('Trail Keeper', '🪶', object.description, [{ label: 'TALK', run: () => dialogueCards('Trail Keeper', '🪶', [
+          'I know these woods as well as I know my own boots.',
+          'Follow the trail south to the Alchemist’s hut. Look for the little sign with a bottle on it.'
+        ], 'Thank you') }]);
+        break;
+      case 'juniper':
+        objectOptions('Juniper', '🌙', object.description, [{ label: 'TALK', run: () => {
+          if (s.grandpaRemedyStarted) { s.moonwellClue = true; updateHud(); }
+          dialogueCards('Juniper', '🌙', [
+            'The stones on this trail stay cool, even after a warm day.',
+            'Once, near the old ivy arch, I saw a silver circle shimmer on the ground. It was gone by morning.'
+          ], 'Thank you');
+        } }]);
+        break;
+      case 'birdWatcher':
+        objectOptions('Ivo the Birdwatcher', '🐦', object.description, [{ label: 'TALK', run: () => {
+          if (s.grandpaRemedyStarted) { s.moonwellClue = true; updateHud(); }
+          dialogueCards('Ivo the Birdwatcher', '🐦', [
+            'The birds go quiet near the ivy-covered arch just before sunset.',
+            'Then I hear a tiny trickle, though I can never find a stream. Perhaps it runs under the stones.'
+          ], 'Thank you');
         } }]);
         break;
       case 'pathHermit':
@@ -1235,6 +1235,8 @@
       case 'trailKeeper': drawVillager(0,0,1,''); break;
       case 'pathHermit': drawVillager(0,0,5,''); break;
       case 'trailRanger': drawVillager(0,0,7,''); break;
+      case 'juniper': drawVillager(0,0,4,''); break;
+      case 'birdWatcher': drawVillager(0,0,3,''); break;
       case 'gate':
         ctx.fillStyle='#294235';ctx.beginPath();ctx.ellipse(0,48,46,11,0,0,Math.PI*2);ctx.fill();
         ctx.fillStyle='#78664d';ctx.fillRect(-39,-47,12,98);ctx.fillRect(27,-47,12,98);ctx.fillStyle='#a69a76';ctx.fillRect(-44,-51,22,10);ctx.fillRect(22,-51,22,10);
