@@ -236,7 +236,7 @@
       else if(!s.alchemyMushroomRequested)objectives.push('Talk to the Alchemist');
       else if(!s.alchemyMushroomCollected)objectives.push('Find the Glowcap Mushroom on the fallen log');
       else objectives.push('Bring the Glowcap Mushroom to the Alchemist');
-    }else if(s.gateOpen&&!s.vinesStarted)objectives.push('Investigate the Vines');
+    }else if(s.gateOpen&&!s.vinesStarted&&s.screen==='11')objectives.push('Investigate the Vines');
     else if(s.vinesStarted&&!s.alchemistTalked)objectives.push('Find the Alchemist');
     else if(s.vinesStarted&&s.potion&&!s.thorns)objectives.push('Use the potion on the Vines');
     if(s.thorns&&!s.returnGateOpen&&!s.returned)objectives.push('Unlock the gate back to the village');
