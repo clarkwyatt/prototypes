@@ -330,7 +330,7 @@
       #game.intro-mode .hud, #game.intro-mode .music-toggle, #game.intro-mode .controls-help, #game.intro-mode .touch { display:none !important; }
       #village-tale-intro { position:absolute; inset:0; z-index:20; display:grid; place-items:center; color:#fff7df; font-family:Georgia,serif; background:linear-gradient(180deg,#102d2722 0%,#102d2740 43%,#102d27d9 100%); }
       #village-tale-intro * { box-sizing:border-box; }
-      #village-tale-intro .intro-title-screen { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; padding:clamp(34px,8vh,82px) 18px 0; text-align:center; }
+      #village-tale-intro .intro-title-screen { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; padding:clamp(34px,8vh,82px) 18px 0; text-align:center; background:linear-gradient(180deg,#10291e24 0%,#10291e42 48%,#10291ec9 100%),url('assets/intro/04_beyond_the_west_gate.webp') center / cover no-repeat; }
       #village-tale-intro .intro-title { margin:0; color:#fff4d2; font-size:clamp(42px,8vw,92px); line-height:.96; font-weight:700; letter-spacing:.015em; text-shadow:0 4px 0 #284638,0 8px 26px #132d24b8; }
       #village-tale-intro .intro-title-rule { width:min(250px,44vw); height:3px; margin:18px auto 0; background:linear-gradient(90deg,transparent,#f0d48f,transparent); }
       #village-tale-intro .intro-start { position:absolute; left:0; right:0; bottom:11%; width:100%; padding:16px 22px; color:#fff7df; text-align:center; text-shadow:0 2px 10px #102d27; font:900 clamp(15px,2.2vw,21px) system-ui,sans-serif; letter-spacing:.1em; text-transform:uppercase; animation:intro-pulse 1.8s ease-in-out infinite; }
