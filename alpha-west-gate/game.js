@@ -363,7 +363,8 @@
     s.interior = 'home';
     s.screen = '13';
     s.x = 560; s.y = 520;
-    s.outsideX = 560; s.outsideY = 335;
+    // Start just below the house collision circle so the player can walk away on exit.
+    s.outsideX = 560; s.outsideY = 370;
     keys.ArrowUp = keys.ArrowDown = keys.ArrowLeft = keys.ArrowRight = false;
     keys.w = keys.a = keys.s = keys.d = keys.W = keys.A = keys.S = keys.D = false;
     game.classList.remove('intro-mode');
