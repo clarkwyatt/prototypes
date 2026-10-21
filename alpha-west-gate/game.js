@@ -151,7 +151,7 @@
     '06': [
       { id: 'pond', name: 'Moonlit Pond', x: 820, y: 500, r: 104, description: 'The wide, clear pond mirrors a pale moon-shaped patch of sky. Water lilies drift near the mossy edge.' },
       { id: 'mushrooms', name: 'Twilight Mushrooms', x: 730, y: 200, r: 34, description: 'These tiny violet mushrooms glow softly beneath the trees.' },
-      { id: 'moonTree', name: 'Silverleaf Tree', x: 700, y: 85, r: 48, description: 'Pale leaves catch the light like little pieces of the moon.' }
+      { id: 'moonTree', name: 'Silverleaf Tree', x: 830, y: 86, r: 48, description: 'Pale leaves catch the light like little pieces of the moon.' }
     ],
     '08': [
       { id: 'ruin', name: 'Overgrown Arch', x: 875, y: 245, r: 46, description: 'Thick ivy nearly swallows the broken stone arch. A warm breeze slips through its leafy opening.' },
@@ -325,6 +325,7 @@
     if (!s.rodentQuestStarted) { s.rodentQuestStarted=true; updateHud(); openModal('Grandfather','🧓','<p>I need a favor, if you have time. You can find me inside.</p>',()=>makeButton('I’ll help!',closeModal),true); return; }
     if (s.rodents<5) { openModal('Grandfather','🧓','<p>Catch all 5 rodents downstairs and I’ll give you the West Gate key.</p>',()=>makeButton('Okay',closeModal),true); return; }
     if (s.grandpaRemedyStarted && s.healingWater && !s.grandpaHealed) { s.healingWater=false;s.grandpaHealed=true;updateHud();openModal('Grandfather','🧓','<p>That cool spring water is just what I needed. I already feel stronger. I was bitten while clearing out the rodents, and you came through for me. The gates beyond our village are yours to explore whenever you are ready.</p>',()=>makeButton('I’m glad you’re better',closeModal),true);return; }
+    if (s.grandpaHealed) { openModal('Grandfather','🧓','<p>I’m feeling much better now, thanks to you. The village feels a little bigger knowing you’ve explored beyond the gates.</p>',()=>makeButton('You’re welcome',closeModal),true);return; }
     if (s.grandpaRemedyStarted) { openModal('Grandfather','🧓','<p>I’m still feeling weak from that bite. The Moonwell Fountain beyond the overgrown arch may hold the healing water I need.</p>',()=>makeButton('I’ll find it',closeModal),true);return; }
     s.key=true;s.grandpaRemedyStarted=true;updateHud();
     openModal('Grandfather','🧓','<p>Thank you for catching the rodents. Here is the West Gate key. One bit me while I was clearing the basement, and I’m suddenly feeling quite ill. An old Moonwell Fountain near an overgrown arch may hold healing water. You always wanted to escape the same village routine; now you have a real reason to explore and help your family.</p>',()=>makeButton('I’ll find a remedy',closeModal),true);
