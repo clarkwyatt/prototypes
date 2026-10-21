@@ -15,7 +15,7 @@
     scene: 'outside', interior: '', rodents: 0, rodentQuestStarted: false, mice: [], basementEntered: false,
     returnX: 0, returnY: 0, outsideX: 0, outsideY: 0,
     flowers: { sunpetal: false, bluebell: false, mooncap: false, lavender: false, amberleaf: false, fern: false }, alchemistTalked: false, vinesStarted: false,
-    key: false, gateOpen: false, logGone: false, potion: false,
+    key: false, gateOpen: false, logGone: false, logCrossingStarted: false, potion: false,
     thorns: false, returned: false
   };
 
@@ -32,23 +32,37 @@
   const requiredFlowers = Object.keys(flowerNames).sort(() => Math.random() - 0.5).slice(0, 3);
 
   const roomNeighbors = {
-    '13': { west: '12', north: '08' },
+    '13': { west: '12', north: '09' },
+    '09': { south: '13', north: '08' },
     '12': { east: '13', west: '11' },
-    '11': { east: '12', north: '06', south: '16' },
+    '11': { east: '12', north: '05', south: '16' },
     '16': { north: '11', south: '21' },
     '21': { north: '16' },
-    '06': { south: '11', north: '08' },
-    '08': { north: '06', south: '13' }
+    '05': { south: '11', east: '06' },
+    '06': { south: '08', north: '07', west: '05' },
+    '07': { south: '06' },
+    '08': { north: '06', south: '09' }
   };
 
   // Each exit is placed where the hand-drawn path meets the edge of its panel.
   const roomDoors = {
-    '13': { west: 360, north: 830 }, '12': { east: 360, west: 360 },
+    '13': { west: 360, north: 830 }, '09': { south: 830, north: 830 }, '12': { east: 360, west: 360 },
     '11': { east: 360, north: 220, south: 560 }, '16': { north: 560, south: 560 },
-    '21': { north: 560 }, '06': { south: 220, north: 560 }, '08': { north: 560, south: 830 }
+    '21': { north: 560 }, '05': { south: 220, east: 360 }, '06': { south: 560, north: 560, west: 360 }, '07': { south: 560 }, '08': { north: 560, south: 830 }
   };
 
   const roomObjects = {
+    '05': [
+      { id: 'mossyMarker', name: 'Mossy Trail Marker', x: 475, y: 265, r: 36, description: 'A small trail marker is nearly hidden beneath moss. Its arrow points east toward the pond.' },
+      { id: 'fireflies', name: 'Firefly Ferns', x: 820, y: 505, r: 42, description: 'Ferns grow in a shady hollow. A few golden fireflies blink among their curled leaves.' },
+      { id: 'riverStone', name: 'Rainworn Stone', x: 295, y: 500, r: 34, description: 'Rain has smoothed the stone until it feels like cool glass. A tiny spiral is carved on its top.' }
+    ],
+    '09': [
+      { id: 'meadowFlowers', name: 'Windflower Patch', x: 385, y: 485, r: 52, description: 'Blue and gold windflowers lean together in the breeze. A tiny butterfly keeps circling the tallest bloom.' },
+      { id: 'meadowStone', name: 'Carved Meadow Stone', x: 735, y: 250, r: 34, description: 'A pale standing stone has a spiral carved into its face. The old trail bends around it.' },
+      { id: 'meadowTree', name: 'Old Apple Tree', x: 950, y: 450, r: 48, description: 'A broad apple tree shades the meadow. Its fallen fruit feeds a family of field mice.' },
+      { id: 'meadowLantern', name: 'Trail Lantern', x: 545, y: 225, r: 34, description: 'A small lantern hangs from a wooden hook to mark the trail after dusk.' }
+    ],
     '13': [
       { id: 'home', name: 'Your Home', x: 560, y: 280, r: 57 },
       { id: 'grandpa', name: 'Grandfather’s House', x: 850, y: 520, r: 58 },
@@ -69,14 +83,17 @@
       { id: 'riverWillow', name: 'River Willow', x: 180, y: 210, r: 48, description: 'Long branches dip toward the water. A nest rests safely between the leaves.' }
     ],
     '11': [
-      { id: 'thorns', name: 'Thorny Vines', x: 225, y: 155, r: 82 },
+      { id: 'thorns', name: 'Thorny Vines', x: 225, y: 155, r: 125, description: 'A towering, tangled hedge of hooked briars blocks the northern trail. The fresh green shoots look as if they appeared overnight.' },
       { id: 'fallenLog', name: 'Fallen Log', x: 815, y: 560, r: 44, description: 'Moss covers the fallen log. Little white mushrooms peek out from underneath.' },
       { id: 'mossyMarker', name: 'Mossy Waystone', x: 660, y: 205, r: 34, description: 'An old waystone bears a faded arrow and a carving of a crescent moon.' },
-      { id: 'forestOak', name: 'Bent Forest Oak', x: 945, y: 485, r: 48, description: 'One crooked branch points north, as if the old tree is showing the way.' }
+      { id: 'forestOak', name: 'Bent Forest Oak', x: 945, y: 485, r: 48, description: 'One crooked branch points north, as if the old tree is showing the way.' },
+      { id: 'scaredVillager', name: 'Worried Traveler', x: 475, y: 270, r: 38, description: 'A traveler keeps glancing toward the thorny wall. Their walking stick is scratched with fresh green sap.' },
+      { id: 'trailKeeper', name: 'Trail Keeper', x: 650, y: 510, r: 38, description: 'The keeper watches over this stretch of trail and listens to the forest.' }
     ],
     '16': [
       { id: 'oldOak', name: 'Old Oak', x: 835, y: 190, r: 48, description: 'This oak is so old its roots rise above the earth like a little wooden bridge.' },
-      { id: 'stoneRing', name: 'Stone Circle', x: 760, y: 490, r: 42, description: 'Three small stones form a ring. Wildflowers grow where a fourth stone once stood.' }
+      { id: 'stoneRing', name: 'Stone Circle', x: 760, y: 490, r: 55, description: 'Seven old standing stones make a complete circle around a mossy patch of earth. Tiny flowers grow between them.' },
+      { id: 'pathHermit', name: 'Meadow Walker', x: 430, y: 390, r: 38, description: 'A quiet walker points down the trail. “The hermit in the southern glade has lived alone for years. They know plants better than anyone.”' }
     ],
     '21': [
       { id: 'hut', name: 'Alchemist’s Hut', x: 250, y: 390, r: 72 },
@@ -88,14 +105,19 @@
       { id: 'fern', name: 'Fern', x: 410, y: 250, r: 40 }
     ],
     '06': [
-      { id: 'pond', name: 'Moonlit Pond', x: 820, y: 500, r: 50, description: 'Even in daylight, the pond reflects a pale moon-shaped patch of sky.' },
+      { id: 'pond', name: 'Moonlit Pond', x: 820, y: 500, r: 104, description: 'The wide, clear pond mirrors a pale moon-shaped patch of sky. Water lilies drift near the mossy edge.' },
       { id: 'mushrooms', name: 'Twilight Mushrooms', x: 730, y: 200, r: 34, description: 'These tiny violet mushrooms glow softly beneath the trees.' },
       { id: 'moonTree', name: 'Silverleaf Tree', x: 700, y: 85, r: 48, description: 'Pale leaves catch the light like little pieces of the moon.' }
     ],
     '08': [
       { id: 'signpost', name: 'Old Signpost', x: 390, y: 310, r: 36, description: 'The painted arrows point to the village, the meadow, and a place marked only with a star.' },
-      { id: 'ruin', name: 'Overgrown Arch', x: 875, y: 245, r: 46, description: 'Vines curl around the ancient stone arch. A warm breeze hums through its opening.' },
+      { id: 'ruin', name: 'Overgrown Arch', x: 875, y: 245, r: 46, description: 'Thick ivy nearly swallows the broken stone arch. A warm breeze slips through its leafy opening.' },
       { id: 'appleTree', name: 'Wild Apple Tree', x: 945, y: 485, r: 48, description: 'Small red apples peek between the leaves. One has a tiny bite taken out of it.' }
+    ],
+    '07': [
+      { id: 'trailLantern', name: 'Mossy Trail Lantern', x: 330, y: 275, r: 34, description: 'A glass lantern hangs from a crooked post. Someone has left a little sprig of rosemary beside it.' },
+      { id: 'fireflies', name: 'Firefly Hollow', x: 815, y: 425, r: 40, description: 'A few fireflies blink above the ferns, even though the sun is still out.' },
+      { id: 'trailRanger', name: 'Forest Rambler', x: 610, y: 540, r: 38, description: 'The rambler says the vines appeared without warning. “The Alchemist lives south of here. Maybe they can help.”' }
     ]
   };
 
@@ -200,7 +222,7 @@
     if (!s.rodentQuestStarted) {
       s.rodentQuestStarted = true;
       updateHud();
-      openModal('Grandfather', '🧓', '<p>Would you help me with a little problem in the basement? There are five cheeky rodents down there.</p>', () => makeButton('I’ll help!', closeModal), true);
+      openModal('Grandfather', '🧓', '<p>I need a favor, if you have time. You can find me inside.</p>', () => makeButton('I’ll help!', closeModal), true);
       return;
     }
     if (s.rodents < 5) {
@@ -305,7 +327,7 @@
         objectOptions('Grandfather’s House', '🏠', 'Grandfather lives here.', [{ label: 'ENTER', run: () => enterInterior('grandpa') }]);
         break;
       case 'villageGrandma':
-        objectOptions('Grandma', '👵', object.description, [{ label: 'TALK', run: () => simpleModal('Grandma', '👵', 'Your grandfather is downstairs with the rodents. I’ll keep an eye on the village while you help him!') }]);
+        objectOptions('Grandma', '👵', object.description, [{ label: 'TALK', run: () => simpleModal('Grandma', '👵', 'Your grandfather needs a favor. You can find him inside the house.') }]);
         break;
       case 'villagerMara':
         objectOptions('Mara the Gardener', '🌼', 'Mara tends the village garden and knows every flower along the paths.', [{ label: 'TALK', run: () => simpleModal('Mara the Gardener', '🌼', 'The meadow flowers are prettiest where the morning sun reaches them.') }]);
@@ -334,21 +356,30 @@
       case 'thorns':
         s.vinesStarted = true;
         updateHud();
-        objectOptions('Thorny Vines', '🌿', 'A dense wall of thorny vines covers the path. The tangled stems cannot be pulled apart by hand.', [{
-          label: 'USE POTION',
-          run: () => {
-            if (!s.potion) { simpleModal('Thorny Vines', '🌿', 'You need a Vine Potion to clear the Vines.'); return; }
-            s.potion = false; s.thorns = true;
-            toast('The potion clears the Vines. The sky grows dim…');
-            updateHud();
-          }
-        }]);
+        objectOptions('Thorny Vines', '🌿', object.description, s.potion ? [{
+          label: 'USE POTION', run: () => { s.potion = false; s.thorns = true; toast('The potion clears the Vines. The sky grows dim…'); updateHud(); }
+        }] : []);
         break;
       case 'hut':
         objectOptions('Alchemist’s Hut', '⚗️', 'A small hut where the Alchemist brews potions.', [{ label: 'ENTER', run: () => enterInterior('hut') }]);
         break;
-      case 'well': case 'garden': case 'berryBush': case 'riverReeds': case 'riverStone': case 'fallenLog': case 'mossyMarker': case 'oldOak': case 'stoneRing': case 'pond': case 'mushrooms': case 'signpost': case 'ruin': case 'villageOak': case 'riverWillow': case 'forestOak': case 'moonTree': case 'appleTree':
+      case 'well': case 'garden': case 'berryBush': case 'riverReeds': case 'riverStone': case 'fallenLog': case 'mossyMarker': case 'oldOak': case 'stoneRing': case 'pond': case 'mushrooms': case 'signpost': case 'ruin': case 'villageOak': case 'riverWillow': case 'forestOak': case 'moonTree': case 'appleTree': case 'trailLantern': case 'fireflies': case 'meadowStone': case 'meadowLantern':
         objectOptions(object.name, object.id==='pond'?'💧':object.id==='mushrooms'?'🍄':'✦', object.description);
+        break;
+      case 'scaredVillager':
+        objectOptions('Worried Traveler','❔',object.description,[{label:'TALK',run:()=>simpleModal('Worried Traveler','❔','“Those thorny vines sprang up overnight. I heard the Alchemist farther south might know what to do.”')}]);
+        break;
+      case 'meadowFlowers':
+        objectOptions('Windflower Patch','🌼',object.description);
+        break;
+      case 'trailKeeper':
+        objectOptions('Trail Keeper','🪶',object.description,[{label:'TALK',run:()=>simpleModal('Trail Keeper','🪶','“No one remembers seeing vines like those before. Keep to the path, and watch for thorns.”')}]);
+        break;
+      case 'pathHermit':
+        objectOptions('Meadow Walker','🧭',object.description,[{label:'TALK',run:()=>simpleModal('Meadow Walker','🧭','“The hermit has lived in the southern glade for many years. If anyone can help with the vines, they can.”')}]);
+        break;
+      case 'trailRanger':
+        objectOptions('Forest Rambler','🧺',object.description,[{label:'TALK',run:()=>simpleModal('Forest Rambler','🧺','“The vines appeared all at once. The Alchemist lives south of here and knows every plant in the woods.”')}]);
         break;
       case 'sunpetal': case 'bluebell': case 'mooncap': case 'lavender': case 'amberleaf': case 'fern': {
         const description = flowerDetails[object.id] || 'A little piece of local plant life.';
@@ -466,22 +497,38 @@
     ctx.fillStyle='#563b30';ctx.fillRect(-12,14,24,35);ctx.fillStyle='#d9b476';ctx.fillRect(-9,17,18,31);ctx.fillStyle='#8acbd0';ctx.fillRect(-5,20,10,10);ctx.fillStyle='#805536';ctx.beginPath();ctx.arc(6,35,2,0,Math.PI*2);ctx.fill();
     ctx.fillStyle='#405d3c';ctx.fillRect(-45,34,4,11);ctx.fillRect(41,34,4,11);ctx.fillStyle='#dd9971';ctx.beginPath();ctx.arc(-43,31,5,0,Math.PI*2);ctx.arc(43,31,5,0,Math.PI*2);ctx.fill();
     ctx.fillStyle='#4c6d45';for(const px of [-48,48]){ctx.beginPath();ctx.ellipse(px,39,7,4,0,0,Math.PI*2);ctx.fill();}
-    if (label) { ctx.fillStyle = '#395f48'; ctx.font = '800 13px Nunito'; ctx.textAlign = 'center'; ctx.fillText(label, 0, 69); }
+    ctx.restore();
+  }
+
+  function drawPotionSign(x,y) {
+    ctx.save();ctx.translate(x,y);
+    ctx.fillStyle='#533c2f';ctx.beginPath();ctx.roundRect(-29,-13,58,28,9);ctx.fill();
+    ctx.fillStyle='#f1dfb4';ctx.beginPath();ctx.roundRect(-26,-11,52,24,7);ctx.fill();
+    ctx.fillStyle='#6b4b37';ctx.fillRect(-5,-7,10,4);ctx.fillRect(-4,-10,8,4);
+    const bottle=ctx.createLinearGradient(-9,-5,10,10);bottle.addColorStop(0,'#77cda1');bottle.addColorStop(.55,'#388b72');bottle.addColorStop(1,'#256452');
+    ctx.fillStyle=bottle;ctx.beginPath();ctx.moveTo(-5,-3);ctx.lineTo(5,-3);ctx.lineTo(5,1);ctx.quadraticCurveTo(12,7,10,12);ctx.quadraticCurveTo(0,16,-10,12);ctx.quadraticCurveTo(-12,7,-5,1);ctx.closePath();ctx.fill();
+    ctx.fillStyle='#d8e897';ctx.beginPath();ctx.ellipse(0,9,8,3,0,0,Math.PI*2);ctx.fill();ctx.fillStyle='#ffffffaa';ctx.beginPath();ctx.ellipse(-4,4,2,4,-.2,0,Math.PI*2);ctx.fill();
     ctx.restore();
   }
 
   function drawFlora(id, x, y) {
     ctx.save(); ctx.translate(x, y);
+    ctx.fillStyle='#355b3848';ctx.beginPath();ctx.ellipse(0,25,24,7,0,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#4c804e';for(const side of [-1,1]){ctx.beginPath();ctx.ellipse(side*9,18,8,3,side*.65,0,Math.PI*2);ctx.fill();}
+    ctx.strokeStyle='#a9cc7a';ctx.lineWidth=1.4;ctx.beginPath();ctx.moveTo(-12,23);ctx.lineTo(-5,17);ctx.moveTo(12,23);ctx.lineTo(5,17);ctx.stroke();
     if (id === 'sunpetal') {
-      ctx.strokeStyle = '#477b49'; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(0, 12); ctx.lineTo(0, 32); ctx.stroke();
-      for (let i = 0; i < 8; i++) { ctx.fillStyle = '#f3c94e'; ctx.beginPath(); ctx.ellipse(Math.cos(i * Math.PI / 4) * 15, Math.sin(i * Math.PI / 4) * 15, 9, 15, i * Math.PI / 4, 0, Math.PI * 2); ctx.fill(); }
-      ctx.fillStyle = '#945d38'; ctx.beginPath(); ctx.arc(0, 0, 9, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = '#477b49'; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(0, 12); ctx.quadraticCurveTo(-3,23,0,32); ctx.stroke();
+      ctx.fillStyle='#528b50';ctx.beginPath();ctx.ellipse(-8,22,8,4,-.55,0,Math.PI*2);ctx.ellipse(8,28,8,4,.55,0,Math.PI*2);ctx.fill();
+      const petal=ctx.createLinearGradient(0,-18,0,18);petal.addColorStop(0,'#fff09b');petal.addColorStop(.55,'#f4c849');petal.addColorStop(1,'#dd9c35');
+      for (let i = 0; i < 10; i++) { ctx.fillStyle=petal;ctx.beginPath();ctx.ellipse(Math.cos(i*Math.PI/5)*13,Math.sin(i*Math.PI/5)*13,7,14,i*Math.PI/5,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#fbe99a';ctx.lineWidth=1;ctx.stroke(); }
+      ctx.fillStyle = '#825237'; ctx.beginPath(); ctx.arc(0, 0, 8, 0, Math.PI * 2); ctx.fill();ctx.fillStyle='#d99a41';for(let i=0;i<9;i++){const a=i*2.4;ctx.beginPath();ctx.arc(Math.cos(a)*4,Math.sin(a)*4,1.2,0,Math.PI*2);ctx.fill();}
     } else if (id === 'bluebell') {
       ctx.strokeStyle = '#47804e'; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(0, 22); ctx.quadraticCurveTo(-5, 0, 0, -22); ctx.stroke();
-      [[-12,-13], [3,-22], [15,-8]].forEach(([bx,by],i)=>{ctx.fillStyle=['#667fd0','#8276d3','#5c92d2'][i];ctx.beginPath();ctx.moveTo(bx-8,by-3);ctx.quadraticCurveTo(bx,by-15,bx+8,by-3);ctx.lineTo(bx+5,by+7);ctx.quadraticCurveTo(bx,by+12,bx-5,by+7);ctx.closePath();ctx.fill();});
+      [[-12,-13], [3,-22], [15,-8]].forEach(([bx,by],i)=>{const g=ctx.createLinearGradient(bx,by-12,bx,by+12);g.addColorStop(0,['#9caff1','#b8a4ed','#8ebde9'][i]);g.addColorStop(1,['#506cb5','#705db7','#477ab6'][i]);ctx.fillStyle=g;ctx.beginPath();ctx.moveTo(bx-8,by-3);ctx.quadraticCurveTo(bx,by-15,bx+8,by-3);ctx.lineTo(bx+5,by+7);ctx.quadraticCurveTo(bx,by+12,bx-5,by+7);ctx.closePath();ctx.fill();ctx.strokeStyle='#cbd6f7';ctx.lineWidth=1;ctx.stroke();ctx.fillStyle='#f4e5a1';ctx.beginPath();ctx.arc(bx,by+5,1.5,0,Math.PI*2);ctx.fill();});
     } else if (id === 'mooncap') {
-      ctx.fillStyle = '#f0e9d3'; ctx.fillRect(-5, 0, 10, 23); ctx.fillStyle = '#9c6e9f'; ctx.beginPath(); ctx.ellipse(0, 0, 25, 14, -.12, Math.PI, 0); ctx.fill();
-      ctx.fillStyle = '#e3d9b4'; for (let i = -12; i <= 12; i += 12) { ctx.beginPath(); ctx.arc(i, -5, 2.5, 0, Math.PI * 2); ctx.fill(); }
+      ctx.fillStyle = '#f0e9d3';ctx.beginPath();ctx.roundRect(-5,-1,10,26,4);ctx.fill();ctx.fillStyle='#c8b8d3';ctx.fillRect(-3,5,2,16);
+      const mush=ctx.createLinearGradient(0,-15,0,3);mush.addColorStop(0,'#c39bd0');mush.addColorStop(.55,'#90669f');mush.addColorStop(1,'#614968');ctx.fillStyle=mush;ctx.beginPath();ctx.ellipse(0,0,26,15,-.12,Math.PI,0);ctx.fill();ctx.strokeStyle='#d8c0dc';ctx.lineWidth=2;ctx.beginPath();ctx.ellipse(0,0,25,14,-.12,Math.PI,0);ctx.stroke();
+      ctx.fillStyle = '#f4e8bf'; for (let i = -16; i <= 16; i += 8) { ctx.beginPath(); ctx.ellipse(i, -6-Math.abs(i)*.05, 2.3, 1.7, 0, 0, Math.PI * 2); ctx.fill(); }
     } else if (id === 'lavender') {
       ctx.strokeStyle = '#4f7f4c'; ctx.lineWidth = 4; for (let j = -1; j <= 1; j++) { ctx.beginPath(); ctx.moveTo(j * 10, 25); ctx.lineTo(j * 8, -15); ctx.stroke(); for (let k=0;k<4;k++){ctx.fillStyle='#9376bd';ctx.beginPath();ctx.ellipse(j*8+(k%2)*4,-14+k*8,4,7,.4,0,Math.PI*2);ctx.fill();} }
     } else if (id === 'amberleaf') {
@@ -500,27 +547,48 @@
       { coat:'#668fba',trim:'#e7bd6e',hair:'#5b4639',hat:'#d98b66' },
       { coat:'#789b64',trim:'#f2d28b',hair:'#704937',hat:'#e2a86f' },
       { coat:'#9a79ad',trim:'#edd18b',hair:'#463a36',hat:'#82a56b' },
-      { coat:'#8d687f',trim:'#f3d48f',hair:'#f0e2c0',hat:'#788c5d' }
-    ][Math.min(style,4)];
+      { coat:'#8d687f',trim:'#f3d48f',hair:'#f0e2c0',hat:'#788c5d' },
+      { coat:'#976f55',trim:'#ead8ad',hair:'#d1d0c2',hat:'#8b9a7b' },
+      { coat:'#725b82',trim:'#d9c98a',hair:'#493c39',hat:'#b28760' },
+      { coat:'#547c77',trim:'#e7c478',hair:'#7a4d39',hat:'#ba795a' }
+    ][Math.min(style,7)];
     ctx.save();ctx.translate(x,y);
     ctx.fillStyle='#20392d3d';ctx.beginPath();ctx.ellipse(0,18,21,9,0,0,Math.PI*2);ctx.fill();
+    const tallHat = style===0 || style===5 || style===7;
     ctx.fillStyle='#493b31';ctx.beginPath();ctx.ellipse(0,-8,14,15,0,0,Math.PI*2);ctx.fill();
     ctx.fillStyle='#f2c99d';ctx.beginPath();ctx.ellipse(0,-5,10,12,0,0,Math.PI*2);ctx.fill();
-    ctx.fillStyle=palettes.hair;ctx.beginPath();ctx.arc(0,-11,11,Math.PI,Math.PI*2);ctx.fill();ctx.fillRect(-10,-12,4,10);
+    ctx.fillStyle=palettes.hair;ctx.beginPath();
+    if(style===1||style===6){ctx.ellipse(0,-14,12,7,0,Math.PI,Math.PI*2);ctx.fill();ctx.fillRect(-12,-14,5,18);ctx.fillRect(7,-13,5,17);}
+    else if(style===2){ctx.arc(0,-13,12,Math.PI,Math.PI*2);ctx.fill();ctx.fillRect(-11,-12,22,5);}
+    else {ctx.arc(0,-11,11,Math.PI,Math.PI*2);ctx.fill();ctx.fillRect(-10,-12,4,10);}
     ctx.fillStyle='#3e342e';ctx.beginPath();ctx.arc(-3,-5,1.2,0,Math.PI*2);ctx.arc(4,-5,1.2,0,Math.PI*2);ctx.fill();
     ctx.strokeStyle='#b76f61';ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(.5,-1,3,.15,Math.PI-.15);ctx.stroke();
     ctx.fillStyle=palettes.coat;ctx.beginPath();ctx.moveTo(-13,6);ctx.quadraticCurveTo(-18,9,-18,23);ctx.quadraticCurveTo(0,30,18,23);ctx.quadraticCurveTo(17,9,13,6);ctx.quadraticCurveTo(0,13,-13,6);ctx.fill();
     ctx.fillStyle=palettes.trim;ctx.beginPath();ctx.ellipse(0,21,17,4,0,0,Math.PI*2);ctx.fill();
     ctx.fillStyle='#80533a';ctx.fillRect(-11,24,8,5);ctx.fillRect(4,24,8,5);
-    if(style===4){ctx.fillStyle=palettes.hair;ctx.beginPath();ctx.arc(10,-13,5,0,Math.PI*2);ctx.fill();ctx.fillStyle=palettes.hat;ctx.beginPath();ctx.ellipse(0,-15,16,5,0,Math.PI,Math.PI*2);ctx.fill();ctx.fillRect(-10,-20,20,5);ctx.fillStyle='#d8b779';ctx.beginPath();ctx.arc(0,-18,2.4,0,Math.PI*2);ctx.fill();}else{ctx.fillStyle=palettes.hat;ctx.beginPath();ctx.ellipse(0,-15,16,5,0,Math.PI,Math.PI*2);ctx.fill();ctx.fillRect(-10,-20,20,5);}
-    ctx.fillStyle='#fff8e8';ctx.font='800 12px Nunito, system-ui';ctx.textAlign='center';ctx.lineWidth=4;ctx.strokeStyle='#294739cc';ctx.strokeText(label,0,47);ctx.fillText(label,0,47);
+    if(tallHat){
+      ctx.fillStyle=palettes.hat;ctx.beginPath();ctx.ellipse(0,-16,17,5,0,Math.PI,Math.PI*2);ctx.fill();ctx.fillRect(-10,-21,20,6);
+      if(style===5){ctx.beginPath();ctx.moveTo(-9,-20);ctx.lineTo(0,-39);ctx.lineTo(11,-20);ctx.closePath();ctx.fill();}
+      if(style===7){ctx.beginPath();ctx.ellipse(0,-28,4,12,-.18,0,Math.PI*2);ctx.fill();}
+    } else if(style===4){ctx.fillStyle=palettes.hair;ctx.beginPath();ctx.arc(10,-13,5,0,Math.PI*2);ctx.fill();ctx.fillStyle=palettes.hat;ctx.beginPath();ctx.ellipse(0,-15,16,5,0,Math.PI,Math.PI*2);ctx.fill();ctx.fillRect(-10,-20,20,5);ctx.fillStyle='#d8b779';ctx.beginPath();ctx.arc(0,-18,2.4,0,Math.PI*2);ctx.fill();}
+    else if(style===3){ctx.fillStyle=palettes.hat;ctx.beginPath();ctx.ellipse(0,-15,18,8,0,Math.PI,Math.PI*2);ctx.fill();ctx.fillRect(-7,-20,14,6);}
+    else {ctx.fillStyle=palettes.hat;ctx.beginPath();ctx.ellipse(0,-15,16,5,0,Math.PI,Math.PI*2);ctx.fill();ctx.fillRect(-10,-20,20,5);}
+    // Each villager carries a different tool or keepsake, so their silhouettes read apart.
+    if(style===0){ctx.fillStyle='#c58c4b';ctx.fillRect(14,5,5,20);ctx.fillStyle='#6d4c35';ctx.fillRect(12,5,9,5);}
+    if(style===1){ctx.strokeStyle='#9a7147';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(-18,7);ctx.lineTo(-20,29);ctx.stroke();ctx.fillStyle='#d8b56d';ctx.beginPath();ctx.arc(-20,5,4,0,Math.PI*2);ctx.fill();}
+    if(style===2){ctx.fillStyle='#658b50';ctx.beginPath();ctx.ellipse(-17,10,7,3,-.5,0,Math.PI*2);ctx.ellipse(17,13,7,3,.5,0,Math.PI*2);ctx.fill();}
+    if(style===3){ctx.fillStyle='#a86c46';ctx.beginPath();ctx.roundRect(12,8,12,15,3);ctx.fill();ctx.fillStyle='#e9cf91';ctx.beginPath();ctx.arc(18,11,2,0,Math.PI*2);ctx.fill();}
+    if(style===4){ctx.fillStyle='#b88852';ctx.beginPath();ctx.ellipse(-18,17,8,4,-.2,0,Math.PI*2);ctx.fill();}
+    if(style===5){ctx.fillStyle='#e4d7b1';ctx.fillRect(-13,10,4,15);ctx.fillStyle='#9b7651';ctx.beginPath();ctx.arc(-11,9,4,0,Math.PI*2);ctx.fill();}
+    if(style===6){ctx.fillStyle='#b5b5a0';ctx.beginPath();ctx.arc(-11,-4,3,0,Math.PI*2);ctx.arc(11,-4,3,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#d7d0b8';ctx.lineWidth=2;ctx.beginPath();ctx.arc(0,6,6,.2,Math.PI-.2);ctx.stroke();}
+    if(style===7){ctx.fillStyle='#7690aa';ctx.beginPath();ctx.moveTo(-17,9);ctx.lineTo(-23,28);ctx.lineTo(-15,25);ctx.closePath();ctx.fill();}
     ctx.restore();
   }
 
   function drawGround() {
     const palettes={
-      '13':['#b7d794','#78ad70'],'12':['#afd493','#78ad70'],'11':['#b7d996','#7aaa70'],
-      '16':['#b1d28b','#76a96d'],'21':['#c4dfa0','#85b877'],'06':['#94c27c','#568f62'],'08':['#b9d995','#7daf70']
+      '13':['#b7d794','#78ad70'],'09':['#acd38a','#79ab72'],'12':['#afd493','#78ad70'],'11':['#b7d996','#7aaa70'],
+      '16':['#b1d28b','#76a96d'],'21':['#c4dfa0','#85b877'],'05':['#99c882','#618b68'],'06':['#94c27c','#568f62'],'07':['#a9cf89','#61916a'],'08':['#b9d995','#7daf70']
     };
     const colors=palettes[s.screen]||palettes['13'];
     const grad = ctx.createLinearGradient(0, 0, 0, H); grad.addColorStop(0, colors[0]); grad.addColorStop(1, colors[1]);
@@ -578,6 +646,8 @@
 
   function drawRoomPath() {
     switch (s.screen) {
+      case '09': drawPath([[830, 680], [750, 570], [665, 480], [625, 380], [700, 275], [780, 180], [830, 40]], 180); break;
+      case '05': drawPath([[220, 680], [285, 560], [405, 470], [600, 410], [800, 360], [1080, 360]], 180); break;
       case '13': drawPath([[90, 360], [190, 360], [320, 520], [510, 540], [700, 500], [820, 390], [790, 265], [785, 165], [830, 40]], 180); break;
       case '12':
         drawPath([[1080, 360], [900, 360], [760, 360], [660, 360], [560, 360], [460, 360], [330, 360], [180, 360], [40, 360]], 180);
@@ -596,9 +666,11 @@
       case '16': drawPath([[560, 35], [470, 150], [340, 230], [245, 350], [270, 490], [390, 585], [485, 650], [560, 685]], 180); break;
       case '21': drawPath([[560, 40], [520, 170], [460, 285], [370, 370], [260, 390]], 460, ['#254c31', '#315d39', '#3d6d43']); break;
       case '06':
-        drawPath([[220, 680], [255, 560], [335, 455], [420, 350], [500, 255], [560, 40]], 180);
+        drawPath([[560, 680], [535, 570], [540, 460], [590, 340], [680, 230], [700, 130], [560, 40]], 180);
+        drawPath([[540,460],[430,420],[320,380],[200,360],[40,360]],150);
         break;
-      case '08': drawPath([[560, 40], [585, 155], [630, 270], [690, 385], [750, 510], [830, 680]], 180); break;
+      case '07': drawPath([[560, 40], [525, 160], [500, 280], [545, 400], [620, 505], [560, 680]], 180); break;
+      case '08': drawPath([[560, 40], [525, 150], [445, 225], [390, 310], [475, 405], [625, 470], [750, 565], [830, 680]], 180); break;
     }
   }
 
@@ -606,23 +678,46 @@
     ctx.save();
     if(id==='well') { ctx.fillStyle='#3a5844';ctx.beginPath();ctx.ellipse(0,12,40,19,0,0,Math.PI*2);ctx.fill();ctx.fillStyle='#786047';ctx.beginPath();ctx.ellipse(0,0,35,22,0,0,Math.PI*2);ctx.fill();ctx.fillStyle='#68a9a6';ctx.beginPath();ctx.ellipse(0,-4,27,13,0,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#dcc391';ctx.lineWidth=5;ctx.strokeRect(-30,-20,60,8);ctx.fillStyle='#795638';ctx.fillRect(-28,-29,5,32);ctx.fillRect(23,-29,5,32);ctx.fillRect(-35,-33,70,7); }
     else if(id==='garden'||id==='berryBush'||id==='mushrooms'||id==='riverReeds') { for(let i=0;i<6;i++){let x=(i-2.5)*12,y=(i%2)*5;ctx.fillStyle=id==='berryBush'?'#477a45':id==='mushrooms'?'#5c8047':'#4e8a55';ctx.beginPath();ctx.ellipse(x,y,12,18,(i%3-.8)*.35,0,Math.PI*2);ctx.fill();if(id==='berryBush'){ctx.fillStyle=i%2?'#c95058':'#d96161';ctx.beginPath();ctx.arc(x+4,y-6,3.5,0,Math.PI*2);ctx.fill();}if(id==='mushrooms'){ctx.fillStyle='#eee2c4';ctx.fillRect(x-2,y-4,4,13);ctx.fillStyle='#9e75b8';ctx.beginPath();ctx.ellipse(x,y-5,8,5,0,Math.PI,Math.PI*2);ctx.fill();}} }
-    else if(id==='riverStone'||id==='stoneRing'||id==='mossyMarker'){ctx.fillStyle='#3e6148';ctx.beginPath();ctx.ellipse(0,14,30,10,0,0,Math.PI*2);ctx.fill();ctx.fillStyle='#8c9581';ctx.beginPath();ctx.moveTo(-23,12);ctx.lineTo(-18,-14);ctx.lineTo(-6,-23);ctx.lineTo(19,-17);ctx.lineTo(25,12);ctx.closePath();ctx.fill();ctx.strokeStyle='#c7c5a2';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(-12,-6);ctx.quadraticCurveTo(2,-16,13,-5);ctx.stroke();ctx.fillStyle='#6f9660';ctx.beginPath();ctx.ellipse(-7,-16,7,3,-.5,0,Math.PI*2);ctx.fill();}
+    else if(id==='stoneRing'){
+      ctx.fillStyle='#31523d55';ctx.beginPath();ctx.ellipse(0,12,62,38,-.12,0,Math.PI*2);ctx.fill();
+      for(let i=0;i<7;i++){const a=-Math.PI/2+i*Math.PI*2/7,cx=Math.cos(a)*43,cy=Math.sin(a)*25;const h=22+(i%3)*5;
+        ctx.fillStyle='#596f65';ctx.beginPath();ctx.moveTo(cx-12,cy+7);ctx.lineTo(cx-10,cy-h+8);ctx.lineTo(cx-4,cy-h);ctx.lineTo(cx+9,cy-h+2);ctx.lineTo(cx+13,cy+8);ctx.closePath();ctx.fill();
+        const stone=ctx.createLinearGradient(cx-10,cy,cx+10,cy);stone.addColorStop(0,'#687c70');stone.addColorStop(.45,'#b1b9a2');stone.addColorStop(1,'#718477');ctx.fillStyle=stone;ctx.beginPath();ctx.moveTo(cx-10,cy+5);ctx.lineTo(cx-8,cy-h+8);ctx.lineTo(cx+2,cy-h+4);ctx.lineTo(cx+10,cy-h+9);ctx.lineTo(cx+11,cy+5);ctx.closePath();ctx.fill();
+        ctx.strokeStyle='#d1d4b8';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(cx-5,cy-h+10);ctx.lineTo(cx-3,cy-2);ctx.stroke();
+      }
+      ctx.fillStyle='#668457';ctx.beginPath();ctx.ellipse(0,3,21,11,0,0,Math.PI*2);ctx.fill();ctx.fillStyle='#e5d48a';for(let i=0;i<5;i++){const a=i*1.25;ctx.beginPath();ctx.arc(Math.cos(a)*15,Math.sin(a)*8,2.3,0,Math.PI*2);ctx.fill();}
+    }
+    else if(id==='riverStone'||id==='mossyMarker'){ctx.fillStyle='#3e6148';ctx.beginPath();ctx.ellipse(0,14,30,10,0,0,Math.PI*2);ctx.fill();ctx.fillStyle='#8c9581';ctx.beginPath();ctx.moveTo(-23,12);ctx.lineTo(-18,-14);ctx.lineTo(-6,-23);ctx.lineTo(19,-17);ctx.lineTo(25,12);ctx.closePath();ctx.fill();ctx.strokeStyle='#c7c5a2';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(-12,-6);ctx.quadraticCurveTo(2,-16,13,-5);ctx.stroke();ctx.fillStyle='#6f9660';ctx.beginPath();ctx.ellipse(-7,-16,7,3,-.5,0,Math.PI*2);ctx.fill();}
     else if(id==='fallenLog'||id==='oldOak'){ctx.fillStyle='#435744';ctx.beginPath();ctx.ellipse(0,16,42,12,0,0,Math.PI*2);ctx.fill();ctx.fillStyle='#80583b';ctx.beginPath();ctx.ellipse(0,0,39,15,-.2,0,Math.PI*2);ctx.fill();ctx.fillStyle='#bb8a58';ctx.beginPath();ctx.ellipse(28,-1,8,13,-.2,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#56754c';ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(-22,-8);ctx.quadraticCurveTo(0,-20,19,-7);ctx.stroke();}
-    else if(id==='pond'){ctx.fillStyle='#385f4a';ctx.beginPath();ctx.ellipse(0,10,48,28,-.12,0,Math.PI*2);ctx.fill();ctx.fillStyle='#5a9fa0';ctx.beginPath();ctx.ellipse(0,0,40,20,-.12,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#bfe4c5';ctx.lineWidth=3;ctx.beginPath();ctx.ellipse(-6,-2,19,7,0,0,Math.PI*2);ctx.stroke();}
-    else if(id==='signpost'){ctx.fillStyle='#614932';ctx.fillRect(-4,-5,8,43);ctx.fillStyle='#a77a4c';ctx.beginPath();ctx.moveTo(-28,-23);ctx.lineTo(25,-23);ctx.lineTo(35,-12);ctx.lineTo(25,-2);ctx.lineTo(-28,-2);ctx.closePath();ctx.fill();ctx.fillStyle='#e6c78a';ctx.font='bold 10px sans-serif';ctx.textAlign='center';ctx.fillText('✦',0,-10);}
-    else if(id==='ruin'){ctx.fillStyle='#7e8b74';ctx.fillRect(-34,-32,12,61);ctx.fillRect(21,-32,12,61);ctx.fillStyle='#929b7b';ctx.fillRect(-40,-37,78,13);ctx.fillStyle='#557c4c';ctx.strokeStyle='#557c4c';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(-23,-28);ctx.bezierCurveTo(-6,-10,10,-41,26,-16);ctx.stroke();}
+    else if(id==='pond'){ctx.fillStyle='#31543e70';ctx.beginPath();ctx.ellipse(0,15,97,59,-.12,0,Math.PI*2);ctx.fill();const shore=ctx.createLinearGradient(0,-48,0,52);shore.addColorStop(0,'#8c9a66');shore.addColorStop(.4,'#567657');shore.addColorStop(1,'#344f43');ctx.fillStyle=shore;ctx.beginPath();ctx.ellipse(0,0,92,55,-.12,0,Math.PI*2);ctx.fill();const water=ctx.createLinearGradient(-30,-35,35,38);water.addColorStop(0,'#9dd9cf');water.addColorStop(.52,'#4f9da2');water.addColorStop(1,'#357882');ctx.fillStyle=water;ctx.beginPath();ctx.ellipse(-2,-5,77,42,-.12,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#c3ece0';ctx.lineWidth=3;ctx.beginPath();ctx.ellipse(-12,-10,37,14,.12,0,Math.PI*2);ctx.stroke();ctx.strokeStyle='#d8efcf99';ctx.lineWidth=2;ctx.beginPath();ctx.ellipse(22,2,16,6,-.2,0,Math.PI*2);ctx.stroke();
+      for(const [x,y] of [[-96,-10],[98,2],[-42,-58],[48,54]]){ctx.fillStyle='#507a4e';ctx.beginPath();ctx.ellipse(x,y,9,4,x*.01,0,Math.PI*2);ctx.fill();ctx.fillStyle='#74a45a';ctx.beginPath();ctx.ellipse(x+3,y-3,5,3,-.5,0,Math.PI*2);ctx.fill();}
+      for(const [x,y] of [[-38,-5],[35,-22]]){ctx.fillStyle='#6b9b63';ctx.beginPath();ctx.ellipse(x,y,12,7,-.2,0,Math.PI*2);ctx.fill();ctx.fillStyle='#f7edce';for(let i=0;i<5;i++){const a=i*Math.PI*2/5;ctx.beginPath();ctx.ellipse(x+Math.cos(a)*4,y+Math.sin(a)*3,3,2,a,0,Math.PI*2);ctx.fill();}ctx.fillStyle='#e5c765';ctx.beginPath();ctx.arc(x,y,2,0,Math.PI*2);ctx.fill();}}
+    else if(id==='signpost'){ctx.fillStyle='#614932';ctx.fillRect(-4,-5,8,43);ctx.fillStyle='#a77a4c';ctx.beginPath();ctx.moveTo(-28,-23);ctx.lineTo(25,-23);ctx.lineTo(35,-12);ctx.lineTo(25,-2);ctx.lineTo(-28,-2);ctx.closePath();ctx.fill();ctx.strokeStyle='#d2aa70';ctx.lineWidth=2;ctx.stroke();ctx.fillStyle='#e6c78a';ctx.font='bold 11px sans-serif';ctx.textAlign='center';ctx.fillText('←',-12,-10);ctx.fillText('↑',6,-10);ctx.fillText('✦',23,-10);}
+    else if(id==='ruin'){
+      ctx.fillStyle='#34583c50';ctx.beginPath();ctx.ellipse(0,30,69,15,0,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle='#82907b';ctx.beginPath();ctx.moveTo(-54,25);ctx.lineTo(-50,-31);ctx.lineTo(-36,-37);ctx.lineTo(-25,-29);ctx.lineTo(-23,25);ctx.closePath();ctx.fill();ctx.beginPath();ctx.moveTo(24,25);ctx.lineTo(24,-25);ctx.lineTo(36,-38);ctx.lineTo(52,-29);ctx.lineTo(54,25);ctx.closePath();ctx.fill();
+      ctx.fillStyle='#a0a58a';ctx.beginPath();ctx.moveTo(-47,-28);ctx.lineTo(-35,-52);ctx.lineTo(-17,-50);ctx.lineTo(-5,-41);ctx.lineTo(8,-48);ctx.lineTo(30,-48);ctx.lineTo(48,-35);ctx.lineTo(45,-23);ctx.lineTo(21,-29);ctx.lineTo(2,-33);ctx.lineTo(-17,-28);ctx.closePath();ctx.fill();
+      ctx.strokeStyle='#d0cbaa';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(-40,-22);ctx.lineTo(-38,15);ctx.moveTo(36,-20);ctx.lineTo(39,14);ctx.stroke();
+      // Ivy fully blankets the arch crown and both pillars; dangling tendrils break the outline.
+      const leaves=[[-42,-38],[-31,-44],[-19,-42],[-6,-40],[8,-42],[21,-43],[35,-39],[-43,-18],[-29,-12],[-27,4],[-43,12],[35,-20],[45,-14],[32,0],[44,9],[-4,-36],[12,-32],[0,-31]];
+      ctx.strokeStyle='#3f7048';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(-45,18);ctx.bezierCurveTo(-24,-4,-37,-32,-13,-36);ctx.bezierCurveTo(5,-48,15,-24,37,-39);ctx.bezierCurveTo(50,-18,32,-2,46,18);ctx.stroke();
+      leaves.forEach(([x,y],i)=>{ctx.fillStyle=i%2?'#5d914e':'#78a957';ctx.beginPath();ctx.ellipse(x,y,7,4,i%2?-.65:.65,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#a1c16d';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(x-3,y+1);ctx.lineTo(x+4,y-1);ctx.stroke();});
+      ctx.fillStyle='#7ea85d';ctx.beginPath();ctx.moveTo(-39,-12);ctx.quadraticCurveTo(-57,-2,-40,4);ctx.quadraticCurveTo(-31,0,-39,-12);ctx.fill();ctx.beginPath();ctx.moveTo(42,-10);ctx.quadraticCurveTo(58,-2,43,5);ctx.quadraticCurveTo(34,0,42,-10);ctx.fill();
+    }
+    else if(id==='trailLantern'){ctx.fillStyle='#59442f';ctx.fillRect(-3,-8,6,43);ctx.strokeStyle='#735236';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(0,-5);ctx.lineTo(0,-38);ctx.quadraticCurveTo(20,-50,28,-33);ctx.stroke();ctx.fillStyle='#d3ad65';ctx.beginPath();ctx.roundRect(7,-34,20,25,5);ctx.fill();ctx.fillStyle='#f9d984';ctx.beginPath();ctx.roundRect(11,-30,12,17,3);ctx.fill();ctx.fillStyle='#ffeeb2';ctx.beginPath();ctx.arc(17,-22,5,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#426d48';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(-15,15);ctx.lineTo(-12,1);ctx.moveTo(-12,4);ctx.lineTo(-20,-2);ctx.moveTo(-12,4);ctx.lineTo(-4,-5);ctx.stroke();}
+    else if(id==='fireflies'){ctx.fillStyle='#4a794c';for(let i=0;i<7;i++){const x=(i-3)*9,y=(i%3)*4;ctx.beginPath();ctx.ellipse(x,y+12,9,14,(i%2-.5)*.7,0,Math.PI*2);ctx.fill();}for(let i=0;i<5;i++){const x=(i*23)%60-28,y=-16-(i%2)*15;ctx.shadowColor='#f9e68b';ctx.shadowBlur=13;ctx.fillStyle='#fff0a2';ctx.beginPath();ctx.arc(x,y,3,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;}}
     ctx.restore();
   }
 
   function drawSelectionOutline(id, pulse) {
-    ctx.save(); ctx.strokeStyle=`rgba(100,255,130,${.76 + pulse*.18})`; ctx.lineWidth=2.5+pulse*1.3; ctx.lineJoin='round'; ctx.lineCap='round'; ctx.shadowColor='#5dff7e'; ctx.shadowBlur=8+pulse*11;
+    ctx.save(); ctx.strokeStyle=`rgba(100,255,130,${.55 + pulse*.35})`; ctx.lineWidth=2.5+pulse*1.3; ctx.lineJoin='round'; ctx.lineCap='round'; ctx.shadowColor='#5dff7e'; ctx.shadowBlur=4+pulse*7;
     ctx.beginPath();
     if(id==='home') {ctx.moveTo(-77,66);ctx.lineTo(-77,-11);ctx.lineTo(0,-64);ctx.lineTo(77,-11);ctx.lineTo(66,-11);ctx.lineTo(66,66);ctx.closePath();}
     else if(id==='hut') {ctx.moveTo(-86,68);ctx.lineTo(-86,-12);ctx.lineTo(0,-75);ctx.lineTo(86,-12);ctx.lineTo(72,-12);ctx.lineTo(72,68);ctx.closePath();}
     else if(id==='grandpa') {ctx.roundRect(-67,-27,134,81,8);}
-    else if(id.includes('villager')||id==='villageGrandma') {ctx.moveTo(-18,25);ctx.quadraticCurveTo(-24,14,-17,5);ctx.lineTo(-12,0);ctx.arc(0,-7,12,Math.PI,0);ctx.lineTo(17,5);ctx.quadraticCurveTo(24,14,18,25);ctx.quadraticCurveTo(0,33,-18,25);ctx.closePath();}
+    else if(id.includes('villager')||id==='villageGrandma'||id==='scaredVillager'||id==='trailKeeper'||id==='pathHermit'||id==='trailRanger') {ctx.moveTo(-18,25);ctx.quadraticCurveTo(-24,14,-17,5);ctx.lineTo(-12,0);ctx.arc(0,-7,12,Math.PI,0);ctx.lineTo(17,5);ctx.quadraticCurveTo(24,14,18,25);ctx.quadraticCurveTo(0,33,-18,25);ctx.closePath();}
     else if(id==='gate'||id==='northGate') {ctx.moveTo(-36,50);ctx.lineTo(-36,-48);ctx.lineTo(36,-48);ctx.lineTo(36,50);ctx.closePath();}
-    else if(id==='thorns') {ctx.moveTo(-56,35);for(let x=-45;x<=50;x+=15)ctx.bezierCurveTo(x-8,-16,x+13,26,x+8,-37);ctx.lineTo(52,40);ctx.closePath();}
+    else if(id==='thorns') {ctx.moveTo(-117,34);ctx.lineTo(-115,7);ctx.lineTo(-103,-21);ctx.lineTo(-92,-12);ctx.lineTo(-83,-43);ctx.lineTo(-67,-21);ctx.lineTo(-51,-53);ctx.lineTo(-37,-23);ctx.lineTo(-17,-48);ctx.lineTo(-4,-21);ctx.lineTo(14,-54);ctx.lineTo(30,-20);ctx.lineTo(47,-45);ctx.lineTo(60,-18);ctx.lineTo(78,-39);ctx.lineTo(88,-9);ctx.lineTo(106,-27);ctx.lineTo(117,8);ctx.lineTo(115,35);ctx.closePath();}
     else if(['sunpetal','bluebell','mooncap','lavender','amberleaf','fern'].includes(id)) {ctx.moveTo(0,30);ctx.quadraticCurveTo(-26,8,-25,-2);ctx.quadraticCurveTo(-6,-8,0,-35);ctx.quadraticCurveTo(9,-8,27,-2);ctx.quadraticCurveTo(25,12,0,30);ctx.closePath();}
     else {ctx.roundRect(-34,-28,68,52,9);}
     ctx.stroke(); ctx.restore();
@@ -635,15 +730,26 @@
     switch (object.id) {
       case 'home': drawHouse(0, 0, '#b76352', '', 1.35, true); break;
       case 'grandpa': drawHouse(0, 0, '#8c6947', '', 1.34); break;
-      case 'villageGrandma': drawVillager(0,0,4,'Grandma'); break;
+      case 'villageGrandma': drawVillager(0,0,4,''); break;
       case 'villageOak': case 'riverWillow': case 'forestOak': case 'oldOak': case 'moonTree': case 'appleTree':
         tree(0,0,1.18);
         if(object.id==='appleTree'){ctx.fillStyle='#c94c4d';[[-23,-34],[14,-51],[27,-25],[-4,-13]].forEach(([x,y])=>{ctx.beginPath();ctx.arc(x,y,4,0,Math.PI*2);ctx.fill();});}
         if(object.id==='moonTree'){ctx.fillStyle='#e6e5b5';[[-24,-37],[13,-51],[28,-25],[-2,-13]].forEach(([x,y])=>{ctx.beginPath();ctx.arc(x,y,3,0,Math.PI*2);ctx.fill();});}
         break;
+      case 'meadowTree':
+        tree(0,0,1.22);ctx.fillStyle='#c94c4d';[[-23,-34],[14,-51],[27,-25],[-4,-13],[3,-39]].forEach(([x,y])=>{ctx.beginPath();ctx.arc(x,y,4,0,Math.PI*2);ctx.fill();});break;
+      case 'meadowStone': drawWorldProp('riverStone'); break;
+      case 'meadowLantern': drawWorldProp('trailLantern'); break;
+      case 'meadowFlowers':
+        for(const [fx,fy,id] of [[-20,4,'bluebell'],[0,-9,'sunpetal'],[22,6,'bluebell']]){ctx.save();ctx.translate(fx,fy);ctx.scale(.78,.78);drawFlora(id,0,0);ctx.restore();}
+        ctx.fillStyle='#527d4d';for(let i=0;i<8;i++){ctx.beginPath();ctx.ellipse(-34+i*9,21,7,3,(i%2?-.45:.45),0,Math.PI*2);ctx.fill();}break;
       case 'villagerMara': drawVillager(0,0,2,'Mara'); break;
       case 'villagerPip': drawVillager(0,0,3,'Pip'); break;
       case 'villagerTomas': drawVillager(0,0,0,'Tomas'); break;
+      case 'scaredVillager': drawVillager(0,0,6,''); break;
+      case 'trailKeeper': drawVillager(0,0,1,''); break;
+      case 'pathHermit': drawVillager(0,0,5,''); break;
+      case 'trailRanger': drawVillager(0,0,7,''); break;
       case 'gate':
         ctx.fillStyle='#4e3a2c';ctx.fillRect(-32,-49,13,100);ctx.fillRect(19,-49,13,100);
         const gateWood=ctx.createLinearGradient(-18,0,18,0);gateWood.addColorStop(0,'#906440');gateWood.addColorStop(.5,'#c28e53');gateWood.addColorStop(1,'#845737');
@@ -661,16 +767,19 @@
         break;
       case 'thorns':
         if(!s.thorns){
-          for(let i=0;i<7;i++){
-            ctx.strokeStyle=i%2?'#31583c':'#477649';ctx.lineWidth=9;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(-48+i*15,34);ctx.bezierCurveTo(-32+i*11,-20,18-i*5,38,42-i*13,-36);ctx.stroke();
-            for(let j=0;j<4;j++){const lx=-34+i*12+j*9,ly=20-j*15+(i%2)*7;ctx.fillStyle=(i+j)%2?'#6c9d57':'#81ad60';ctx.beginPath();ctx.ellipse(lx,ly,10,5,-.8,0,Math.PI*2);ctx.fill();ctx.fillStyle='#d8c98f';ctx.beginPath();ctx.moveTo(lx+4,ly-2);ctx.lineTo(lx+11,ly-8);ctx.lineTo(lx+6,ly+1);ctx.fill();}
+          ctx.fillStyle='#263f2f66';ctx.beginPath();ctx.ellipse(0,38,124,23,-.08,0,Math.PI*2);ctx.fill();
+          for(let i=0;i<11;i++){
+            const bx=-104+i*20, top=-35-(i%3)*14, sway=(i%2?1:-1)*8;
+            ctx.strokeStyle=i%2?'#31583b':'#426e43';ctx.lineWidth=7+(i%3);ctx.lineCap='round';ctx.beginPath();ctx.moveTo(bx,34);ctx.bezierCurveTo(bx-13,-4,bx+17,7,bx+sway,top);ctx.stroke();
+            for(let j=0;j<5;j++){const lx=bx-11+(j%2)*13,ly=22-j*14+(i%3)*3;const leaf=ctx.createLinearGradient(lx-9,ly-4,lx+10,ly+5);leaf.addColorStop(0,(i+j)%2?'#8ab967':'#719e55');leaf.addColorStop(1,(i+j)%2?'#416d41':'#355d3b');ctx.fillStyle=leaf;ctx.beginPath();ctx.ellipse(lx,ly,11,6,(i+j)%2?-.48:.48,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#b2cc78';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(lx-5,ly+2);ctx.lineTo(lx+6,ly-2);ctx.stroke();}
+            for(let j=0;j<3;j++){const tx=bx+(i%2?4:-4),ty=17-j*22;ctx.fillStyle='#e4d8ad';ctx.beginPath();ctx.moveTo(tx,ty);ctx.lineTo(tx+(i%2?12:-12),ty-9);ctx.lineTo(tx+(i%2?6:-6),ty+3);ctx.closePath();ctx.fill();}
           }
-          ctx.fillStyle='#f4da91';ctx.font='800 12px Nunito';ctx.textAlign='center';ctx.lineWidth=4;ctx.strokeStyle='#335439';ctx.strokeText('VINES',0,-48);ctx.fillText('VINES',0,-48);
+          ctx.fillStyle='#5b9a55';for(let i=0;i<9;i++){const x=-99+i*24,y=-25+(i%3)*9;ctx.beginPath();ctx.arc(x,y,9+(i%2)*2,0,Math.PI*2);ctx.fill();ctx.fillStyle='#7bae5b';ctx.beginPath();ctx.arc(x-3,y-4,4,0,Math.PI*2);ctx.fill();ctx.fillStyle='#5b9a55';}
         }
         break;
       case 'hut':
         drawHouse(0,0,'#798d5b','',1.5,true);
-        ctx.fillStyle='#f2d894';ctx.beginPath();ctx.roundRect(-36,-42,72,19,6);ctx.fill();ctx.fillStyle='#405d43';ctx.font='900 11px Nunito';ctx.textAlign='center';ctx.fillText('ALCHEMY',0,-29);
+        drawPotionSign(0,-34);
         drawFlora('fern',-61,34);drawFlora('lavender',63,33);break;
       case 'sunpetal': case 'bluebell': case 'mooncap': case 'lavender': case 'amberleaf': case 'fern': drawFlora(object.id, 0, 0); break;
       default: drawWorldProp(object.id);
@@ -689,13 +798,13 @@
     const tunic=ctx.createLinearGradient(-12,0,12,0);tunic.addColorStop(0,'#315d4c');tunic.addColorStop(.5,'#54886a');tunic.addColorStop(1,'#2f604d');
     ctx.fillStyle=tunic;ctx.beginPath();ctx.moveTo(-11,0);ctx.quadraticCurveTo(-18,3,-16,18);ctx.quadraticCurveTo(0,28,16,18);ctx.quadraticCurveTo(18,4,11,0);ctx.quadraticCurveTo(0,8,-11,0);ctx.fill();
     ctx.fillStyle='#e0bb70';ctx.fillRect(-11,7,22,3);ctx.fillStyle='#ecd18f';ctx.beginPath();ctx.arc(0,9,2,0,Math.PI*2);ctx.fill();
-    ctx.fillStyle='#b97855';ctx.beginPath();ctx.arc(0,-6,11,0,Math.PI*2);ctx.fill();
-    ctx.fillStyle='#f3c99d';ctx.beginPath();ctx.ellipse(0,-5,8,9,0,0,Math.PI*2);ctx.fill();
-    if(s.face==='up'){ctx.fillStyle='#704c36';ctx.beginPath();ctx.arc(0,-7,11,Math.PI,Math.PI*2);ctx.fill();ctx.fillStyle='#574434';ctx.beginPath();ctx.ellipse(0,-8,9,7,0,0,Math.PI*2);ctx.fill();}
-    else {ctx.fillStyle='#704c36';ctx.beginPath();ctx.arc(0,-11,10,Math.PI,Math.PI*2);ctx.fill();ctx.fillRect(s.face==='left'?-10:6,-12,4,8);}
+    const side=s.face==='left'||s.face==='right',dir=s.face==='left'?-1:1;
+    ctx.fillStyle='#b97855';ctx.beginPath();ctx.ellipse(side?dir:0,-6,side?10:11,11,0,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#f3c99d';ctx.beginPath();ctx.ellipse(side?dir*1.5:0,-5,side?7.5:8,9,0,0,Math.PI*2);ctx.fill();
+    if(s.face==='up'){ctx.fillStyle='#704c36';ctx.beginPath();ctx.ellipse(0,-8,11,10,0,Math.PI,Math.PI*2);ctx.fill();ctx.fillStyle='#574434';ctx.beginPath();ctx.ellipse(0,-8,9,7,0,0,Math.PI*2);ctx.fill();}
+    else if(side){ctx.fillStyle='#704c36';ctx.beginPath();ctx.ellipse(-dir*2,-12,10,6,0,Math.PI,Math.PI*2);ctx.fill();ctx.fillRect(dir<0?-12:8,-12,4,8);ctx.fillStyle='#4a3830';ctx.beginPath();ctx.ellipse(dir*-2.5,-6,1.35,1.8,0,0,Math.PI*2);ctx.fill();ctx.fillStyle='#e6b88c';ctx.beginPath();ctx.moveTo(dir*7,-4);ctx.lineTo(dir*12,-2);ctx.lineTo(dir*7,1);ctx.closePath();ctx.fill();ctx.strokeStyle='#b96f60';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(dir*1,2);ctx.quadraticCurveTo(dir*4,4,dir*7,2);ctx.stroke();}
+    else{ctx.fillStyle='#704c36';ctx.beginPath();ctx.arc(0,-11,10,Math.PI,Math.PI*2);ctx.fill();ctx.fillStyle='#4a3830';ctx.beginPath();ctx.arc(-3,-6,1.4,0,Math.PI*2);ctx.arc(3,-6,1.4,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#b96f60';ctx.lineWidth=1;ctx.beginPath();ctx.arc(0,-2,2.6,.2,Math.PI-.2);ctx.stroke();}
     ctx.fillStyle='#43513c';ctx.beginPath();ctx.ellipse(0,-14,11,4,0,0,Math.PI*2);ctx.fill();ctx.fillRect(-7,-20,14,6);ctx.fillStyle='#d5b365';ctx.fillRect(-3,-18,6,2);
-    if(s.face==='down'){ctx.fillStyle='#4a3830';ctx.beginPath();ctx.arc(-3,-6,1.4,0,Math.PI*2);ctx.arc(3,-6,1.4,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#b96f60';ctx.lineWidth=1;ctx.beginPath();ctx.arc(0,-2,2.6,.2,Math.PI-.2);ctx.stroke();}
-    else if(s.face==='left'||s.face==='right'){ctx.fillStyle='#4a3830';ctx.beginPath();ctx.arc(s.face==='left'?-5:5,-6,1.5,0,Math.PI*2);ctx.fill();ctx.fillStyle='#b96f60';ctx.beginPath();ctx.arc(s.face==='left'?-9:9,-2,2,0,Math.PI*2);ctx.fill();}
     ctx.fillStyle='#b8714e';ctx.fillRect(s.face==='left'?8:-14,5,4,9);
     ctx.restore();
   }
@@ -800,13 +909,38 @@
   }
 
   function drawHutRoomAccents() {
-    // Dried herbs and potion bottles are arranged like a working alchemist's shop.
-    ctx.fillStyle='#654832';ctx.beginPath();ctx.roundRect(668,132,274,22,7);ctx.fill();ctx.fillStyle='#b88852';ctx.fillRect(674,128,262,7);
-    for(let i=0;i<6;i++){const x=690+i*43;ctx.fillStyle=['#7a9a62','#9c79aa','#d1b667'][i%3];ctx.fillRect(x,159,22,42);ctx.fillStyle='#e8d6ac';ctx.fillRect(x+4,166,14,14);ctx.fillStyle='#75513c';ctx.fillRect(x-3,157,28,5);ctx.fillStyle='#88a25d';ctx.strokeStyle='#63834e';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(x+11,130);ctx.lineTo(x+11,125);ctx.lineTo(x+4,116);ctx.moveTo(x+11,127);ctx.lineTo(x+19,115);ctx.stroke();}
-    ctx.fillStyle='#77523a';ctx.beginPath();ctx.roundRect(667,286,280,19,6);ctx.fill();
-    for(let i=0;i<5;i++){const x=686+i*50;ctx.fillStyle=['#8c5d83','#789c75','#d1ad68','#638e9d','#a96d54'][i];ctx.beginPath();ctx.roundRect(x,250,31,36,6);ctx.fill();ctx.fillStyle='#e6d29c';ctx.beginPath();ctx.ellipse(x+15,250,12,5,0,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#f0d9a6';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(x+8,262);ctx.lineTo(x+23,262);ctx.stroke();}
-    ctx.strokeStyle='#dfc986';ctx.lineWidth=3;ctx.beginPath();ctx.arc(820,230,71,-2.8,-.3);ctx.stroke();
-    for(let i=0;i<9;i++){const a=-2.8+i*.31;ctx.fillStyle=i%2?'#d5d880':'#e7c278';ctx.beginPath();ctx.arc(820+Math.cos(a)*71,230+Math.sin(a)*71,2.5,0,Math.PI*2);ctx.fill();}
+    // Wall racks keep the flower studies, working ingredients and tools in clear zones.
+    ctx.fillStyle='#392d2d';ctx.beginPath();ctx.roundRect(665,112,300,172,11);ctx.fill();
+    ctx.fillStyle='#6d4a38';ctx.beginPath();ctx.roundRect(674,120,282,157,7);ctx.fill();
+    ctx.fillStyle='#9b7048';ctx.fillRect(672,204,286,10);ctx.fillRect(672,271,286,10);
+    ctx.fillStyle='#d2ad70';ctx.fillRect(674,208,282,3);ctx.fillRect(674,275,282,3);
+    // Hanging herb bundles with stems and tied ribbons.
+    for(let i=0;i<6;i++){const x=694+i*43;ctx.strokeStyle='#446a43';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(x,131);ctx.lineTo(x+3,166);ctx.moveTo(x+3,143);ctx.lineTo(x-5,135);ctx.moveTo(x+3,148);ctx.lineTo(x+10,138);ctx.stroke();ctx.fillStyle=['#668b50','#728b54','#90759d'][i%3];for(let j=0;j<4;j++){ctx.beginPath();ctx.ellipse(x+(j%2?5:-4),143+j*5,4,2,.5,0,Math.PI*2);ctx.fill();}ctx.strokeStyle='#c68c63';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(x-3,159);ctx.lineTo(x+8,159);ctx.stroke();}
+    // Distinct stoppered bottles, each filled with a different glowing ingredient.
+    const colors=['#5aa783','#8b73ba','#d19a47','#548ca2','#bd6470','#a0ad56'];
+    for(let i=0;i<6;i++){const x=691+i*42;const g=ctx.createLinearGradient(x,220,x+25,260);g.addColorStop(0,'#fff0c977');g.addColorStop(.25,colors[i]);g.addColorStop(1,'#394c4a');ctx.fillStyle=g;ctx.beginPath();ctx.moveTo(x+7,223);ctx.lineTo(x+18,223);ctx.lineTo(x+18,230);ctx.quadraticCurveTo(x+27,240,x+25,258);ctx.quadraticCurveTo(x+12,264,x,258);ctx.quadraticCurveTo(x-2,240,x+7,230);ctx.closePath();ctx.fill();ctx.strokeStyle='#dec792';ctx.lineWidth=2;ctx.stroke();ctx.fillStyle='#60432e';ctx.fillRect(x+8,217,10,7);ctx.fillStyle='#fff2bfaa';ctx.beginPath();ctx.ellipse(x+6,242,2,8,-.15,0,Math.PI*2);ctx.fill();}
+    // Painted herbarium and hanging measuring tools add shape to the bare wall.
+    ctx.fillStyle='#604532';ctx.beginPath();ctx.roundRect(655,317,94,66,7);ctx.fill();ctx.fillStyle='#e4d1a4';ctx.beginPath();ctx.roundRect(660,322,84,56,4);ctx.fill();
+    ctx.strokeStyle='#5b874e';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(702,370);ctx.quadraticCurveTo(688,350,705,332);ctx.moveTo(702,358);ctx.lineTo(687,347);ctx.moveTo(701,350);ctx.lineTo(716,338);ctx.stroke();
+    for(const [x,y] of [[689,350],[715,342],[701,334]]){ctx.fillStyle='#819b5c';ctx.beginPath();ctx.ellipse(x,y,6,3,-.6,0,Math.PI*2);ctx.fill();}
+    ctx.strokeStyle='#d5bd82';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(938,310);ctx.lineTo(938,365);ctx.arc(938,372,7,Math.PI,0);ctx.lineTo(938,391);ctx.stroke();
+    ctx.fillStyle='#9b8057';ctx.beginPath();ctx.roundRect(915,401,48,9,4);ctx.fill();
+    ctx.fillStyle='#c5a36a';ctx.beginPath();ctx.ellipse(939,400,18,6,0,0,Math.PI*2);ctx.fill();
+  }
+
+  function drawHutWorkbench() {
+    // A little stone bench holds a pestle, an open field journal, and a moon crystal.
+    ctx.fillStyle='#263b2d30';ctx.beginPath();ctx.ellipse(695,474,72,23,0,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#715137';ctx.beginPath();ctx.roundRect(635,420,124,54,9);ctx.fill();
+    ctx.fillStyle='#a77d4c';ctx.beginPath();ctx.roundRect(641,414,112,15,7);ctx.fill();
+    ctx.fillStyle='#827764';ctx.beginPath();ctx.ellipse(683,407,22,9,0,0,Math.PI*2);ctx.fill();ctx.fillStyle='#a5a38c';ctx.beginPath();ctx.ellipse(683,404,18,7,0,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#6b5238';ctx.save();ctx.translate(703,395);ctx.rotate(-.45);ctx.beginPath();ctx.roundRect(-4,-5,37,8,4);ctx.fill();ctx.restore();
+    ctx.fillStyle='#553f31';ctx.beginPath();ctx.roundRect(885,431,88,56,6);ctx.fill();ctx.fillStyle='#d7c28f';ctx.beginPath();ctx.roundRect(891,436,76,46,4);ctx.fill();
+    ctx.strokeStyle='#967651';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(929,438);ctx.lineTo(929,480);ctx.stroke();
+    ctx.strokeStyle='#67845a';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(910,472);ctx.quadraticCurveTo(903,452,916,445);ctx.moveTo(910,465);ctx.lineTo(900,457);ctx.moveTo(911,457);ctx.lineTo(921,451);ctx.stroke();
+    ctx.fillStyle='#6c5a99';ctx.beginPath();ctx.moveTo(820,416);ctx.lineTo(835,388);ctx.lineTo(848,416);ctx.lineTo(838,427);ctx.lineTo(824,425);ctx.closePath();ctx.fill();
+    const crystal=ctx.createLinearGradient(820,388,846,427);crystal.addColorStop(0,'#f6e9ff');crystal.addColorStop(.3,'#b7a3dc');crystal.addColorStop(1,'#6e609d');ctx.fillStyle=crystal;ctx.beginPath();ctx.moveTo(831,390);ctx.lineTo(843,414);ctx.lineTo(836,427);ctx.lineTo(823,425);ctx.lineTo(819,411);ctx.closePath();ctx.fill();
+    ctx.strokeStyle='#eadfae';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(832,397);ctx.lineTo(833,417);ctx.stroke();
   }
 
   function drawHutGuide() {
@@ -863,15 +997,16 @@
     } else if (s.interior === 'hut') {
       drawHutRoomAccents();
       drawHutGuide();
-      ctx.fillStyle='#263b2d35';ctx.beginPath();ctx.ellipse(822,262,110,35,0,0,Math.PI*2);ctx.fill();
-      ctx.fillStyle='#74563d';ctx.beginPath();ctx.ellipse(820,240,93,47,0,0,Math.PI*2);ctx.fill();
-      ctx.fillStyle='#557b54';ctx.beginPath();ctx.ellipse(820,239,80,36,0,0,Math.PI*2);ctx.fill();
-      ctx.fillStyle='#4c9880';ctx.beginPath();ctx.ellipse(820,230,67,28,0,0,Math.PI*2);ctx.fill();
-      const brew=ctx.createRadialGradient(802,218,2,820,230,56);brew.addColorStop(0,'#c8e390');brew.addColorStop(.5,'#7dc484');brew.addColorStop(1,'#42846f');ctx.fillStyle=brew;ctx.beginPath();ctx.ellipse(820,230,54,20,0,0,Math.PI*2);ctx.fill();
-      ctx.fillStyle='#f1dbad';ctx.fillRect(800,205,40,32);ctx.fillStyle='#714b36';ctx.fillRect(796,201,48,7);
-      ctx.fillStyle='#f0dfae';for(let i=0;i<4;i++){ctx.beginPath();ctx.arc(784+i*24,187-(i%2)*11,4+i%2,0,Math.PI*2);ctx.fill();}
-      roundedRect(735,282,170,17,8,'#6d513d');ctx.fillStyle='#d7b27b';for(let i=0;i<5;i++){ctx.beginPath();ctx.arc(755+i*31,290,5,0,Math.PI*2);ctx.fill();}
-      if(Math.hypot(s.x-820,s.y-240)<105){const p=(Math.sin(performance.now()/230)+1)/2;ctx.save();ctx.strokeStyle=`rgba(100,255,130,${.76+p*.18})`;ctx.lineWidth=3+p;ctx.shadowColor='#5dff7e';ctx.shadowBlur=8+p*11;ctx.beginPath();ctx.ellipse(820,240,94,49,0,0,Math.PI*2);ctx.stroke();ctx.restore();}
+      drawHutWorkbench();
+      ctx.fillStyle='#263b2d35';ctx.beginPath();ctx.ellipse(822,487,110,35,0,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle='#74563d';ctx.beginPath();ctx.ellipse(820,465,93,47,0,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle='#557b54';ctx.beginPath();ctx.ellipse(820,464,80,36,0,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle='#4c9880';ctx.beginPath();ctx.ellipse(820,455,67,28,0,0,Math.PI*2);ctx.fill();
+      const brew=ctx.createRadialGradient(802,443,2,820,455,56);brew.addColorStop(0,'#c8e390');brew.addColorStop(.5,'#7dc484');brew.addColorStop(1,'#42846f');ctx.fillStyle=brew;ctx.beginPath();ctx.ellipse(820,455,54,20,0,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle='#f1dbad';ctx.fillRect(800,430,40,32);ctx.fillStyle='#714b36';ctx.fillRect(796,426,48,7);
+      ctx.fillStyle='#f0dfae';for(let i=0;i<4;i++){ctx.beginPath();ctx.arc(784+i*24,412-(i%2)*11,4+i%2,0,Math.PI*2);ctx.fill();}
+      roundedRect(735,507,170,17,8,'#6d513d');ctx.fillStyle='#d7b27b';for(let i=0;i<5;i++){ctx.beginPath();ctx.arc(755+i*31,515,5,0,Math.PI*2);ctx.fill();}
+      if(Math.hypot(s.x-820,s.y-465)<105){const p=(Math.sin(performance.now()/230)+1)/2;ctx.save();ctx.strokeStyle=`rgba(100,255,130,${.76+p*.18})`;ctx.lineWidth=3+p;ctx.shadowColor='#5dff7e';ctx.shadowBlur=8+p*11;ctx.beginPath();ctx.ellipse(820,465,94,49,0,0,Math.PI*2);ctx.stroke();ctx.restore();}
       if(Math.hypot(s.x-820,s.y-345)<110){const p=(Math.sin(performance.now()/230)+1)/2;ctx.save();ctx.strokeStyle=`rgba(100,255,130,${.76+p*.18})`;ctx.lineWidth=3+p;ctx.shadowColor='#5dff7e';ctx.shadowBlur=8+p*11;ctx.beginPath();ctx.moveTo(798,365);ctx.quadraticCurveTo(794,340,800,329);ctx.arc(820,338,19,Math.PI,0);ctx.quadraticCurveTo(846,344,842,366);ctx.quadraticCurveTo(820,379,798,365);ctx.closePath();ctx.stroke();ctx.restore();}
       drawInteriorPerson(820,345,'#716483');
     }
@@ -991,6 +1126,7 @@
     const groundTrees = [[34,54],[1082,52],[32,657],[1080,652],[340,35],[780,676],[1020,215],[140,510]];
     const sceneTrees = s.screen === '06'
       ? [[700,85],[1040,100],[1080,255],[690,300],[1030,650],[620,120]]
+      : s.screen === '09' ? [[180,210],[1030,170],[180,610],[1060,620]]
       : s.screen === '12' ? [[180,210]]
       : s.screen === '11' || s.screen === '21' || s.screen === '08' ? [[945,485]]
       : s.screen === '16' ? [[835,190]] : [];
@@ -999,9 +1135,12 @@
     }
     const fixed = {
       '13': [[560,280,58],[850,520,58],[265,205,52],[930,455,27],[405,245,27],[670,545,27],[320,405,27]],
-      '11': s.thorns ? [] : [[225,155,58]],
+      '11': s.thorns ? [[475,270,24],[650,510,24]] : [[225,155,98],[475,270,24],[650,510,24]],
+      '16': [[430,390,24]],
+      '07': [[610,540,24]],
+      '09': [[950,450,38]],
       '21': [[250,390,68]],
-      '06': []
+      '06': [[820,500,64],[730,200,20]]
     };
     const objects = fixed[s.screen] || [];
     const gate = s.screen === '13' && !s.gateOpen ? [[100,360,36]] : [];
@@ -1019,7 +1158,7 @@
         ? [[340,185,63],[815,500,54],[560,180,35],[805,335,30],[820,190,43]]
         : s.interior === 'home'
           ? [[335,225,82],[810,198,45],[392,480,57]]
-          : [[820,240,55],[820,345,30],...hutGuideCards.map((c)=>[c.x,c.y,34])];
+          : [[820,465,55],[820,345,30],[683,404,24],[929,455,28],[830,414,19],...hutGuideCards.map((c)=>[c.x,c.y,34])];
       if (circleHits(x,y,furniture,13)) return true;
     }
     if (s.scene === 'basement') {
@@ -1089,9 +1228,13 @@
       s.y = ny;
     }
 
-    if (s.screen === '12' && !s.logGone && oldX > riverCenter(s.y)+112 && s.x <= riverCenter(s.y)+112 && s.y >= 342 && s.y <= 378) {
-      s.logGone = true;
-      toast('You cross the river. The log drifts away.');
+    if (s.screen === '12' && !s.logGone && s.y >= 342 && s.y <= 378) {
+      const center=riverCenter(s.y);
+      if(dx<0 && oldX>center+40 && s.x<=center+40) s.logCrossingStarted=true;
+      if(s.logCrossingStarted && s.x<center-150) {
+        s.logGone=true;s.logCrossingStarted=false;
+        toast('You reach the far bank. The log drifts away.');
+      }
     }
     if (s.screen === '11' && s.logGone && s.x >= W - 34 && s.y > 270 && s.y < 450) {
       s.x = W - 34; toast('The log is gone. The crossing is one-way.'); return;
@@ -1153,6 +1296,13 @@
         return;
       }
       if (s.interior === 'hut') {
+        if(x>660&&x<960&&y>112&&y<285&&near(810,200,230)) { simpleModal('Potion and Herb Shelves','🧪','Stoppered bottles hold dew, berry syrup, and glowing flower pollen. Bundles of moon mint hang above them to dry.'); return; }
+        if(x>650&&x<750&&y>315&&y<390&&near(700,350,130)) { simpleModal('Pressed Plant Study','🌿','The Alchemist pressed a moon fern between sheets of handmade paper. Tiny notes mark the best time to gather it.'); return; }
+        if(x>910&&x<970&&y>300&&y<410&&near(940,355,130)) { simpleModal('Brass Measuring Set','⚖️','Little brass weights balance on a narrow beam. Each one is etched with a different moon phase.'); return; }
+        if(x>650&&x<730&&y>385&&y<425&&near(683,404,115)) { simpleModal('Stone Mortar and Pestle','🪨','The stone bowl is stained green from crushed herbs. A wooden pestle rests beside a pinch of golden seeds.'); return; }
+        if(x>885&&x<975&&y>430&&y<490&&near(929,455,125)) { simpleModal('Alchemist’s Field Journal','📖','A plant sketch fills one page. The other is covered with careful notes about mixing flowers and rainwater.'); return; }
+        if(x>805&&x<855&&y>385&&y<430&&near(830,414,115)) { simpleModal('Moon Crystal','🔮','A cool lavender crystal catches the light and scatters tiny violet reflections across the floor.'); return; }
+        if(x>725&&x<915&&y>420&&y<515&&near(820,465,125)) { simpleModal('Bubbling Cauldron', '⚗️', 'A copper cauldron bubbles with a bright green brew. A slow spiral of steam smells faintly of mint.'); return; }
         const card = hutGuideCards.find((entry) => Math.abs(x-entry.x)<48 && Math.abs(y-entry.y)<41);
         if (card && near(card.x,card.y,86)) {
           simpleModal(flowerNames[card.id], card.id==='fern'?'🌿':'🌸', flowerDetails[card.id]);
@@ -1169,10 +1319,6 @@
       }
       if (s.interior === 'home' && x > 265 && x < 520 && y > 415 && y < 550) {
         if (near(392,480,145)) simpleModal('Handmade Table','🕯️','The table was carved from a fallen oak. A warm candle makes the wood glow like honey.');
-        return;
-      }
-      if (s.interior === 'hut' && x > 735 && x < 910 && y > 155 && y < 325) {
-        if (near(820,240,105)) simpleModal('Bubbling Cauldron', '⚗️', 'A heavy cauldron bubbles with a bright green brew.');
         return;
       }
       return;
