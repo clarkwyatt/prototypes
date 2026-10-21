@@ -53,7 +53,7 @@
   const s = {
     screen: '13', x: 605, y: 335, face: 'down', speed: 215,
     scene: 'outside', interior: '', rodents: 0, rodentQuestStarted: false, mice: [], activeCatchTarget: null, basementEntered: false,
-    grandpaRemedyStarted: false, healingWater: false, grandpaHealed: false, villageOverrun: false,
+    grandpaRemedyStarted: false, healingWater: false, grandpaHealed: false, villageOverrun: false, endingShown: false,
     bakerQuestStarted: false, berriesPicked: false, bakerQuestComplete: false, muffin: false,
     waterQuestStarted: false, carryingWater: false, grandmaHelped: false, grandmaHouseKey: false, grandparentsHouseUnlocked: false,
     returnX: 0, returnY: 0, outsideX: 0, outsideY: 0,
@@ -275,11 +275,50 @@
   }
 
   function leaveInterior() {
-    s.scene='outside';
-    s.interior='';
-    s.x=s.outsideX||560;
-    s.y=s.outsideY||335;
+    s.scene = 'outside';
+    s.interior = '';
+    s.x = s.outsideX || 560;
+    s.y = s.outsideY || 335;
     updateHud();
+    if (s.grandpaHealed && s.villageOverrun) beginEnding();
+  }
+
+  function beginEnding() {
+    if (s.endingShown) return;
+    s.endingShown = true;
+
+    const style = document.createElement('style');
+    style.textContent = `
+      #prototype-ending {
+        position: fixed; inset: 0; z-index: 2147483647; display: grid;
+        place-items: center; background: #050807; opacity: 0;
+        transition: opacity 1.6s ease; pointer-events: auto;
+      }
+      #prototype-ending.is-visible { opacity: 1; }
+      #prototype-ending .ending-title {
+        color: #f6edcf; font-family: Georgia, serif;
+        font-size: clamp(2rem, 7vw, 4.5rem); letter-spacing: .06em;
+        opacity: 0; transform: translateY(8px);
+        transition: opacity .8s ease 1.8s, transform .8s ease 1.8s;
+        text-shadow: 0 2px 22px #b7a66c55;
+      }
+      #prototype-ending.is-visible .ending-title { opacity: 1; transform: translateY(0); }
+      @media (prefers-reduced-motion: reduce) {
+        #prototype-ending, #prototype-ending .ending-title { transition: none; }
+      }
+    `;
+    document.head.appendChild(style);
+
+    const overlay = document.createElement('div');
+    overlay.id = 'prototype-ending';
+    overlay.setAttribute('role', 'status');
+    overlay.setAttribute('aria-live', 'polite');
+    const title = document.createElement('div');
+    title.className = 'ending-title';
+    title.textContent = 'To Be Continued...';
+    overlay.appendChild(title);
+    document.body.appendChild(overlay);
+    requestAnimationFrame(() => overlay.classList.add('is-visible'));
   }
 
   function talkToGrandma() {
@@ -303,6 +342,10 @@
   }
 
   function talkToTomas() {
+    if (s.villageOverrun && (!s.berriesPicked || s.bakerQuestComplete)) {
+      openModal('Tomas the Baker', '🥖', '<p>The vines wrapped right around my bakery! I managed to save the muffins, at least. Please tell me you found a way to stop them before they take over the whole village.</p>', () => makeButton('We’ll save the village', closeModal), true);
+      return;
+    }
     if (!s.bakerQuestStarted) {
       s.bakerQuestStarted = true;
       updateHud();
@@ -1062,8 +1105,7 @@
       case 'returnGate': {
         ctx.fillStyle='#4d392c';ctx.fillRect(-58,-34,12,68);ctx.fillRect(46,-34,12,68);
         const returnWood=ctx.createLinearGradient(-46,0,46,0);returnWood.addColorStop(0,'#825837');returnWood.addColorStop(.45,'#c18c52');returnWood.addColorStop(1,'#755032');
-        if(s.returnGateOpen){ctx.save();ctx.translate(-45,0);ctx.rotate(-.95);ctx.fillStyle=returnWood;ctx.fillRect(-4,-29,62,58);ctx.strokeStyle='#e0bb78';ctx.lineWidth=4;ctx.strokeRect(-4,-29,62,58);ctx.restore();}
-        else {ctx.fillStyle=returnWood;ctx.fillRect(-46,-30,92,60);ctx.strokeStyle='#68472e';ctx.lineWidth=3;for(let x=-32;x<=32;x+=16){ctx.beginPath();ctx.moveTo(x,-25);ctx.lineTo(x,25);ctx.stroke();}ctx.strokeStyle='#e0bb78';ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(-44,-18);ctx.lineTo(44,-18);ctx.moveTo(-44,18);ctx.lineTo(44,18);ctx.stroke();ctx.fillStyle='#f0d596';ctx.beginPath();ctx.arc(12,0,3,0,Math.PI*2);ctx.fill();}
+        if(!s.returnGateOpen){ctx.fillStyle=returnWood;ctx.fillRect(-46,-30,92,60);ctx.strokeStyle='#68472e';ctx.lineWidth=3;for(let x=-32;x<=32;x+=16){ctx.beginPath();ctx.moveTo(x,-25);ctx.lineTo(x,25);ctx.stroke();}ctx.strokeStyle='#e0bb78';ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(-44,-18);ctx.lineTo(44,-18);ctx.moveTo(-44,18);ctx.lineTo(44,18);ctx.stroke();ctx.fillStyle='#f0d596';ctx.beginPath();ctx.arc(12,0,3,0,Math.PI*2);ctx.fill();}
         break;
       }
       case 'northGate':
@@ -1591,7 +1633,7 @@
       if(!mouse.moving&&now>=mouse.pauseUntil){mouse.targetX=235+Math.random()*650;mouse.targetY=245+Math.random()*285;mouse.moving=true;}
       if(!mouse.moving)continue;const dx=mouse.targetX-mouse.x,dy=mouse.targetY-mouse.y,d=Math.hypot(dx,dy);
       if(d<4){mouse.x=mouse.targetX;mouse.y=mouse.targetY;mouse.moving=false;mouse.pauseUntil=now+900+Math.random()*2300;}
-      else{const step=Math.min(d,(160+(mouse.id%3)*44)*dt);mouse.x+=dx/d*step;mouse.y+=dy/d*step;mouse.face=Math.abs(dx)>=Math.abs(dy)?(dx>=0?0:Math.PI):(dy>=0?Math.PI/2:-Math.PI/2);}
+      else{const step=Math.min(d,(160+(mouse.id%3)*44)*dt);mouse.x+=dx/d*step;mouse.y+=dy/d*step;mouse.face = Math.atan2(dy, dx) + Math.PI / 2;}
     }
     if(modal.classList.contains('catching')&&s.activeCatchTarget!=null){const m=s.mice.find(v=>v.id===s.activeCatchTarget);if(!m||Math.hypot(s.x-m.x,s.y-m.y)>180){closeModal();toast('The rodent scurried out of reach!');}}
   }
@@ -1776,7 +1818,7 @@
   }
 
   let last = performance.now();
-  function loop(now) { const dt = Math.min((now - last) / 1000, .04); last = now; move(dt); updateMice(now, dt); requestAnimationFrame(loop); }
+  function loop(now) { if (s.endingShown) { last = now; requestAnimationFrame(loop); return; } const dt = Math.min((now - last) / 1000, .04); last = now; move(dt); updateMice(now, dt); requestAnimationFrame(loop); }
   requestAnimationFrame(loop); draw();
 
   window.addEventListener('keydown', (event) => {
