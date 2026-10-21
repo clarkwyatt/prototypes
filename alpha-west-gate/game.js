@@ -594,8 +594,9 @@
     ctx.fillStyle = color; ctx.beginPath(); ctx.arc(x, y, 4, 0, Math.PI * 2); ctx.fill();
   }
 
-  function drawPath(points, width = 88, { taperStart = false, taperEnd = false } = {}) {
-    // Build a smooth centerline so trails can narrow naturally where they stop.
+  function drawPath(points, width = 88) {
+    // One flat gravel fill keeps junctions seamless; rounded strokes give every
+    // trail end a soft cap, while exit routes continue beyond the screen edge.
     const samples = [];
     const stepsPerSegment = 12;
     for (let i = 0; i < points.length - 1; i++) {
@@ -603,56 +604,39 @@
       const p2 = points[i + 1], p3 = points[Math.min(points.length - 1, i + 2)];
       for (let step = 0; step < stepsPerSegment; step++) {
         const t = step / stepsPerSegment, t2 = t * t, t3 = t2 * t;
-        const x = .5 * ((2 * p1[0]) + (-p0[0] + p2[0]) * t + (2*p0[0] - 5*p1[0] + 4*p2[0] - p3[0]) * t2 + (-p0[0] + 3*p1[0] - 3*p2[0] + p3[0]) * t3);
-        const y = .5 * ((2 * p1[1]) + (-p0[1] + p2[1]) * t + (2*p0[1] - 5*p1[1] + 4*p2[1] - p3[1]) * t2 + (-p0[1] + 3*p1[1] - 3*p2[1] + p3[1]) * t3);
+        const x = .5 * (2*p1[0] + (-p0[0]+p2[0])*t + (2*p0[0]-5*p1[0]+4*p2[0]-p3[0])*t2 + (-p0[0]+3*p1[0]-3*p2[0]+p3[0])*t3);
+        const y = .5 * (2*p1[1] + (-p0[1]+p2[1])*t + (2*p0[1]-5*p1[1]+4*p2[1]-p3[1])*t2 + (-p0[1]+3*p1[1]-3*p2[1]+p3[1])*t3);
         samples.push([x, y]);
       }
     }
     samples.push(points[points.length - 1].slice());
 
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(points[0][0], points[0][1]);
+    for (let i = 1; i < points.length - 1; i++) {
+      const current = points[i], next = points[i + 1];
+      ctx.quadraticCurveTo(current[0], current[1], (current[0] + next[0]) / 2, (current[1] + next[1]) / 2);
+    }
+    ctx.lineTo(points[points.length - 1][0], points[points.length - 1][1]);
+    ctx.strokeStyle = '#bba17d';
+    ctx.lineWidth = width;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.stroke();
+
     const lengths = [0];
     for (let i = 1; i < samples.length; i++) {
-      lengths[i] = lengths[i - 1] + Math.hypot(samples[i][0] - samples[i-1][0], samples[i][1] - samples[i-1][1]);
+      lengths[i] = lengths[i - 1] + Math.hypot(samples[i][0] - samples[i - 1][0], samples[i][1] - samples[i - 1][1]);
     }
     const totalLength = lengths[lengths.length - 1];
-    const widths = samples.map((_, i) => {
-      const fromStart = taperStart ? Math.min(1, lengths[i] / 104) : 1;
-      const fromEnd = taperEnd ? Math.min(1, (totalLength - lengths[i]) / 104) : 1;
-      return Math.max(0.025, Math.min(fromStart, fromEnd));
-    });
-
-    function ribbon(extra, fillStyle) {
-      ctx.beginPath();
-      for (let i = 0; i < samples.length; i++) {
-        const before = samples[Math.max(0, i - 1)], after = samples[Math.min(samples.length - 1, i + 1)];
-        const dx = after[0] - before[0], dy = after[1] - before[1], length = Math.hypot(dx, dy) || 1;
-        const half = width * widths[i] / 2 + extra;
-        const x = samples[i][0] - dy / length * half, y = samples[i][1] + dx / length * half;
-        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-      }
-      for (let i = samples.length - 1; i >= 0; i--) {
-        const before = samples[Math.max(0, i - 1)], after = samples[Math.min(samples.length - 1, i + 1)];
-        const dx = after[0] - before[0], dy = after[1] - before[1], length = Math.hypot(dx, dy) || 1;
-        const half = width * widths[i] / 2 + extra;
-        ctx.lineTo(samples[i][0] + dy / length * half, samples[i][1] - dx / length * half);
-      }
-      ctx.closePath();
-      ctx.fillStyle = fillStyle;
-      ctx.fill();
-    }
-
-    ctx.save();
-    ctx.shadowColor = '#33432b35'; ctx.shadowBlur = 13; ctx.shadowOffsetY = 3;
-    ribbon(6, '#8c795766');
-    ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
-    ribbon(0, '#8c704d');
-    ribbon(-width * .13, '#a08059');
-    ribbon(-width * .29, '#a98760');
-
-    // Small soil flecks and flat stones make the trail feel worn into the meadow.
-    const count = Math.max(12, Math.floor(totalLength / 32));
-    for (let i = 0; i < count; i++) {
-      const target = (i + .5) / count * totalLength;
+    let seed = 2166136261;
+    for (const point of points) seed = Math.imul(seed ^ ((point[0] | 0) + ((point[1] | 0) << 1)), 16777619) >>> 0;
+    const random = () => { seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0; return seed / 4294967296; };
+    const gravel = ['#d8c6a433', '#927b5b4d', '#e4d2b144', '#8b76584a'];
+    const pebbleCount = Math.max(18, Math.floor(totalLength * width / 1500));
+    for (let i = 0; i < pebbleCount; i++) {
+      const target = random() * totalLength;
       let at = 1;
       while (at < lengths.length - 1 && lengths[at] < target) at++;
       const span = lengths[at] - lengths[at - 1] || 1;
@@ -661,10 +645,11 @@
       const y = samples[at - 1][1] + (samples[at][1] - samples[at - 1][1]) * mix;
       const before = samples[Math.max(0, at - 1)], after = samples[Math.min(samples.length - 1, at + 1)];
       const dx = after[0] - before[0], dy = after[1] - before[1], length = Math.hypot(dx, dy) || 1;
-      const offset = Math.sin(i * 9.17) * width * .22;
-      ctx.fillStyle = i % 4 === 0 ? '#d2b98940' : '#5b503a24';
+      const offset = (random() - .5) * width * .76;
+      const size = 1.2 + random() * 2.2;
+      ctx.fillStyle = gravel[Math.floor(random() * gravel.length)];
       ctx.beginPath();
-      ctx.ellipse(x - dy / length * offset, y + dx / length * offset, 3 + i % 3, 2 + i % 2, Math.atan2(dy, dx), 0, Math.PI * 2);
+      ctx.ellipse(x - dy / length * offset, y + dx / length * offset, size * 1.45, size * .72, Math.atan2(dy, dx), 0, Math.PI * 2);
       ctx.fill();
     }
     ctx.restore();
@@ -856,13 +841,13 @@
   function drawRoomPath() {
     switch (s.screen) {
       case '09':
-        drawPath([[830, 680], [750, 570], [665, 480], [625, 380], [700, 275], [780, 180], [830, 40]], 132);
-        drawPath([[40, 360], [220, 360], [395, 365], [515, 420], [625, 485], [700, 535]], 116);
+        drawPath([[830, 800], [750, 570], [665, 480], [625, 380], [700, 275], [780, 180], [830, -80]], 122);
+        drawPath([[-80, 360], [220, 360], [395, 365], [515, 420], [625, 485], [700, 535]], 112);
         break;
-      case '05': drawPath([[220, 680], [285, 560], [405, 470], [600, 410], [800, 360], [1080, 360]], 132); break;
-      case '13': drawPath([[90, 360], [190, 360], [320, 520], [510, 540], [700, 500], [820, 390], [790, 265], [785, 165], [830, 40]], 132); break;
+      case '05': drawPath([[220, 800], [285, 560], [405, 470], [600, 410], [800, 360], [1200, 360]], 122); break;
+      case '13': drawPath([[-80, 360], [190, 360], [320, 520], [510, 540], [700, 500], [820, 390], [790, 265], [785, 165], [830, -80]], 122); break;
       case '12':
-        drawPath([[1080, 360], [900, 360], [760, 360], [660, 360], [560, 360], [460, 360], [330, 360], [180, 360], [40, 360]], 132);
+        drawPath([[1200, 360], [900, 360], [760, 360], [660, 360], [560, 360], [460, 360], [330, 360], [180, 360], [-80, 360]], 122);
         drawWindingRiver();
         if (!s.logGone) {
           const rc=riverCenter(360); roundedRect(rc-132, 322, 264, 76, 18, '#68452f');
@@ -872,18 +857,18 @@
         }
         break;
       case '11':
-        drawPath([[1080, 360], [890, 360], [730, 390], [570, 390], [430, 330], [330, 245], [225, 155], [220, 80], [220, 38]], 128);
-        drawPath([[570, 390], [470, 425], [370, 500], [350, 600], [420, 675], [560, 680]], 120);
+        drawPath([[1200, 360], [890, 360], [730, 390], [570, 390], [430, 330], [330, 245], [225, 155], [220, 80], [220, -80]], 122);
+        drawPath([[570, 390], [470, 425], [370, 500], [350, 600], [420, 675], [560, 800]], 116);
         break;
-      case '16': drawPath([[560, 35], [470, 150], [340, 230], [245, 350], [270, 490], [390, 585], [485, 650], [560, 685]], 132); break;
-      case '21': drawPath([[560, 40], [520, 170], [460, 285], [370, 370], [260, 390]], 330); break;
+      case '16': drawPath([[560, -80], [470, 150], [340, 230], [245, 350], [270, 490], [390, 585], [485, 650], [560, 800]], 122); break;
+      case '21': drawPath([[560, -80], [520, 170], [460, 285], [370, 370], [260, 430], [250, 470]], 112); break;
       case '06':
-        drawPath([[560, 610], [535, 570], [540, 460], [590, 340], [680, 230], [700, 130], [560, 40]], 132, { taperStart: true });
-        drawPath([[540,460],[430,420],[320,380],[200,360],[40,360]],112);
-        drawPath([[600,360],[740,355],[900,350],[1080,360]],112);
+        drawPath([[560, 610], [535, 570], [540, 460], [590, 340], [680, 230], [700, 130], [560, -80]], 122);
+        drawPath([[540,460],[430,420],[320,380],[200,360],[-80,360]],112);
+        drawPath([[600,360],[740,355],[900,350],[1200,360]],112);
         break;
-      case '07': drawPath([[560, 104], [525, 160], [500, 280], [545, 400], [620, 505], [560, 680]], 132, { taperStart: true }); break;
-      case '08': drawPath([[560, 104], [525, 150], [445, 225], [390, 310], [475, 405], [625, 470], [750, 565], [830, 680]], 132, { taperStart: true }); break;
+      case '07': drawPath([[560, 104], [525, 160], [500, 280], [545, 400], [620, 505], [560, 800]], 122); break;
+      case '08': drawPath([[560, 104], [525, 150], [445, 225], [390, 310], [475, 405], [625, 470], [750, 565], [830, 800]], 122); break;
     }
   }
 
