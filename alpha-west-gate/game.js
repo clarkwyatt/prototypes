@@ -326,18 +326,15 @@
       #village-tale-intro .intro-title-screen { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; padding:clamp(34px,8vh,82px) 18px 0; text-align:center; }
       #village-tale-intro .intro-title { margin:0; color:#fff4d2; font-size:clamp(42px,8vw,92px); line-height:.96; font-weight:700; letter-spacing:.015em; text-shadow:0 4px 0 #284638,0 8px 26px #132d24b8; }
       #village-tale-intro .intro-title-rule { width:min(250px,44vw); height:3px; margin:18px auto 0; background:linear-gradient(90deg,transparent,#f0d48f,transparent); }
-      #village-tale-intro .intro-start { position:absolute; left:50%; bottom:11%; transform:translateX(-50%); width:min(430px,88%); padding:16px 22px; border:2px solid #f4d995; border-radius:999px; color:#fff7df; background:linear-gradient(#477f5d,#27543f); box-shadow:0 6px 0 #183a2c,0 14px 30px #071d18a8,inset 0 1px #ffffff55; font:900 clamp(15px,2.2vw,21px) system-ui,sans-serif; letter-spacing:.1em; text-transform:uppercase; cursor:pointer; animation:intro-pulse 1.8s ease-in-out infinite; }
-      #village-tale-intro .intro-start:hover, #village-tale-intro .intro-next:hover { filter:brightness(1.08); transform:translateY(-2px); }
-      #village-tale-intro .intro-story { width:min(900px,92%); height:min(640px,91%); display:grid; grid-template-rows:auto minmax(0,1fr) auto auto; gap:14px; padding:clamp(14px,2.5vw,24px); border:5px solid #324a3a; border-radius:22px; color:#263d36; background:radial-gradient(ellipse at 50% 0,#fffef7,#fff8e7 55%,#eddfbf); box-shadow:0 20px 60px #071b17b8,inset 0 0 0 2px #d7bd7e; }
-      #village-tale-intro .story-topline { display:flex; justify-content:space-between; align-items:center; gap:12px; color:#43634b; font:900 12px system-ui,sans-serif; letter-spacing:.13em; text-transform:uppercase; }
+      #village-tale-intro .intro-start { position:absolute; left:0; right:0; bottom:11%; width:100%; padding:16px 22px; color:#fff7df; text-align:center; text-shadow:0 2px 10px #102d27; font:900 clamp(15px,2.2vw,21px) system-ui,sans-serif; letter-spacing:.1em; text-transform:uppercase; animation:intro-pulse 1.8s ease-in-out infinite; }
+      #village-tale-intro .intro-story { width:min(900px,92%); height:min(640px,91%); display:grid; grid-template-rows:minmax(0,1fr) auto auto; gap:14px; padding:clamp(14px,2.5vw,24px); border:5px solid #324a3a; border-radius:22px; color:#263d36; background:radial-gradient(ellipse at 50% 0,#fffef7,#fff8e7 55%,#eddfbf); box-shadow:0 20px 60px #071b17b8,inset 0 0 0 2px #d7bd7e; }
       #village-tale-intro .story-art { min-height:0; overflow:hidden; border:4px solid #3e4b3e; border-radius:13px; background:#d8e3cc; box-shadow:inset 0 0 0 2px #fff8dc; }
       #village-tale-intro .story-art svg { width:100%; height:100%; display:block; }
       #village-tale-intro .story-caption { margin:0; max-width:780px; justify-self:center; color:#2b4939; text-align:center; font-size:clamp(18px,2.6vw,27px); line-height:1.25; font-weight:700; }
-      #village-tale-intro .story-controls { display:flex; justify-content:center; align-items:center; gap:16px; flex-wrap:wrap; }
+      #village-tale-intro .story-controls { display:flex; justify-content:center; align-items:center; }
       #village-tale-intro .story-hint { color:#62715d; font:700 12px system-ui,sans-serif; }
-      #village-tale-intro .intro-next { min-width:150px; padding:10px 20px; border:2px solid #a7c882; border-radius:12px; color:#fff8e8; background:linear-gradient(#5cac72,#347951); box-shadow:0 4px 0 #28613f; font:900 14px system-ui,sans-serif; cursor:pointer; transition:transform .15s,filter .15s; }
-      @keyframes intro-pulse { 0%,100% { box-shadow:0 6px 0 #183a2c,0 14px 30px #071d18a8,inset 0 1px #ffffff55; } 50% { box-shadow:0 6px 0 #183a2c,0 14px 34px #071d18c9,0 0 22px #f2d48c70,inset 0 1px #ffffff55; } }
-      @media(max-width:700px) { #village-tale-intro .intro-title-screen { padding-top:10vh; } #village-tale-intro .intro-start { bottom:13%; } #village-tale-intro .intro-story { width:96%; height:94%; gap:10px; padding:12px; border-width:4px; border-radius:16px; grid-template-rows:auto minmax(0,1fr) auto auto; } #village-tale-intro .story-topline { font-size:10px; } #village-tale-intro .story-art { border-width:3px; } #village-tale-intro .story-caption { font-size:clamp(16px,4.4vw,21px); } #village-tale-intro .story-hint { width:100%; text-align:center; } }
+      @keyframes intro-pulse { 0%,100% { text-shadow:0 2px 10px #102d27; } 50% { text-shadow:0 2px 14px #102d27,0 0 22px #f2d48c70; } }
+      @media(max-width:700px) { #village-tale-intro .intro-title-screen { padding-top:10vh; } #village-tale-intro .intro-start { bottom:13%; } #village-tale-intro .intro-story { width:96%; height:94%; gap:10px; padding:12px; border-width:4px; border-radius:16px; grid-template-rows:minmax(0,1fr) auto auto; } #village-tale-intro .story-art { border-width:3px; } #village-tale-intro .story-caption { font-size:clamp(16px,4.4vw,21px); } }
       @media(prefers-reduced-motion:reduce) { #village-tale-intro .intro-start { animation:none; } }
     `;
     document.head.appendChild(style);
@@ -348,17 +345,15 @@
     if (introState === 'splash') {
       introOverlay.innerHTML = `<section class="intro-title-screen" aria-label="A Village Tale title screen">
         <h1 class="intro-title">A Village Tale</h1><div class="intro-title-rule" aria-hidden="true"></div>
-        <button class="intro-start" type="button">Press Any Key To Start</button>
+        <p class="intro-start">Press Any Key or Click To Start</p>
       </section>`;
       return;
     }
     const panel = introPanels[introPanelIndex];
-    const lastPanel = introPanelIndex === introPanels.length - 1;
     introOverlay.innerHTML = `<section class="intro-story" role="dialog" aria-label="Opening story">
-      <div class="story-topline"><span>A Village Tale</span><span>Panel ${introPanelIndex + 1} of ${introPanels.length}</span></div>
       <div class="story-art">${panel.art}</div>
       <p class="story-caption" aria-live="polite">${panel.caption}</p>
-      <div class="story-controls"><span class="story-hint">Press any key to continue</span><button class="intro-next" type="button">${lastPanel ? 'Enter the House' : 'Next Panel'}</button></div>
+      <div class="story-controls"><span class="story-hint">Press any key or click to continue</span></div>
     </section>`;
   }
 
@@ -392,9 +387,11 @@
     game.classList.add('intro-mode');
     introOverlay = document.createElement('div');
     introOverlay.id = 'village-tale-intro';
-    introOverlay.addEventListener('click', (event) => {
-      if (event.target.closest('button')) advanceIntro();
+    introOverlay.addEventListener('pointerdown', (event) => {
+      event.preventDefault();
+      advanceIntro();
     });
+    introOverlay.addEventListener('contextmenu', (event) => event.preventDefault());
     game.appendChild(introOverlay);
     renderIntro();
   }
