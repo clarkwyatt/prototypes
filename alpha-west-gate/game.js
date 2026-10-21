@@ -115,7 +115,7 @@
       { id: 'northGate', name: 'North Gate', x: 830, y: 80, r: 48, description: 'A weathered gate with little brass stars hammered into its posts.' },
       { id: 'well', name: 'Wishing Well', x: 710, y: 245, r: 34, description: 'Coins glimmer beneath the clear water. Someone wished for a safe journey.' },
       { id: 'garden', name: 'Grandma’s Herb Garden', x: 450, y: 330, r: 48, description: 'Mint, thyme, and tiny blue flowers grow together in the sunny garden.' },
-      { id: 'berryBush', name: 'Berry Bush', x: 785, y: 545, r: 38, description: 'A few ripe red berries hide beneath the glossy leaves. Birds have been here too.' },
+      { id: 'berryBush', name: 'Berry Bush', x: 785, y: 545, r: 38, description: 'Glossy leaves hide clusters of plump blue berries. The bush grows beside Grandpa and Grandma’s house.' },
       { id: 'villageOak', name: 'Old Village Oak', x: 140, y: 510, r: 48, description: 'The oak’s knotted roots make a perfect seat. A tiny wooden bird is tucked into its bark.' }
     ],
     '12': [
@@ -691,7 +691,7 @@
       // A soft, fitted bonnet follows Grandma’s head instead of hovering above it.
       ctx.fillStyle=palettes.hair;ctx.beginPath();ctx.arc(10,-10,5,0,Math.PI*2);ctx.fill();
       ctx.fillStyle=palettes.hat;ctx.beginPath();ctx.moveTo(-14,-8);ctx.quadraticCurveTo(-17,-21,-6,-23);ctx.quadraticCurveTo(3,-27,12,-20);ctx.quadraticCurveTo(16,-16,14,-8);ctx.quadraticCurveTo(0,-12,-14,-8);ctx.closePath();ctx.fill();
-      ctx.beginPath();ctx.ellipse(0,-11,15,3,0,0,Math.PI*2);ctx.fill();
+      ctx.beginPath();ctx.ellipse(0,-9,15,4,0,0,Math.PI*2);ctx.fill();
       ctx.strokeStyle='#5f704d';ctx.lineWidth=1.4;ctx.beginPath();ctx.moveTo(-11,-12);ctx.quadraticCurveTo(0,-17,11,-12);ctx.stroke();
       ctx.fillStyle='#d8b779';ctx.beginPath();ctx.arc(6,-19,2.4,0,Math.PI*2);ctx.fill();}
     else if(style===3){ctx.fillStyle=palettes.hat;ctx.beginPath();ctx.ellipse(0,-15,18,8,0,Math.PI,Math.PI*2);ctx.fill();ctx.fillRect(-7,-20,14,6);}
@@ -800,7 +800,7 @@
   function drawWorldProp(id) {
     ctx.save();
     if(id==='well') { ctx.fillStyle='#3a5844';ctx.beginPath();ctx.ellipse(0,12,40,19,0,0,Math.PI*2);ctx.fill();ctx.fillStyle='#786047';ctx.beginPath();ctx.ellipse(0,0,35,22,0,0,Math.PI*2);ctx.fill();ctx.fillStyle='#68a9a6';ctx.beginPath();ctx.ellipse(0,-4,27,13,0,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#dcc391';ctx.lineWidth=5;ctx.strokeRect(-30,-20,60,8);ctx.fillStyle='#795638';ctx.fillRect(-28,-29,5,32);ctx.fillRect(23,-29,5,32);ctx.fillRect(-35,-33,70,7); }
-    else if(id==='garden'||id==='berryBush'||id==='mushrooms'||id==='riverReeds') { for(let i=0;i<6;i++){let x=(i-2.5)*12,y=(i%2)*5;ctx.fillStyle=id==='berryBush'?'#477a45':id==='mushrooms'?'#5c8047':'#4e8a55';ctx.beginPath();ctx.ellipse(x,y,12,18,(i%3-.8)*.35,0,Math.PI*2);ctx.fill();if(id==='berryBush'){ctx.fillStyle=i%2?'#c95058':'#d96161';ctx.beginPath();ctx.arc(x+4,y-6,3.5,0,Math.PI*2);ctx.fill();}if(id==='mushrooms'){ctx.fillStyle='#eee2c4';ctx.fillRect(x-2,y-4,4,13);ctx.fillStyle='#9e75b8';ctx.beginPath();ctx.ellipse(x,y-5,8,5,0,Math.PI,Math.PI*2);ctx.fill();}} }
+    else if(id==='garden'||id==='berryBush'||id==='mushrooms'||id==='riverReeds') { for(let i=0;i<6;i++){let x=(i-2.5)*12,y=(i%2)*5;ctx.fillStyle=id==='berryBush'?'#477a45':id==='mushrooms'?'#5c8047':'#4e8a55';ctx.beginPath();ctx.ellipse(x,y,12,18,(i%3-.8)*.35,0,Math.PI*2);ctx.fill();if(id==='berryBush'){ctx.fillStyle=i%2?'#3f6cbb':'#547fce';ctx.beginPath();ctx.arc(x+4,y-6,3.5,0,Math.PI*2);ctx.fill();ctx.fillStyle='#c6ddf5';ctx.beginPath();ctx.arc(x+3,y-7,1.1,0,Math.PI*2);ctx.fill();}if(id==='mushrooms'){ctx.fillStyle='#eee2c4';ctx.fillRect(x-2,y-4,4,13);ctx.fillStyle='#9e75b8';ctx.beginPath();ctx.ellipse(x,y-5,8,5,0,Math.PI,Math.PI*2);ctx.fill();}} }
     else if(id==='stoneRing'){
       ctx.fillStyle='#31523d55';ctx.beginPath();ctx.ellipse(0,12,62,38,-.12,0,Math.PI*2);ctx.fill();
       for(let i=0;i<7;i++){const a=-Math.PI/2+i*Math.PI*2/7,cx=Math.cos(a)*43,cy=Math.sin(a)*25;const h=22+(i%3)*5;
