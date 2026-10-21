@@ -53,7 +53,7 @@
 
   const roomObjects = {
     '05': [
-      { id: 'mossyMarker', name: 'Mossy Trail Marker', x: 475, y: 265, r: 36, description: 'A small trail marker is nearly hidden beneath moss. Its arrow points east toward the pond.' },
+      { id: 'mossyMarker', name: 'Mossy Trail Marker', x: 475, y: 265, r: 36, description: 'A small trail marker is nearly hidden beneath moss. A faded crescent is carved into its rounded stone face.' },
       { id: 'fireflies', name: 'Firefly Ferns', x: 820, y: 505, r: 42, description: 'Ferns grow in a shady hollow. A few golden fireflies blink among their curled leaves.' },
       { id: 'riverStone', name: 'Rainworn Stone', x: 295, y: 500, r: 34, description: 'Rain has smoothed the stone until it feels like cool glass. A tiny spiral is carved on its top.' }
     ],
@@ -718,6 +718,14 @@
     else if(id.includes('villager')||id==='villageGrandma'||id==='scaredVillager'||id==='trailKeeper'||id==='pathHermit'||id==='trailRanger') {ctx.moveTo(-18,25);ctx.quadraticCurveTo(-24,14,-17,5);ctx.lineTo(-12,0);ctx.arc(0,-7,12,Math.PI,0);ctx.lineTo(17,5);ctx.quadraticCurveTo(24,14,18,25);ctx.quadraticCurveTo(0,33,-18,25);ctx.closePath();}
     else if(id==='gate'||id==='northGate') {ctx.moveTo(-36,50);ctx.lineTo(-36,-48);ctx.lineTo(36,-48);ctx.lineTo(36,50);ctx.closePath();}
     else if(id==='thorns') {ctx.moveTo(-117,34);ctx.lineTo(-115,7);ctx.lineTo(-103,-21);ctx.lineTo(-92,-12);ctx.lineTo(-83,-43);ctx.lineTo(-67,-21);ctx.lineTo(-51,-53);ctx.lineTo(-37,-23);ctx.lineTo(-17,-48);ctx.lineTo(-4,-21);ctx.lineTo(14,-54);ctx.lineTo(30,-20);ctx.lineTo(47,-45);ctx.lineTo(60,-18);ctx.lineTo(78,-39);ctx.lineTo(88,-9);ctx.lineTo(106,-27);ctx.lineTo(117,8);ctx.lineTo(115,35);ctx.closePath();}
+    else if(['villageOak','riverWillow','forestOak','oldOak','moonTree','appleTree','meadowTree'].includes(id)) {ctx.moveTo(-51,2);ctx.bezierCurveTo(-61,-20,-41,-43,-23,-39);ctx.bezierCurveTo(-16,-66,18,-68,28,-41);ctx.bezierCurveTo(55,-39,62,-13,48,5);ctx.bezierCurveTo(56,28,30,40,9,31);ctx.bezierCurveTo(-13,45,-47,31,-51,2);ctx.closePath();}
+    else if(id==='pond') {ctx.ellipse(0,0,96,58,-.12,0,Math.PI*2);}
+    else if(id==='stoneRing') {ctx.ellipse(0,0,63,42,-.08,0,Math.PI*2);}
+    else if(id==='well') {ctx.ellipse(0,0,41,30,0,0,Math.PI*2);}
+    else if(id==='ruin') {ctx.moveTo(-58,31);ctx.lineTo(-58,-34);ctx.lineTo(-42,-55);ctx.lineTo(-24,-47);ctx.lineTo(-8,-42);ctx.lineTo(6,-51);ctx.lineTo(32,-52);ctx.lineTo(58,-35);ctx.lineTo(58,31);ctx.lineTo(32,31);ctx.lineTo(32,-15);ctx.lineTo(20,-27);ctx.lineTo(-20,-27);ctx.lineTo(-32,-14);ctx.lineTo(-32,31);ctx.closePath();}
+    else if(id==='fallenLog'||id==='riverStone'||id==='mossyMarker'||id==='meadowStone') {ctx.ellipse(0,0,43,25,-.12,0,Math.PI*2);}
+    else if(id==='fireflies'||id==='mushrooms'||id==='trailLantern'||id==='meadowLantern') {ctx.moveTo(-40,15);ctx.quadraticCurveTo(-44,-4,-31,-20);ctx.quadraticCurveTo(-16,-30,-8,-13);ctx.quadraticCurveTo(0,-35,12,-19);ctx.quadraticCurveTo(31,-29,40,-7);ctx.lineTo(37,17);ctx.closePath();}
+    else if(id==='meadowFlowers') {ctx.moveTo(-52,20);ctx.quadraticCurveTo(-58,-2,-39,-15);ctx.quadraticCurveTo(-19,-30,-7,-11);ctx.quadraticCurveTo(0,-39,11,-12);ctx.quadraticCurveTo(34,-31,49,-8);ctx.quadraticCurveTo(60,8,49,21);ctx.closePath();}
     else if(['sunpetal','bluebell','mooncap','lavender','amberleaf','fern'].includes(id)) {ctx.moveTo(0,30);ctx.quadraticCurveTo(-26,8,-25,-2);ctx.quadraticCurveTo(-6,-8,0,-35);ctx.quadraticCurveTo(9,-8,27,-2);ctx.quadraticCurveTo(25,12,0,30);ctx.closePath();}
     else {ctx.roundRect(-34,-28,68,52,9);}
     ctx.stroke(); ctx.restore();
