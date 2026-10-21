@@ -343,7 +343,7 @@
 
   function talkToTomas() {
     if (s.villageOverrun && (!s.berriesPicked || s.bakerQuestComplete)) {
-      openModal('Tomas the Baker', '🥖', '<p>The vines wrapped right around my bakery! I managed to save the muffins, at least. Please tell me you found a way to stop them before they take over the whole village.</p>', () => makeButton('We’ll save the village', closeModal), true);
+      openModal('Tomas the Baker', '🥖', '<p>The vines wrapped right around my bakery! I managed to save the muffins, at least. We need to find a way to help everyone in the village.</p>', () => makeButton('We’ll save the village', closeModal), true);
       return;
     }
     if (!s.bakerQuestStarted) {
@@ -357,7 +357,7 @@
       s.bakerQuestComplete = true;
       s.muffin = true;
       updateHud();
-      openModal('Tomas the Baker', '🥖', '<p>Perfect berries! Here’s a blueberry muffin, fresh from the oven. Keep it for a tough moment ahead; if you save this errand for later, you’ll need another way through.</p>', () => makeButton('Thanks, Tomas!', closeModal), true);
+      openModal('Tomas the Baker', '🥖', '<p>Perfect berries! Here’s a blueberry muffin, fresh from the oven. I hope you enjoy it!</p>', () => makeButton('Thanks, Tomas!', closeModal), true);
       return;
     }
     if (!s.bakerQuestComplete) {
