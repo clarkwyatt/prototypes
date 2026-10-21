@@ -51,7 +51,7 @@
   document.addEventListener('keydown', startMusicOnInput, { once: true });
 
   const s = {
-    screen: '13', x: 605, y: 335, face: 'down', speed: 215,
+    screen: '13', x: 605, y: 335, face: 'down', speed: 215, dressed: false,
     scene: 'outside', interior: '', rodents: 0, rodentQuestStarted: false, mice: [], activeCatchTarget: null, basementEntered: false,
     grandpaRemedyStarted: false, healingWater: false, grandpaHealed: false, villageOverrun: false, endingShown: false,
     bakerQuestStarted: false, berriesPicked: false, bakerQuestComplete: false, muffin: false,
@@ -69,19 +69,19 @@
   const introPanels = [
     {
       caption: 'Every morning, the boy watched the road beyond the West Gate.',
-      art: `<svg viewBox="0 0 960 460" role="img" aria-label="The boy looks toward the West Gate from his home"><defs><linearGradient id="sky1" x2="0" y2="1"><stop stop-color="#f6d890"/><stop offset="1" stop-color="#c7e3c0"/></linearGradient></defs><rect width="960" height="460" fill="url(#sky1)"/><circle cx="790" cy="90" r="47" fill="#fff3c6"/><path d="M0 270 Q180 200 360 270 T720 245 T960 260 V460 H0Z" fill="#93bd7c"/><path d="M0 345 Q260 295 470 350 T960 330 V460 H0Z" fill="#6c9c68"/><path d="M0 375 Q260 300 490 360 T960 330" fill="none" stroke="#d5b783" stroke-width="82"/><path d="M0 375 Q260 300 490 360 T960 330" fill="none" stroke="#7e6449" stroke-width="5" stroke-dasharray="12 18"/><g stroke="#503f32" stroke-width="12" fill="#9b7049"><path d="M630 264v120M740 245v128"/><path d="M632 282h108M632 327h108"/><path d="M680 250v135"/></g><path d="M615 244h140" stroke="#e0be7f" stroke-width="12"/><path d="M620 246l26-30 24 30 25-34 28 34" fill="#356a4c" stroke="#294b3c" stroke-width="7"/><g stroke="#4c3c30" stroke-width="8"><path d="M155 230h300v190H155z" fill="#c28b58"/><path d="M125 238l180-118 180 118Z" fill="#80534a"/><path d="M220 270h75v65h-75zM330 270h75v65h-75z" fill="#8ed0d4"/><path d="M220 300h75M257 270v65M330 300h75M367 270v65" fill="none"/></g><g stroke="#3d352d" stroke-width="8"><circle cx="510" cy="303" r="27" fill="#f0c69d"/><path d="M481 300q29-54 58 0" fill="#543e32"/><path d="M480 332q30-24 60 0v82h-60z" fill="#6d8c64"/><path d="M506 329v72" stroke="#f2d39a"/></g><path d="M536 291h84" stroke="#4b483d" stroke-width="4" stroke-dasharray="8 10"/><path d="M558 275l20 16-20 16" fill="none" stroke="#4b483d" stroke-width="4"/></svg>`
+      art: `<svg viewBox="0 0 960 460" role="img" aria-label="The boy looks toward the West Gate from his home"><defs><linearGradient id="dawnSky" x2="0" y2="1"><stop stop-color="#88b5b4"/><stop offset=".56" stop-color="#f3c987"/><stop offset="1" stop-color="#f8e7bb"/></linearGradient><linearGradient id="dawnHill" x2="0" y2="1"><stop stop-color="#73966f"/><stop offset="1" stop-color="#3e684f"/></linearGradient><filter id="softShadow"><feGaussianBlur stdDeviation="8"/></filter></defs><rect width="960" height="460" fill="url(#dawnSky)"/><circle cx="761" cy="102" r="54" fill="#fff1c6" opacity=".9"/><circle cx="761" cy="102" r="77" fill="#fff0bf" opacity=".18"/><path d="M0 250Q180 186 356 248T720 225T960 244V460H0Z" fill="#8cac80"/><path d="M0 311Q180 253 366 311T710 288T960 308V460H0Z" fill="url(#dawnHill)"/><path d="M-30 430Q180 342 409 367Q601 390 1000 281" fill="none" stroke="#d5b57e" stroke-width="104"/><path d="M-30 430Q180 342 409 367Q601 390 1000 281" fill="none" stroke="#f0d39b" stroke-width="87"/><path d="M-30 430Q180 342 409 367Q601 390 1000 281" fill="none" stroke="#a98a60" stroke-width="3" stroke-dasharray="7 18" opacity=".65"/><g fill="#f6df9c" opacity=".75"><circle cx="103" cy="304" r="4"/><circle cx="124" cy="297" r="3"/><circle cx="861" cy="317" r="4"/><circle cx="883" cy="311" r="3"/></g><g stroke="#594331" stroke-width="8" stroke-linejoin="round"><path d="M635 207v155M756 193v126M637 226h118M637 272h118M637 319h118" fill="none"/><path d="M619 208h155" stroke="#d5ae69" stroke-width="12"/><path d="M628 208l24-32 25 30 28-39 31 41" fill="#486f50" stroke="#365844"/></g><path d="M96 197h266v168H96z" fill="#bd8859" stroke="#704b3a" stroke-width="9"/><path d="M73 208l155-111 157 111Z" fill="#754a48" stroke="#563d3a" stroke-width="9"/><path d="M124 230h76v68h-76zM250 230h76v68h-76z" fill="#a9d7d3" stroke="#f2d8a0" stroke-width="8"/><path d="M162 231v65M287 231v65M125 263h74M251 263h74" stroke="#f6e2b8" stroke-width="5"/><g transform="translate(454 307)"><ellipse cy="55" rx="42" ry="10" fill="#263e3340"/><path d="M-25 10q25-18 50 0v57h-50z" fill="#406b55" stroke="#29483d" stroke-width="5"/><path d="M-13 14v43M13 14v43" stroke="#e2c783" stroke-width="4"/><circle cy="-16" r="23" fill="#efc89d" stroke="#604733" stroke-width="5"/><path d="M-24-19q24-40 48 0v7h-48z" fill="#594032"/></g><path d="M498 287q47-16 94-2" fill="none" stroke="#fff4d6" stroke-width="5" stroke-dasharray="4 13"/><g fill="#fff6df"><circle cx="543" cy="267" r="3"/><circle cx="579" cy="278" r="3"/></g><path d="M0 415q90-28 155-16" stroke="#aac47e" stroke-width="4" fill="none"/><g fill="#e9c872"><path d="M45 356q12-27 24 0-12 18-24 0"/><path d="M865 375q12-27 24 0-12 18-24 0"/></g></svg>`
     },
     {
       caption: 'He knew every path, every fence, and every familiar turn by heart.',
-      art: `<svg viewBox="0 0 960 460" role="img" aria-label="The boy walks the same village path again"><defs><linearGradient id="sky2" x2="0" y2="1"><stop stop-color="#b7d9df"/><stop offset="1" stop-color="#f3e2ae"/></linearGradient></defs><rect width="960" height="460" fill="url(#sky2)"/><circle cx="155" cy="94" r="44" fill="#fff2c6"/><path d="M0 260Q200 205 400 255T960 235V460H0Z" fill="#8eb879"/><path d="M0 350Q220 270 460 345T960 300V460H0Z" fill="#6f9f68"/><path d="M-20 390Q240 320 490 365T1000 315" fill="none" stroke="#d0b385" stroke-width="105"/><path d="M-20 390Q240 320 490 365T1000 315" fill="none" stroke="#8e7556" stroke-width="5" stroke-dasharray="13 17"/><g opacity=".28" stroke="#4a3a31" stroke-width="8"><circle cx="300" cy="275" r="22" fill="#edc39b"/><path d="M277 301q23-16 46 0v66h-46z" fill="#6c8e69"/><circle cx="460" cy="307" r="22" fill="#edc39b"/><path d="M437 333q23-16 46 0v66h-46z" fill="#6c8e69"/></g><g stroke="#493a31" stroke-width="8"><circle cx="615" cy="277" r="25" fill="#edc39b"/><path d="M588 274q27-50 54 0" fill="#543e32"/><path d="M585 307q30-22 60 0v76h-60z" fill="#6c8e69"/><path d="M585 381l-16 45M645 381l16 45"/></g><g fill="#e6c76f"><circle cx="170" cy="332" r="7"/><circle cx="210" cy="316" r="6"/><circle cx="780" cy="320" r="7"/><circle cx="825" cy="304" r="6"/></g><path d="M675 260q50-55 100-4" fill="none" stroke="#fff8e3" stroke-width="6" stroke-dasharray="8 12"/></svg>`
+      art: `<svg viewBox="0 0 960 460" role="img" aria-label="The boy walks the familiar village path"><defs><linearGradient id="morningSky" x2="0" y2="1"><stop stop-color="#9ac8d0"/><stop offset=".65" stop-color="#e9d6a5"/><stop offset="1" stop-color="#f5e6bf"/></linearGradient><linearGradient id="meadow" x2="0" y2="1"><stop stop-color="#92b477"/><stop offset="1" stop-color="#4d7955"/></linearGradient><filter id="shadow"><feGaussianBlur stdDeviation="7"/></filter></defs><rect width="960" height="460" fill="url(#morningSky)"/><circle cx="140" cy="98" r="41" fill="#fff3cb"/><path d="M0 244Q146 198 310 243T631 224T960 235V460H0Z" fill="#a0bb83"/><path d="M0 299Q185 248 360 302T690 286T960 295V460H0Z" fill="url(#meadow)"/><path d="M-30 429Q142 365 289 355Q492 342 603 371Q776 405 1000 299" fill="none" stroke="#c6a578" stroke-width="114"/><path d="M-30 429Q142 365 289 355Q492 342 603 371Q776 405 1000 299" fill="none" stroke="#e8d2a7" stroke-width="91"/><path d="M-30 429Q142 365 289 355Q492 342 603 371Q776 405 1000 299" fill="none" stroke="#8f795b" stroke-width="3" stroke-dasharray="8 19" opacity=".55"/><g opacity=".42" fill="#f7f0d6"><path d="M244 218h67v89h-67zM230 224l47-40 48 40Z"/><path d="M702 213h59v78h-59zM690 218l42-35 41 35Z"/></g><g transform="translate(448 286)" opacity=".36"><circle cy="-5" r="18" fill="#eec39a"/><path d="M-21 16q21-14 42 0v53h-42z" fill="#61795f"/></g><g transform="translate(556 302)" opacity=".34"><circle cy="-5" r="18" fill="#eec39a"/><path d="M-21 16q21-14 42 0v53h-42z" fill="#956759"/></g><g transform="translate(643 269)"><ellipse cy="56" rx="38" ry="9" fill="#263e3340"/><path d="M-22 10q22-17 44 0v52h-44z" fill="#477256" stroke="#2e523f" stroke-width="4"/><path d="M-17 17h34" stroke="#dfc07b" stroke-width="4"/><circle cy="-14" r="21" fill="#efc99e" stroke="#624a38" stroke-width="4"/><path d="M-21-16q21-34 42 0v7h-42z" fill="#594032"/><path d="M-18 59l-9 23M18 59l9 23" stroke="#594032" stroke-width="8" stroke-linecap="round"/></g><g fill="#e9c96e"><circle cx="121" cy="330" r="7"/><circle cx="165" cy="313" r="6"/><circle cx="811" cy="343" r="7"/><circle cx="850" cy="322" r="5"/><circle cx="891" cy="350" r="6"/></g><g fill="#f5ead1" opacity=".9"><path d="M325 146q-35-16-42 7-4 17 24 19 13 1 22-9 14 10 30 2 18-11 2-25-16-13-31 1-5-11-17 5Z"/><path d="M704 120q-28-13-34 7-4 14 20 16 12 1 19-8 13 9 25 1 15-9 1-20-13-10-26 1-4-9-15 3Z"/></g><path d="M0 449Q180 416 288 441M721 422q116-35 232-16" stroke="#aac67f" stroke-width="5" fill="none"/><g fill="#8aa76c"><path d="M82 307q10-34 20-2l-5 26H87Z"/><path d="M915 289q10-34 20-2l-5 26h-10Z"/></g></svg>`
     },
     {
       caption: 'He loved his home. But each day felt just like the last.',
-      art: `<svg viewBox="0 0 960 460" role="img" aria-label="The boy dreams of places beyond the village"><defs><linearGradient id="sky3" x2="0" y2="1"><stop stop-color="#aecde0"/><stop offset="1" stop-color="#f6d9a2"/></linearGradient></defs><rect width="960" height="460" fill="url(#sky3)"/><circle cx="790" cy="95" r="38" fill="#fff4cb"/><path d="M0 300l160-140 130 105 150-180 175 205 135-125 210 130v165H0Z" fill="#789a80" stroke="#3f694f" stroke-width="8"/><path d="M288 265l152-180 170 205-85-44-47 24-54-46-47 32-46-40Z" fill="#e7e0c5"/><path d="M0 350Q280 285 500 355T960 310V460H0Z" fill="#719d68"/><path d="M90 415Q290 315 470 365" fill="none" stroke="#d4b481" stroke-width="66"/><g stroke="#493a31" stroke-width="8"><circle cx="485" cy="321" r="25" fill="#edc39b"/><path d="M460 318q25-48 50 0" fill="#543e32"/><path d="M455 352q30-23 60 0v76h-60z" fill="#705a7c"/></g><g fill="#fff8e3" stroke="#7f6550" stroke-width="6"><path d="M615 110c-48-25-62 33-20 40 18 3 31-2 41-13 18 13 44 10 49-9 5-23-23-33-40-16-8-16-30-19-40-2Z"/><path d="M760 205c-35-20-48 22-15 30 17 4 29-2 35-13 20 10 38 4 37-12-2-20-24-25-38-10-7-12-19-11-19 5Z"/></g><g fill="#dfb95e"><path d="M660 125l5 12 13 1-10 8 3 13-11-7-11 7 3-13-10-8 13-1Z"/><path d="M800 214l4 10 11 1-8 6 2 11-9-6-9 6 2-11-8-6 11-1Z"/></g></svg>`
+      art: `<svg viewBox="0 0 960 460" role="img" aria-label="The boy imagines the places he wants to explore"><defs><linearGradient id="dreamSky" x2="0" y2="1"><stop stop-color="#718cb1"/><stop offset=".52" stop-color="#c5b4bd"/><stop offset="1" stop-color="#f1c58e"/></linearGradient><linearGradient id="dreamHill" x2="0" y2="1"><stop stop-color="#748766"/><stop offset="1" stop-color="#3b5948"/></linearGradient><filter id="cloudGlow"><feGaussianBlur stdDeviation="8"/></filter></defs><rect width="960" height="460" fill="url(#dreamSky)"/><circle cx="771" cy="91" r="31" fill="#fff0ce"/><circle cx="771" cy="91" r="53" fill="#ffe7b8" opacity=".23"/><path d="M0 297l132-123 105 84 151-177 171 195 115-93 159 128v149H0Z" fill="#6d8179"/><path d="M254 241l134-160 169 193-76-33-55 20-45-41-43 32-41-31-43 33Z" fill="#eee5d1"/><path d="M0 346Q178 289 374 335T736 317T960 337V460H0Z" fill="url(#dreamHill)"/><path d="M91 436Q267 349 405 374Q520 398 666 344" fill="none" stroke="#d1ac79" stroke-width="55"/><g fill="#f7e4bc" opacity=".94" stroke="#937b72" stroke-width="4"><path d="M626 145q-40-22-50 8-7 22 32 25 18 2 29-12 18 13 37 2 22-14 3-31-20-17-38 2-6-15-21 6Z"/><path d="M752 213q-31-18-39 6-6 19 25 21 16 1 24-10 15 11 30 2 18-12 2-26-17-14-32 2-5-12-18 5Z"/></g><g fill="#eac676"><path d="M684 164l5 12 14 1-10 8 3 14-12-7-12 7 3-14-10-8 14-1Z"/><path d="M804 226l4 10 12 1-9 7 3 12-10-6-11 6 3-12-9-7 12-1Z"/></g><g transform="translate(456 306)"><ellipse cy="50" rx="39" ry="9" fill="#1d342c55"/><path d="M-23 12q23-17 46 0v48h-46z" fill="#70647f" stroke="#3e4652" stroke-width="4"/><circle cy="-14" r="21" fill="#efc69b" stroke="#59493e" stroke-width="4"/><path d="M-22-17q22-34 44 0v7h-44z" fill="#554035"/><path d="M-17 59l-8 20M17 59l8 20" stroke="#533f35" stroke-width="7" stroke-linecap="round"/></g><g opacity=".22" fill="#fff6df" filter="url(#cloudGlow)"><ellipse cx="691" cy="165" rx="83" ry="49"/><ellipse cx="812" cy="226" rx="65" ry="38"/></g><g fill="#fff0cc"><circle cx="586" cy="112" r="3"/><circle cx="614" cy="85" r="2"/><circle cx="846" cy="123" r="3"/><circle cx="875" cy="174" r="2"/></g><path d="M475 280q47-61 107-87M493 273q103-114 210-99" fill="none" stroke="#fff4d5" stroke-width="3" stroke-dasharray="5 12" opacity=".76"/><g fill="#e8c36e"><circle cx="108" cy="381" r="5"/><circle cx="152" cy="367" r="4"/><circle cx="829" cy="363" r="5"/><circle cx="871" cy="347" r="4"/></g></svg>`
     },
     {
       caption: 'Beyond the gate waited forests, mountains, and places he had only imagined. One day, he would see the world for himself.',
-      art: `<svg viewBox="0 0 960 460" role="img" aria-label="The boy stands at the gate and looks toward the distant world"><defs><linearGradient id="sky4" x2="0" y2="1"><stop stop-color="#f3c987"/><stop offset="1" stop-color="#f5e6bd"/></linearGradient></defs><rect width="960" height="460" fill="url(#sky4)"/><circle cx="785" cy="88" r="42" fill="#fff1c0"/><path d="M0 265l145-98 120 82 160-142 185 165 130-104 220 110v182H0Z" fill="#708f76" stroke="#456449" stroke-width="8"/><path d="M268 249l157-142 184 165-77-39-55 25-55-47-47 37-53-38Z" fill="#e9dfbd"/><path d="M0 333Q280 290 490 348T960 315V460H0Z" fill="#7ea66d"/><path d="M450 460Q474 383 475 325T500 250" fill="none" stroke="#d4b280" stroke-width="112"/><g stroke="#483a30" stroke-width="13" fill="#906b48"><path d="M310 188v206M442 172v220M310 226h132M310 292h132"/><path d="M344 200v194M410 188v204"/></g><path d="M290 183h175" stroke="#e1c17c" stroke-width="15"/><g stroke="#493a31" stroke-width="9"><circle cx="516" cy="302" r="26" fill="#edc39b"/><path d="M488 298q28-50 56 0" fill="#543e32"/><path d="M485 334q31-23 62 0v85h-62z" fill="#6e8e67"/><path d="M500 413l-9 34M532 413l9 34"/></g><path d="M562 294q50-8 89 3" fill="none" stroke="#fff4d0" stroke-width="6" stroke-dasharray="7 13"/><path d="M638 285l16 12-17 9" fill="none" stroke="#fff4d0" stroke-width="6"/></svg>`
+      art: `<svg viewBox="0 0 960 460" role="img" aria-label="The boy stands at the gate and looks toward the distant world"><defs><linearGradient id="gateSky" x2="0" y2="1"><stop stop-color="#4f7891"/><stop offset=".47" stop-color="#eab878"/><stop offset="1" stop-color="#f5dfb2"/></linearGradient><linearGradient id="farMountains" x2="0" y2="1"><stop stop-color="#647e7a"/><stop offset="1" stop-color="#466456"/></linearGradient><linearGradient id="goldRoad" x2="0" y2="1"><stop stop-color="#f2d39a"/><stop offset="1" stop-color="#ba9468"/></linearGradient></defs><rect width="960" height="460" fill="url(#gateSky)"/><circle cx="774" cy="92" r="43" fill="#fff0c6"/><circle cx="774" cy="92" r="70" fill="#fff0c6" opacity=".18"/><path d="M0 262l122-96 108 78 148-153 158 161 134-112 116 106 94-66 80 47v233H0Z" fill="url(#farMountains)"/><path d="M283 237l95-146 158 161-64-29-40 17-45-37-36 27-37-24Z" fill="#eee4ca"/><path d="M0 325Q187 281 361 327T703 306T960 319V460H0Z" fill="#759468"/><path d="M399 460Q438 384 472 325T492 245" fill="none" stroke="#8c694b" stroke-width="120"/><path d="M400 460Q440 384 474 325T494 245" fill="none" stroke="url(#goldRoad)" stroke-width="96"/><path d="M400 460Q440 384 474 325T494 245" fill="none" stroke="#f8e5bd" stroke-width="3" stroke-dasharray="7 17" opacity=".6"/><g stroke="#493b31" stroke-width="12" stroke-linejoin="round"><path d="M287 178v220M423 160v222M287 214h136M287 274h136M287 334h136" fill="none"/><path d="M270 176h170" stroke="#d5b676" stroke-width="15"/><path d="M279 176l28-35 29 34 29-42 33 43" fill="#426a4d" stroke="#344f40" stroke-width="8"/></g><g transform="translate(518 309)"><ellipse cy="55" rx="40" ry="10" fill="#20392e55"/><path d="M-24 12q24-17 48 0v51h-48z" fill="#4d795b" stroke="#2c5140" stroke-width="4"/><path d="M-18 20h36" stroke="#e3c783" stroke-width="4"/><circle cy="-15" r="22" fill="#efc89f" stroke="#604a39" stroke-width="4"/><path d="M-23-18q23-37 46 0v7h-46z" fill="#594032"/><path d="M-18 62l-9 23M18 62l9 23" stroke="#594032" stroke-width="8" stroke-linecap="round"/></g><path d="M554 298q48-7 84 3" fill="none" stroke="#fff2d3" stroke-width="5" stroke-dasharray="5 12"/><path d="M620 288l17 12-19 8" fill="none" stroke="#fff2d3" stroke-width="5"/><g fill="#f3d992"><circle cx="110" cy="354" r="5"/><circle cx="145" cy="346" r="4"/><circle cx="855" cy="351" r="5"/><circle cx="891" cy="342" r="4"/></g><path d="M47 269q20-45 39 0M58 268q14-33 27 0" fill="none" stroke="#385c46" stroke-width="6" stroke-linecap="round"/><path d="M838 273q20-45 39 0M849 272q14-33 27 0" fill="none" stroke="#385c46" stroke-width="6" stroke-linecap="round"/></svg>`
     }
   ];
 
@@ -221,7 +221,8 @@
     if(s.healingWater)inventory.push('💧 Healing Water');
     itemsEl.textContent=inventory.length?inventory.join(' · '):'Empty';
     const objectives=[];
-    if(s.villageOverrun)objectives.push('Help the Village');
+    if(!s.dressed)objectives.push('Get Dressed');
+    else if(s.villageOverrun)objectives.push('Help the Village');
     else if(!s.waterQuestStarted)objectives.push('Explore the Village');
     else if(!s.grandmaHelped&&!s.carryingWater)objectives.push('Fetch a cup of water for Grandma');
     else if(!s.grandmaHelped)objectives.push('Bring the water to Grandma');
@@ -298,6 +299,12 @@
         makeButton(action.label, () => { closeModal(); action.run(); });
       }
     }, true);
+  }
+
+  function dressHero() {
+    s.dressed = true;
+    updateHud();
+    toast('You’re dressed and ready to go!');
   }
 
   function enterInterior(type) {
@@ -1389,9 +1396,18 @@
     ctx.fillStyle = '#18362d4d'; ctx.beginPath(); ctx.ellipse(1, 19, 18, 8, 0, 0, Math.PI * 2); ctx.fill();
     ctx.fillStyle='#78533a';ctx.beginPath();ctx.ellipse(0,23,8,4,0,0,Math.PI*2);ctx.fill();
     ctx.fillStyle='#d1a75d';ctx.beginPath();ctx.roundRect(-10,18,8,7,3);ctx.roundRect(3,18,8,7,3);ctx.fill();
-    const tunic=ctx.createLinearGradient(-12,0,12,0);tunic.addColorStop(0,'#315d4c');tunic.addColorStop(.5,'#54886a');tunic.addColorStop(1,'#2f604d');
-    ctx.fillStyle=tunic;ctx.beginPath();ctx.moveTo(-11,0);ctx.quadraticCurveTo(-18,3,-16,18);ctx.quadraticCurveTo(0,28,16,18);ctx.quadraticCurveTo(18,4,11,0);ctx.quadraticCurveTo(0,8,-11,0);ctx.fill();
-    ctx.fillStyle='#e0bb70';ctx.fillRect(-11,7,22,3);ctx.fillStyle='#ecd18f';ctx.beginPath();ctx.arc(0,9,2,0,Math.PI*2);ctx.fill();
+    const undressed = s.interior === 'home' && !s.dressed;
+    if (undressed) {
+      // Sleepwear: a short-sleeved tee and shorts, worn only before the first quest.
+      ctx.fillStyle='#6d91a1';ctx.beginPath();ctx.moveTo(-10,0);ctx.quadraticCurveTo(-18,2,-17,11);ctx.lineTo(-11,14);ctx.lineTo(-9,8);ctx.lineTo(-8,12);ctx.lineTo(8,12);ctx.lineTo(10,8);ctx.lineTo(12,14);ctx.lineTo(17,11);ctx.quadraticCurveTo(18,2,10,0);ctx.quadraticCurveTo(0,6,-10,0);ctx.fill();
+      ctx.fillStyle='#d9e5df';ctx.beginPath();ctx.moveTo(-3,2);ctx.quadraticCurveTo(0,6,3,2);ctx.lineTo(2,5);ctx.lineTo(-2,5);ctx.closePath();ctx.fill();
+      ctx.fillStyle='#ad7852';ctx.beginPath();ctx.moveTo(-11,12);ctx.lineTo(11,12);ctx.lineTo(12,21);ctx.lineTo(2,21);ctx.lineTo(0,17);ctx.lineTo(-2,21);ctx.lineTo(-12,21);ctx.closePath();ctx.fill();
+      ctx.strokeStyle='#d9ad78';ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(0,13);ctx.lineTo(0,17);ctx.stroke();
+    } else {
+      const tunic=ctx.createLinearGradient(-12,0,12,0);tunic.addColorStop(0,'#315d4c');tunic.addColorStop(.5,'#54886a');tunic.addColorStop(1,'#2f604d');
+      ctx.fillStyle=tunic;ctx.beginPath();ctx.moveTo(-11,0);ctx.quadraticCurveTo(-18,3,-16,18);ctx.quadraticCurveTo(0,28,16,18);ctx.quadraticCurveTo(18,4,11,0);ctx.quadraticCurveTo(0,8,-11,0);ctx.fill();
+      ctx.fillStyle='#e0bb70';ctx.fillRect(-11,7,22,3);ctx.fillStyle='#ecd18f';ctx.beginPath();ctx.arc(0,9,2,0,Math.PI*2);ctx.fill();
+    }
     const side=s.face==='left'||s.face==='right',dir=s.face==='left'?-1:1;
     ctx.fillStyle='#b97855';ctx.beginPath();ctx.ellipse(side?dir:0,-6,side?10:11,11,0,0,Math.PI*2);ctx.fill();
     ctx.fillStyle='#f3c99d';ctx.beginPath();ctx.ellipse(side?dir*1.5:0,-5,side?7.5:8,9,0,0,Math.PI*2);ctx.fill();
@@ -1485,21 +1501,21 @@
   }
 
   function drawHomeRoomAccents() {
-    // Stitching and a quilt pattern make the oversized bed feel like a crafted object.
-    ctx.strokeStyle='#e6dfba';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(245,231);ctx.lineTo(437,231);ctx.moveTo(245,270);ctx.lineTo(437,270);ctx.stroke();
-    for(let x=253;x<433;x+=24){ctx.strokeStyle=x%48?'#6d986d':'#d3dfb0';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(x,238);ctx.lineTo(x+8,247);ctx.lineTo(x,256);ctx.lineTo(x-8,247);ctx.closePath();ctx.stroke();}
-    ctx.fillStyle='#73533a';ctx.beginPath();ctx.ellipse(492,220,34,15,0,0,Math.PI*2);ctx.fill();
-    ctx.fillStyle='#a97a4d';ctx.beginPath();ctx.roundRect(462,198,60,39,6);ctx.fill();
-    ctx.fillStyle='#d5b87d';ctx.beginPath();ctx.arc(492,207,8,0,Math.PI*2);ctx.fill();
-    // Keepsake cabinet with a family portrait and small colored curios.
-    ctx.fillStyle='#714e36';ctx.beginPath();ctx.roundRect(704,137,214,128,15);ctx.fill();
-    ctx.fillStyle='#c59a61';ctx.beginPath();ctx.roundRect(713,146,196,110,10);ctx.fill();
-    ctx.strokeStyle='#80583b';ctx.lineWidth=3;for(let x=720;x<905;x+=61){ctx.beginPath();ctx.moveTo(x,151);ctx.lineTo(x,250);ctx.stroke();}
-    for(let row=0;row<3;row++)for(let col=0;col<3;col++){const x=733+col*59,y=160+row*27;ctx.fillStyle=['#9b6250','#67846b','#6987a5','#b48651'][((row*3+col)%4)];ctx.beginPath();ctx.roundRect(x,y,39,19,3);ctx.fill();ctx.fillStyle='#e1c488';ctx.beginPath();ctx.arc(x+20,y+10,2.5,0,Math.PI*2);ctx.fill();}
-    ctx.fillStyle='#e6d9b8';ctx.beginPath();ctx.roundRect(816,161,48,42,5);ctx.fill();ctx.fillStyle='#71906a';ctx.beginPath();ctx.arc(840,178,11,0,Math.PI*2);ctx.fill();ctx.fillStyle='#d59d7a';ctx.beginPath();ctx.arc(840,190,7,Math.PI,0);ctx.fill();
-    // A woven oval rug and a little teacup make the sitting corner feel used.
-    ctx.strokeStyle='#dfd1a5';ctx.lineWidth=2;for(let i=0;i<3;i++){ctx.beginPath();ctx.ellipse(392,480,75-i*13,27-i*5,0,0,Math.PI*2);ctx.stroke();}
-    ctx.fillStyle='#6c5842';ctx.beginPath();ctx.ellipse(465,467,12,9,0,0,Math.PI*2);ctx.fill();ctx.fillStyle='#f1dfb9';ctx.beginPath();ctx.ellipse(463,464,8,5,0,0,Math.PI*2);ctx.fill();
+    // Framed village sketches, tiny keepsakes and soft lamplight make the room feel lived in.
+    ctx.fillStyle='#5a4332';ctx.beginPath();ctx.roundRect(666,99,92,45,6);ctx.fill();
+    ctx.fillStyle='#d8bd84';ctx.beginPath();ctx.roundRect(671,103,82,37,4);ctx.fill();
+    const painting=ctx.createLinearGradient(670,104,670,140);painting.addColorStop(0,'#9ac8c2');painting.addColorStop(1,'#ecd29b');
+    ctx.fillStyle=painting;ctx.fillRect(675,107,74,29);
+    ctx.fillStyle='#f4e8bc';ctx.beginPath();ctx.arc(733,114,5,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#63835e';ctx.beginPath();ctx.moveTo(675,133);ctx.lineTo(693,119);ctx.lineTo(705,130);ctx.lineTo(721,116);ctx.lineTo(749,134);ctx.closePath();ctx.fill();
+    ctx.fillStyle='#6f4b32';ctx.beginPath();ctx.roundRect(653,165,39,34,5);ctx.fill();
+    ctx.fillStyle='#d6b879';ctx.beginPath();ctx.arc(672,176,8,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#f2dda8';ctx.lineWidth=2;ctx.beginPath();ctx.arc(672,176,5,0,Math.PI*2);ctx.stroke();
+    ctx.strokeStyle='#dfd1a5';ctx.lineWidth=3;ctx.beginPath();ctx.ellipse(463,466,13,9,0,0,Math.PI*2);ctx.stroke();
+    ctx.fillStyle='#f1dfb9';ctx.beginPath();ctx.ellipse(461,463,8,5,0,0,Math.PI*2);ctx.fill();
+    // A small green plant softens the room's hard corners.
+    ctx.fillStyle='#a66b48';ctx.beginPath();ctx.moveTo(916,282);ctx.lineTo(943,282);ctx.lineTo(938,301);ctx.lineTo(921,301);ctx.closePath();ctx.fill();
+    ctx.strokeStyle='#4c7550';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(930,282);ctx.lineTo(930,259);ctx.moveTo(930,272);ctx.lineTo(916,264);ctx.moveTo(930,268);ctx.lineTo(944,258);ctx.stroke();
+    ctx.fillStyle='#719267';for(const [x,y] of [[916,263],[944,257],[922,254],[938,248]]){ctx.beginPath();ctx.ellipse(x,y,8,4,-.6,0,Math.PI*2);ctx.fill();}
   }
 
   function drawHutRoomAccents() {
@@ -1571,17 +1587,55 @@
     ctx.strokeStyle = '#f0ddb0'; ctx.lineWidth = 13; ctx.strokeRect(124,79,872,562);
 
     if (s.interior === 'home') {
-      // Familiar bed in the top-left is the room's scale reference.
-      roundedRect(208,145,260,158,18,'#755039');roundedRect(219,156,238,136,15,'#f2e8d0');
-      roundedRect(229,166,218,116,13,'#8ca982');roundedRect(236,174,204,99,11,'#abc39a');
-      roundedRect(245,180,52,43,10,'#fff5dc');roundedRect(303,180,52,43,10,'#fff5dc');
-      ctx.strokeStyle='#d9e3bf';ctx.lineWidth=2;for(let i=-2;i<=2;i++){ctx.beginPath();ctx.moveTo(342+i*15,226);ctx.lineTo(342+i*15,262);ctx.stroke();}
-      ctx.fillStyle='#d1aa64';ctx.beginPath();ctx.arc(339,245,5,0,Math.PI*2);ctx.fill();
-      if(Math.hypot(s.x-335,s.y-225)<130){const p=(Math.sin(performance.now()/230)+1)/2;ctx.save();ctx.strokeStyle=`rgba(100,255,130,${.76+p*.18})`;ctx.lineWidth=3+p;ctx.shadowColor='#5dff7e';ctx.shadowBlur=8+p*11;ctx.strokeRect(200,145,265,160);ctx.restore();}
-      roundedRect(712,145,198,112,12,'#604637');roundedRect(720,153,182,96,9,'#bc9664');
-      for(let yy=0;yy<3;yy++){roundedRect(735,163+yy*25,70,19,4,'#d1ad78');roundedRect(816,163+yy*25,70,19,4,'#d1ad78');ctx.fillStyle='#805a3d';ctx.beginPath();ctx.arc(795,173+yy*25,2,0,Math.PI*2);ctx.arc(876,173+yy*25,2,0,Math.PI*2);ctx.fill();}
-      roundedRect(270,420,245,120,18,'#5d7554');roundedRect(281,430,223,100,13,'#9ab286');
-      ctx.strokeStyle='#e1d8ad';ctx.lineWidth=3;ctx.beginPath();ctx.ellipse(392,480,82,33,0,0,Math.PI*2);ctx.stroke();ctx.fillStyle='#f3d68a';ctx.beginPath();ctx.arc(392,480,8,0,Math.PI*2);ctx.fill();
+      // A sunlit, lived-in bedroom with a quilted bed, dresser and woven rug.
+      const windowGlow=ctx.createLinearGradient(520,87,520,133);windowGlow.addColorStop(0,'#8dc9d1');windowGlow.addColorStop(1,'#e8d59e');
+      roundedRect(493,86,138,50,12,'#6a4934');roundedRect(500,91,124,39,8,windowGlow);
+      ctx.fillStyle='#fff1bd';ctx.beginPath();ctx.arc(600,103,9,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle='#71966b';ctx.beginPath();ctx.moveTo(500,122);ctx.quadraticCurveTo(533,105,554,120);ctx.quadraticCurveTo(578,104,624,120);ctx.lineTo(624,130);ctx.lineTo(500,130);ctx.fill();
+      ctx.fillStyle='#e6c881';ctx.fillRect(494,131,136,7);
+      ctx.fillStyle='#f0dfb7';ctx.beginPath();ctx.moveTo(489,89);ctx.quadraticCurveTo(507,105,498,132);ctx.lineTo(490,132);ctx.closePath();ctx.fill();ctx.beginPath();ctx.moveTo(635,89);ctx.quadraticCurveTo(617,105,626,132);ctx.lineTo(634,132);ctx.closePath();ctx.fill();
+
+      roundedRect(195,145,286,170,20,'#543927');roundedRect(202,151,272,157,17,'#b78a53');
+      roundedRect(210,158,256,142,15,'#eee3c5');roundedRect(219,165,239,128,12,'#8da581');
+      roundedRect(226,172,225,111,12,'#6b8e72');roundedRect(232,178,213,98,10,'#91ad8d');
+      roundedRect(240,183,64,45,10,'#fff4dc');roundedRect(309,183,64,45,10,'#fff4dc');
+      ctx.fillStyle='#d8c89c';ctx.beginPath();ctx.roundRect(240,222,133,8,4);ctx.fill();
+      const quilt=ctx.createLinearGradient(230,228,450,276);quilt.addColorStop(0,'#6b8e70');quilt.addColorStop(.5,'#83a781');quilt.addColorStop(1,'#547b66');roundedRect(230,230,215,53,9,quilt);
+      ctx.strokeStyle='#d5d9aa';ctx.lineWidth=2;for(let x=240;x<444;x+=24){ctx.beginPath();ctx.moveTo(x,235);ctx.lineTo(x+10,256);ctx.lineTo(x,278);ctx.lineTo(x-10,256);ctx.closePath();ctx.stroke();}
+      roundedRect(220,286,250,14,6,'#70482f');ctx.fillStyle='#d3a960';ctx.fillRect(220,299,250,5);
+      if(Math.hypot(s.x-335,s.y-225)<130){const p=(Math.sin(performance.now()/230)+1)/2;ctx.save();ctx.strokeStyle=`rgba(100,255,130,${.76+p*.18})`;ctx.lineWidth=3+p;ctx.shadowColor='#5dff7e';ctx.shadowBlur=8+p*11;ctx.strokeRect(198,143,280,174);ctx.restore();}
+
+      // Dresser and oval mirror. Clothes are visible until the player gets dressed.
+      ctx.fillStyle='#5d3c2b';ctx.beginPath();ctx.ellipse(811,154,57,43,0,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle='#c7aa77';ctx.beginPath();ctx.ellipse(811,153,48,35,0,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle='#9fc5c2';ctx.beginPath();ctx.ellipse(811,153,39,27,0,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle='#f8e3ac';ctx.beginPath();ctx.ellipse(811,153,30,19,0,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle='#7b5336';ctx.beginPath();ctx.ellipse(811,245,90,10,0,0,Math.PI*2);ctx.fill();
+      roundedRect(725,187,172,67,12,'#7a5034');roundedRect(731,191,160,58,9,'#bd8d56');
+      ctx.fillStyle='#d6b474';ctx.fillRect(731,190,160,5);
+      for(let row=0;row<2;row++){roundedRect(740,199+row*23,142,18,4,row===0?'#d6aa70':'#c99b61');ctx.fillStyle='#765034';ctx.beginPath();ctx.arc(811,208+row*23,3,0,Math.PI*2);ctx.fill();}
+      if(!s.dressed){
+        ctx.fillStyle='#6b91a0';ctx.beginPath();ctx.moveTo(756,185);ctx.lineTo(766,178);ctx.lineTo(780,182);ctx.lineTo(787,190);ctx.lineTo(782,195);ctx.lineTo(777,191);ctx.lineTo(776,200);ctx.lineTo(757,200);ctx.lineTo(756,191);ctx.lineTo(751,195);ctx.lineTo(747,191);ctx.closePath();ctx.fill();
+        ctx.fillStyle='#ad7852';ctx.beginPath();ctx.moveTo(792,186);ctx.lineTo(807,184);ctx.lineTo(810,198);ctx.lineTo(803,198);ctx.lineTo(800,193);ctx.lineTo(797,198);ctx.lineTo(790,198);ctx.closePath();ctx.fill();
+      }else{
+        ctx.fillStyle='#d6ba79';ctx.beginPath();ctx.arc(868,181,8,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#f4e4bd';ctx.lineWidth=2;ctx.beginPath();ctx.arc(868,181,5,0,Math.PI*2);ctx.stroke();
+      }
+      ctx.fillStyle='#513a2b';ctx.fillRect(744,251,10,18);ctx.fillRect(866,251,10,18);
+      if(Math.hypot(s.x-810,s.y-200)<145){const p=(Math.sin(performance.now()/230)+1)/2;ctx.save();ctx.strokeStyle=`rgba(100,255,130,${.76+p*.18})`;ctx.lineWidth=3+p;ctx.shadowColor='#5dff7e';ctx.shadowBlur=8+p*11;ctx.strokeRect(715,177,193,96);ctx.restore();}
+
+      // Hand-braided rug and the little candle table beside it.
+      const rug=ctx.createRadialGradient(394,476,15,394,476,150);rug.addColorStop(0,'#b5a274');rug.addColorStop(1,'#6e805b');
+      ctx.fillStyle='#38523d';ctx.beginPath();ctx.ellipse(394,478,155,88,0,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle=rug;ctx.beginPath();ctx.ellipse(394,473,145,78,0,0,Math.PI*2);ctx.fill();
+      ctx.strokeStyle='#e1d1a1';ctx.lineWidth=3;for(let i=0;i<4;i++){ctx.beginPath();ctx.ellipse(394,473,132-i*19,68-i*12,0,0,Math.PI*2);ctx.stroke();}
+      ctx.fillStyle='#6b5039';ctx.beginPath();ctx.ellipse(392,480,67,29,0,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle='#b88350';ctx.beginPath();ctx.ellipse(392,474,65,28,0,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle='#d7bd82';ctx.beginPath();ctx.arc(392,470,6,0,Math.PI*2);ctx.fill();
+      roundedRect(267,528,247,18,7,'#4f3b2c');roundedRect(278,439,224,91,13,'#805a3d');
+      roundedRect(284,445,212,78,9,'#a8794d');ctx.fillStyle='#d4b47b';ctx.fillRect(284,445,212,5);
+      roundedRect(302,461,176,49,8,'#6d8061');roundedRect(308,466,164,38,6,'#95aa80');
+      ctx.strokeStyle='#e6d3a4';ctx.lineWidth=3;ctx.beginPath();ctx.ellipse(392,485,57,18,0,0,Math.PI*2);ctx.stroke();
+      ctx.fillStyle='#f1d887';ctx.beginPath();ctx.arc(392,481,6,0,Math.PI*2);ctx.fill();
       drawHomeRoomAccents();
     } else if (s.interior === 'grandpa') {
       drawGrandpaRoomDetails();
@@ -2090,7 +2144,13 @@
     const y = (event.clientY - rect.top) / rect.height * H;
     if (s.scene === 'interior') {
       const near = (px, py, radius = 115) => Math.hypot(s.x - px, s.y - py) < radius;
-      if (x > 495 && x < 625 && y > 590 && near(560, 620, 105)) { leaveInterior(); return; }
+      if (x > 495 && x < 625 && y > 590 && near(560, 620, 105)) {
+        if (s.interior === 'home' && !s.dressed) {
+          simpleModal('Get Dressed First', '👕', 'Your adventure clothes are waiting on the dresser.');
+          return;
+        }
+        leaveInterior(); return;
+      }
       if (s.interior === 'grandpa' && x > 195 && x < 485 && y > 120 && y < 255) {
         if (near(340,185,132)) simpleModal('Grandfather’s Bookshelf','📚','Every book is full of maps, old stories, and notes in Grandfather’s tiny handwriting.');
         return;
@@ -2133,8 +2193,13 @@
         if (near(335,225,130)) simpleModal('A Cozy Bed', '🛏️', 'A soft place to rest.');
         return;
       }
-      if (s.interior === 'home' && x > 700 && x < 920 && y > 140 && y < 265) {
-        if (near(810,200,140)) simpleModal('Keepsake Cabinet','🪵','Small treasures from the village are tucked into each little drawer. One holds a smooth blue pebble.');
+      if (s.interior === 'home' && x > 700 && x < 920 && y > 135 && y < 285) {
+        if (near(810,200,140)) {
+          const dresserActions = s.dressed ? [] : [{ label: 'GET DRESSED', run: dressHero }];
+          objectOptions('Dresser', '👕', s.dressed
+            ? 'Your adventure clothes are neatly folded in the top drawer.'
+            : 'Your adventure clothes are folded on top, ready for the day.', dresserActions);
+        }
         return;
       }
       if (s.interior === 'home' && x > 265 && x < 520 && y > 415 && y < 550) {
