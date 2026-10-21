@@ -386,7 +386,7 @@
         { id: 1, x: 270, y: 250 }, { id: 2, x: 440, y: 350 },
         { id: 3, x: 760, y: 260 }, { id: 4, x: 850, y: 430 },
         { id: 5, x: 370, y: 500 }
-      ].map((mouse) => ({ ...mouse, targetX: mouse.x, targetY: mouse.y, pauseUntil: performance.now() + 700 + Math.random() * 2200, moving: false, face: 1 }));
+      ].map((mouse) => ({ ...mouse, targetX: mouse.x, targetY: mouse.y, pauseUntil: performance.now() + 700 + Math.random() * 2200, moving: false, face: 0 }));
       s.basementEntered = true;
     }
     modal.classList.remove('open');
@@ -1309,7 +1309,7 @@
   function drawBasementMouse(mouse) {
     const distance=Math.hypot(mouse.x-s.x,mouse.y-s.y);
     const now=performance.now();
-    const bob=mouse.moving?Math.sin(now/75+mouse.id)*1.1:Math.sin(now/340+mouse.id)*.35;
+    const bob=mouse.moving?Math.sin(now/78+mouse.id)*.8:Math.sin(now/360+mouse.id)*.25;
     ctx.save();
     ctx.translate(mouse.x,mouse.y+bob);
     ctx.rotate(mouse.face||0);
@@ -1317,51 +1317,51 @@
     if(distance<76){
       const pulse=(Math.sin(now/230)+1)/2;
       ctx.save();
-      ctx.strokeStyle='rgba(98,235,116,'+(.72+pulse*.2)+')';
-      ctx.lineWidth=2.2+pulse*.6;
-      ctx.shadowColor='#64e878';
+      ctx.strokeStyle='rgba(101,229,112,'+(.76+pulse*.18)+')';
+      ctx.lineWidth=2+pulse*.5;
+      ctx.shadowColor='#61df70';
       ctx.shadowBlur=4+pulse*6;
       ctx.beginPath();
-      ctx.moveTo(-18,1);
-      ctx.quadraticCurveTo(-22,-7,-15,-12);
-      ctx.quadraticCurveTo(-7,-18,2,-13);
-      ctx.quadraticCurveTo(8,-20,15,-13);
-      ctx.quadraticCurveTo(22,-11,24,-4);
-      ctx.quadraticCurveTo(31,-1,27,5);
-      ctx.quadraticCurveTo(23,12,13,10);
-      ctx.quadraticCurveTo(2,17,-12,11);
-      ctx.quadraticCurveTo(-20,9,-18,1);
-      ctx.closePath();
-      ctx.stroke();
+      ctx.moveTo(-19,2);ctx.quadraticCurveTo(-22,-7,-14,-12);
+      ctx.quadraticCurveTo(-7,-17,1,-12);ctx.quadraticCurveTo(8,-20,15,-12);
+      ctx.quadraticCurveTo(22,-11,24,-4);ctx.quadraticCurveTo(31,-1,27,5);
+      ctx.quadraticCurveTo(23,12,13,10);ctx.quadraticCurveTo(0,16,-13,10);
+      ctx.quadraticCurveTo(-20,9,-19,2);ctx.closePath();ctx.stroke();
       ctx.restore();
     }
 
-    // Fine tail, tucked behind the body rather than reading as a long pink cord.
-    ctx.strokeStyle='#aa7977';ctx.lineWidth=2.1;ctx.lineCap='round';
-    ctx.beginPath();ctx.moveTo(-12,5);ctx.bezierCurveTo(-23,6,-26,15,-34,12);ctx.stroke();
+    // A fine tail trails behind the rounded body.
+    ctx.save();ctx.rotate(Math.sin(now/190+mouse.id)*.09);
+    ctx.strokeStyle='#96706d';ctx.lineWidth=1.8;ctx.lineCap='round';
+    ctx.beginPath();ctx.moveTo(-14,7);ctx.bezierCurveTo(-22,10,-26,14,-31,11);ctx.bezierCurveTo(-35,9,-34,4,-31,2);ctx.stroke();
+    ctx.restore();
 
-    // Soft pear-shaped body and warm belly.
-    const fur=ctx.createLinearGradient(-12,-7,12,12);
-    fur.addColorStop(0,'#b1aaa0');fur.addColorStop(.48,'#8b877f');fur.addColorStop(1,'#6e6c68');
-    ctx.fillStyle=fur;ctx.beginPath();ctx.ellipse(-2,4,17,12,-.12,0,Math.PI*2);ctx.fill();
-    ctx.fillStyle='#c9b9a6';ctx.beginPath();ctx.ellipse(0,10,9,4,.1,0,Math.PI*2);ctx.fill();
+    // Rounded back, soft belly, and tiny paws give the silhouette a clear mouse shape.
+    const fur=ctx.createLinearGradient(-18,-7,15,14);
+    fur.addColorStop(0,'#b8b1a8');fur.addColorStop(.5,'#958e85');fur.addColorStop(1,'#77716b');
+    ctx.fillStyle=fur;ctx.beginPath();ctx.ellipse(-3,4,17,12,-.08,0,Math.PI*2);ctx.fill();
+    ctx.strokeStyle='#655f59';ctx.lineWidth=1.2;ctx.stroke();
+    ctx.fillStyle='#d0c0ad';ctx.beginPath();ctx.ellipse(0,9,9,4,.08,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#a9877c';
+    ctx.beginPath();ctx.ellipse(-13,13,3.2,1.7,-.18,0,Math.PI*2);ctx.ellipse(-1,14,3.1,1.7,.1,0,Math.PI*2);ctx.ellipse(10,10,2.7,1.6,.2,0,Math.PI*2);ctx.fill();
 
-    // Rounded head, ears, and a tiny expressive face.
-    const head=ctx.createRadialGradient(14,-8,1,14,-1,13);
-    head.addColorStop(0,'#c5bcb1');head.addColorStop(1,'#827d75');
-    ctx.fillStyle=head;ctx.beginPath();ctx.ellipse(13,-2,10,9,.16,0,Math.PI*2);ctx.fill();
-    ctx.fillStyle='#b77e7d';ctx.beginPath();ctx.arc(8,-10,4.6,0,Math.PI*2);ctx.arc(17,-10,4.2,0,Math.PI*2);ctx.fill();
-    ctx.fillStyle='#e4b3aa';ctx.beginPath();ctx.arc(8,-10,2.3,0,Math.PI*2);ctx.arc(17,-10,2,0,Math.PI*2);ctx.fill();
-    ctx.fillStyle='#282a28';ctx.beginPath();ctx.arc(18,-3,1.45,0,Math.PI*2);ctx.fill();
-    ctx.fillStyle='#b87976';ctx.beginPath();ctx.ellipse(23,1,2.2,1.7,.1,0,Math.PI*2);ctx.fill();
+    const head=ctx.createRadialGradient(10,-9,1,13,-2,13);
+    head.addColorStop(0,'#c2b8ac');head.addColorStop(1,'#8b837a');
+    ctx.fillStyle=head;ctx.beginPath();ctx.ellipse(12,-3,9.5,8.5,.12,0,Math.PI*2);ctx.fill();
+    ctx.strokeStyle='#655f59';ctx.lineWidth=1.15;ctx.stroke();
 
-    // Subtle whiskers, short enough to keep the face readable at game scale.
-    ctx.strokeStyle='#e3d8ca';ctx.lineWidth=.85;ctx.lineCap='round';
-    ctx.beginPath();ctx.moveTo(20,1);ctx.quadraticCurveTo(27,-3,31,-4);ctx.moveTo(20,3);ctx.quadraticCurveTo(27,3,31,4);ctx.stroke();
+    // Small ears sit close to the head; their inner color is muted rather than bright pink.
+    ctx.fillStyle='#a97d78';ctx.beginPath();ctx.arc(6,-10,4.1,0,Math.PI*2);ctx.arc(15,-10,3.7,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#d3a5a0';ctx.beginPath();ctx.arc(6,-10,2,0,Math.PI*2);ctx.arc(15,-10,1.8,0,Math.PI*2);ctx.fill();
 
-    // Tiny paws ground the silhouette.
-    ctx.fillStyle='#b28c80';
-    ctx.beginPath();ctx.ellipse(-10,13,3.2,1.8,-.2,0,Math.PI*2);ctx.ellipse(4,14,3,1.7,.12,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#302d2b';ctx.beginPath();ctx.arc(17,-4,1.45,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#fff7e8';ctx.beginPath();ctx.arc(17.45,-4.5,.48,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#b47b74';ctx.beginPath();ctx.ellipse(22,0,2,1.55,.08,0,Math.PI*2);ctx.fill();
+
+    // Short, fine whiskers define the nose without becoming the dominant feature.
+    ctx.strokeStyle='#d9d0c5';ctx.lineWidth=.7;ctx.lineCap='round';
+    ctx.beginPath();ctx.moveTo(20,0);ctx.quadraticCurveTo(25,-2,29,-3);
+    ctx.moveTo(20,2);ctx.quadraticCurveTo(25,3,29,4);ctx.stroke();
     ctx.restore();
   }
 
@@ -1508,7 +1508,7 @@
       if(!mouse.moving&&now>=mouse.pauseUntil){mouse.targetX=235+Math.random()*650;mouse.targetY=245+Math.random()*285;mouse.moving=true;}
       if(!mouse.moving)continue;const dx=mouse.targetX-mouse.x,dy=mouse.targetY-mouse.y,d=Math.hypot(dx,dy);
       if(d<4){mouse.x=mouse.targetX;mouse.y=mouse.targetY;mouse.moving=false;mouse.pauseUntil=now+900+Math.random()*2300;}
-      else{const step=Math.min(d,(160+(mouse.id%3)*44)*dt);mouse.x+=dx/d*step;mouse.y+=dy/d*step;mouse.face=Math.atan2(dy,dx);}
+      else{const step=Math.min(d,(160+(mouse.id%3)*44)*dt);mouse.x+=dx/d*step;mouse.y+=dy/d*step;mouse.face=Math.abs(dx)>=Math.abs(dy)?(dx>=0?0:Math.PI):(dy>=0?Math.PI/2:-Math.PI/2);}
     }
     if(modal.classList.contains('catching')&&s.activeCatchTarget!=null){const m=s.mice.find(v=>v.id===s.activeCatchTarget);if(!m||Math.hypot(s.x-m.x,s.y-m.y)>180){closeModal();toast('The rodent scurried out of reach!');}}
   }
