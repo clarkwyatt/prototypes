@@ -189,7 +189,7 @@
     if (s.key) inventory.push('🗝 West Gate Key');
     if (s.potion) inventory.push('🧪 Vine Potion');
     if (s.berriesPicked) inventory.push('🫐 Blueberries');
-    if (s.muffin) inventory.push('🫐 Blueberry Muffin');
+    if (s.muffin) inventory.push('Blueberry Muffin');
     itemsEl.textContent = inventory.length ? inventory.join(' · ') : 'Empty';
 
     let quest = '';
@@ -281,14 +281,14 @@
     if (s.carryingWater && !s.grandmaHelped) {
       s.carryingWater = false; s.grandmaHelped = true; s.grandmaHouseKey = true;
       updateHud();
-      openModal('Grandma', '👵', '<p>Thank you, dear. Here’s our house key. Your Grandpa could use a hand with the rats in his basement. You can find him inside.</p>', () => makeButton('I’ll go see him', closeModal), true);
+      openModal('Grandma', '👵', '<p>Thank you, dear. Here’s our house key. Your Grandpa could use a hand with the rodents in his basement. You can find him inside.</p>', () => makeButton('I’ll go see him', closeModal), true);
       return;
     }
     if (!s.grandmaHelped) {
       openModal('Grandma', '👵', '<p>The village well is nearby. Please bring me a cup of fresh water when you can.</p>', () => makeButton('Okay', closeModal), true);
       return;
     }
-    openModal('Grandma', '👵', '<p>Thank you for the water, dear. Grandpa is inside and could use your help with the rats in his basement.</p>', () => makeButton('I’ll go see him', closeModal), true);
+    openModal('Grandma', '👵', '<p>Thank you for the water, dear. Grandpa is inside and could use your help with the rodents in his basement.</p>', () => makeButton('I’ll go see him', closeModal), true);
   }
 
   function talkToTomas() {
@@ -317,7 +317,7 @@
     if (!s.rodentQuestStarted) {
       s.rodentQuestStarted = true;
       updateHud();
-      openModal('Grandfather', '🧓', '<p>Grandma said you might be able to help. Five cheeky rats have gotten into my basement. Could you catch them for me?</p>', () => makeButton('I’ll help!', closeModal), true);
+      openModal('Grandfather', '🧓', '<p>Grandma said you might be able to help. Five cheeky rodents have gotten into my basement. Could you catch them for me?</p>', () => makeButton('I’ll help!', closeModal), true);
       return;
     }
     if (s.rodents < 5) {
@@ -798,6 +798,7 @@
       case '06':
         drawPath([[560, 680], [535, 570], [540, 460], [590, 340], [680, 230], [700, 130], [560, 40]], 180);
         drawPath([[540,460],[430,420],[320,380],[200,360],[40,360]],150);
+        drawPath([[600,360],[740,355],[900,350],[1080,360]],140);
         break;
       case '07': drawPath([[560, 40], [525, 160], [500, 280], [545, 400], [620, 505], [560, 680]], 180); break;
       case '08': drawPath([[560, 40], [525, 150], [445, 225], [390, 310], [475, 405], [625, 470], [750, 565], [830, 680]], 180); break;
@@ -1283,7 +1284,7 @@
       ctx.beginPath(); ctx.ellipse(x, y, r - 3, r * .58, 0, 0, Math.PI * 2); ctx.stroke();
       ctx.beginPath(); ctx.moveTo(x - 13, y - 5); ctx.quadraticCurveTo(x, y - 13, x + 13, y - 5); ctx.stroke();
     }
-    // A low woven rug sits away from the rat-catching lanes.
+    // A low woven rug sits away from the rodent-catching lanes.
     roundedRect(398, 556, 238, 38, 12, '#675141');
     roundedRect(405, 560, 224, 30, 9, '#9b7650');
     ctx.strokeStyle = '#dbc18a'; ctx.lineWidth = 2; ctx.strokeRect(414, 565, 206, 20);
@@ -1340,7 +1341,7 @@
     if (s.screen === '13') { drawVillageFence(); drawVillageHomes(); }
     if (s.scene === 'outside') {
       const visible=(roomObjects[s.screen]||[]).filter(o=>getAvailableObjects().some(active=>active.id===o.id));
-      const trees=[[34,54],[1082,52],[32,657],[1080,652],[340,35],[780,676],[1020,215],[140,510],[250,80],[900,660]];
+      const trees=[[34,54],[1082,52],[32,657],[1080,652],[340,35],[780,676],[1020,215],[140,510],[250,80],[900,660]].filter(([x,y])=>!(s.screen==='09'&&x>700&&y>600));
       if(s.screen!=='13') trees.push([180,210],[945,485],[380,620]);
       if(s.screen==='06') trees.push([700,85],[1040,100],[1080,255],[690,300],[1030,650],[620,120]);
       const layers=[...trees.map(([x,y],i)=>({y:y+25,draw:()=>tree(x,y,1.15+(i%3)*.12)})),
@@ -1469,7 +1470,7 @@
     const oldX = s.x;
     const riverCenterAtY=riverCenter(s.y);
     const returnAcrossVanishedLog = s.screen === '12' && s.logGone && oldX < riverCenterAtY-112 && nx >= riverCenterAtY-112;
-    const offLogRiverEntry = s.screen === '12' && inRiver(nx,s.y) && (s.logGone || s.y < 320 || s.y > 400);
+    const offLogRiverEntry = s.screen === '12' && inRiver(nx,s.y) && (s.logGone || s.y < 320 || s.y > 378);
     if (s.screen === '13' && !s.returnGateOpen && ny < 118 && nx > 755 && nx < 905) {
       toast('The gate is locked from the other side.');
     } else if (!returnAcrossVanishedLog && !offLogRiverEntry && !(s.screen === '13' && !s.gateOpen && nx < 125 && ny > 290 && ny < 430) && !hitsWorldObject(nx,ny)) {
@@ -1478,14 +1479,14 @@
 
     ny = clamp(s.y + dy * step, minY, maxY);
     const riverOverlap = inRiver(s.x,ny);
-    const onLog = !s.logGone && ny >= 320 && ny <= 400;
+    const onLog = !s.logGone && ny >= 320 && ny <= 378;
     const riverBlocks = riverOverlap && !onLog;
     const crossedAfterLog = s.screen === '12' && s.logGone && s.x < riverCenter(ny)-112 && nx >= riverCenter(ny)-112;
     if (!riverBlocks && !crossedAfterLog && !(s.screen === '13' && !s.returnGateOpen && ny < 118 && s.x > 755 && s.x < 905) && !hitsWorldObject(s.x,ny)) {
       s.y = ny;
     }
 
-    if (s.screen === '12' && !s.logGone && s.y >= 320 && s.y <= 400) {
+    if (s.screen === '12' && !s.logGone && s.y >= 320 && s.y <= 378) {
       const center=riverCenter(s.y);
       if(dx<0 && oldX>center+40 && s.x<=center+40) s.logCrossingStarted=true;
       if(s.logCrossingStarted && s.x<center-150) {
