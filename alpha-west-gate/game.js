@@ -11,30 +11,43 @@
   const keys = {};
 
   const musicButton = document.querySelector('#music-toggle');
-  let audioContext = null, musicMaster = null, musicTimer = null, musicBeat = 0, musicStarted = false, musicEnabled = false, musicPads = [];
-  const melodyNotes = [523.25,659.25,783.99,659.25,587.33,783.99,1046.5,783.99,659.25,587.33,523.25,0,783.99,659.25,587.33,0];
-  const chordNotes = [[130.81,196.00,261.63],[174.61,261.63,349.23],[146.83,220.00,293.66],[196.00,293.66,392.00]];
-  function setMusicButton(enabled) { musicButton.textContent = enabled ? '♫ Music: On' : '♫ Music: Off'; musicButton.setAttribute('aria-pressed',String(enabled)); musicButton.setAttribute('aria-label',enabled?'Turn ambient music off':'Turn ambient music on'); }
-  function playMusicNote(frequency,at,duration=0.62) {
-    if (!frequency || !audioContext || !musicMaster) return;
-    const voice=audioContext.createOscillator(), envelope=audioContext.createGain(); voice.type='sine'; voice.frequency.setValueAtTime(frequency,at);
-    envelope.gain.setValueAtTime(0.0001,at); envelope.gain.exponentialRampToValueAtTime(0.22,at+0.035); envelope.gain.exponentialRampToValueAtTime(0.0001,at+duration);
-    voice.connect(envelope); envelope.connect(musicMaster); voice.start(at); voice.stop(at+duration+0.03);
+  const audioVersion = new URL(document.currentScript?.src || window.location.href, window.location.href).searchParams.get('v') || Date.now().toString(36);
+  const ambientMusic = new Audio(`assets/village-to-forest.mp3?v=${encodeURIComponent(audioVersion)}`);
+  ambientMusic.loop = true;
+  ambientMusic.volume = 0.32;
+  let musicEnabled = false;
+
+  function setMusicButton(enabled) {
+    musicButton.textContent = enabled ? '♫ Music: On' : '♫ Music: Off';
+    musicButton.setAttribute('aria-pressed', String(enabled));
+    musicButton.setAttribute('aria-label', enabled ? 'Turn ambient music off' : 'Turn ambient music on');
   }
+
   function startAmbientMusic() {
-    const Audio=window.AudioContext||window.webkitAudioContext; if(!Audio)return;
-    if(!audioContext) {
-      audioContext=new Audio(); musicMaster=audioContext.createGain(); musicMaster.gain.value=0; musicMaster.connect(audioContext.destination);
-      chordNotes[0].forEach((frequency,index)=>{const voice=audioContext.createOscillator(),level=audioContext.createGain();voice.type=index===1?'sine':'triangle';voice.frequency.value=frequency;level.gain.value=index===0?0.045:0.025;voice.connect(level);level.connect(musicMaster);voice.start();musicPads.push(voice);});
-    }
-    audioContext.resume(); musicEnabled = true; musicMaster.gain.cancelScheduledValues(audioContext.currentTime); musicMaster.gain.setTargetAtTime(0.42,audioContext.currentTime,0.8);
-    if(!musicStarted) { musicStarted=true; musicTimer=window.setInterval(()=>{const now=audioContext.currentTime+0.04;playMusicNote(melodyNotes[musicBeat%melodyNotes.length],now,musicBeat%4===3?0.85:0.56);if(musicBeat%16===15){const chord=chordNotes[Math.floor(musicBeat/16)%chordNotes.length];musicPads.forEach((voice,index)=>voice.frequency.setTargetAtTime(chord[index],now,1.1));}musicBeat++;},720); }
+    musicEnabled = true;
     setMusicButton(true);
+    ambientMusic.play().catch(() => {
+      musicEnabled = false;
+      setMusicButton(false);
+    });
   }
-  function stopAmbientMusic() { musicEnabled = false; if(musicMaster&&audioContext)musicMaster.gain.setTargetAtTime(0,audioContext.currentTime,0.18);setMusicButton(false); }
-  musicButton.addEventListener('click',()=>{if(musicEnabled)stopAmbientMusic();else startAmbientMusic();});
-  const startMusicOnInput=(event)=>{if(!musicButton.contains(event.target))startAmbientMusic();};
-  document.addEventListener('pointerdown',startMusicOnInput,{once:true}); document.addEventListener('keydown',startMusicOnInput,{once:true});
+
+  function stopAmbientMusic() {
+    musicEnabled = false;
+    ambientMusic.pause();
+    setMusicButton(false);
+  }
+
+  musicButton.addEventListener('click', () => {
+    if (musicEnabled) stopAmbientMusic();
+    else startAmbientMusic();
+  });
+
+  const startMusicOnInput = (event) => {
+    if (!musicButton.contains(event.target)) startAmbientMusic();
+  };
+  document.addEventListener('pointerdown', startMusicOnInput, { once: true });
+  document.addEventListener('keydown', startMusicOnInput, { once: true });
 
   const s = {
     screen: '13', x: 605, y: 335, face: 'down', speed: 215,
