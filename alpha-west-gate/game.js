@@ -321,10 +321,10 @@
     if (!object) return;
     switch (object.id) {
       case 'home':
-        objectOptions('Your Home', '🏠', 'A small house in the village.', [{ label: 'ENTER', run: () => enterInterior('home') }]);
+        objectOptions('Your Home', '🏠', 'A cozy cottage with a blue door and a little window box full of flowers. The path home is easy to spot from anywhere in the village.', [{ label: 'ENTER', run: () => enterInterior('home') }]);
         break;
       case 'grandpa':
-        objectOptions('Grandfather’s House', '🏠', 'Grandfather lives here.', [{ label: 'ENTER', run: () => enterInterior('grandpa') }]);
+        objectOptions('Grandfather’s House', '🏠', 'Warm lamplight shines through the windows. A tiny brass star hangs above the door.', [{ label: 'ENTER', run: () => enterInterior('grandpa') }]);
         break;
       case 'villageGrandma':
         objectOptions('Grandma', '👵', object.description, [{ label: 'TALK', run: () => simpleModal('Grandma', '👵', 'Your grandfather needs a favor. You can find him inside the house.') }]);
@@ -339,7 +339,7 @@
         objectOptions('Tomas the Baker', '🥖', 'The village baker is taking a break outside the bakery.', [{ label: 'TALK', run: () => simpleModal('Tomas the Baker', '🥖', 'The berry buns are still warm. I hope you get to try one!') }]);
         break;
       case 'gate':
-        objectOptions('West Gate', '🚪', 'A wooden gate marks the western exit from the village.', s.gateOpen ? [] : [{
+        objectOptions('West Gate', '🚪', 'Thick oak planks and iron bands hold the gate shut. A star-shaped keyhole is set into its latch.', s.gateOpen ? [] : [{
           label: s.key ? 'UNLOCK' : 'TRY GATE',
           run: () => {
             if (!s.key) simpleModal('The West Gate is locked', '🚪', 'The gate is locked. You need a key.');
@@ -361,7 +361,7 @@
         }] : []);
         break;
       case 'hut':
-        objectOptions('Alchemist’s Hut', '⚗️', 'A small hut where the Alchemist brews potions.', [{ label: 'ENTER', run: () => enterInterior('hut') }]);
+        objectOptions('Alchemist’s Hut', '⚗️', 'A mossy green roof almost disappears beneath leaves. A little potion sign hangs above the crooked front door.', [{ label: 'ENTER', run: () => enterInterior('hut') }]);
         break;
       case 'well': case 'garden': case 'berryBush': case 'riverReeds': case 'riverStone': case 'fallenLog': case 'mossyMarker': case 'oldOak': case 'stoneRing': case 'pond': case 'mushrooms': case 'signpost': case 'ruin': case 'villageOak': case 'riverWillow': case 'forestOak': case 'moonTree': case 'appleTree': case 'trailLantern': case 'fireflies': case 'meadowStone': case 'meadowLantern':
         objectOptions(object.name, object.id==='pond'?'💧':object.id==='mushrooms'?'🍄':'✦', object.description);
