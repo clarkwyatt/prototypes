@@ -13,6 +13,11 @@
 </head>
 <body>
   <canvas id="game" aria-label="A hero standing in the center of an empty gray screen"></canvas>
-  <script src="game.js"></script>
+  <script>
+    // Request the latest game code whenever this page opens.
+    const gameScript = document.createElement("script");
+    gameScript.src = `game.js?v=${Date.now().toString(36)}`;
+    document.body.appendChild(gameScript);
+  </script>
 </body>
 </html>
