@@ -103,7 +103,7 @@
   }
 
   function draw() {
-    ctx.fillStyle = "#808080";
+    ctx.fillStyle = "#000000";
     ctx.fillRect(0, 0, width, height);
     drawHero();
   }
