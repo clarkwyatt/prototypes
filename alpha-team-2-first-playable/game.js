@@ -1,5 +1,5 @@
 // Alpha Workshop first-playable starter
-// One empty gray screen. The hero begins in the center and can move with WASD or arrow keys.
+// One empty green screen. The hero begins in the center and can move with WASD or arrow keys.
 // Add your team's world, story, obstacles, and interactions here.
 
 (() => {
@@ -103,7 +103,7 @@
   }
 
   function draw() {
-    ctx.fillStyle = "#808080";
+    ctx.fillStyle = "#008000";
     ctx.fillRect(0, 0, width, height);
     drawHero();
   }
