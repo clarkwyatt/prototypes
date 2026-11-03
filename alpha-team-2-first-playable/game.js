@@ -1,11 +1,11 @@
 // Alpha Workshop first-playable starter
-// One empty green screen. The alien in a UFO begins in the center and can move with WASD or arrow keys.
+// One empty moon-gray screen. The alien in a UFO begins in the center and can move with WASD or arrow keys.
 // Add your team's world, story, obstacles, and interactions here.
 
 (() => {
   const canvas = document.querySelector("#game");
   const ctx = canvas.getContext("2d");
-  canvas.setAttribute("aria-label", "An alien riding in a UFO on a green background");
+  canvas.setAttribute("aria-label", "An alien riding in a UFO on a moon-gray background");
   const keys = new Set();
   const hero = { x: 0, y: 0, speed: 220 };
   let width = 0;
@@ -106,7 +106,7 @@
   }
 
   function draw() {
-    ctx.fillStyle = "#008000";
+    ctx.fillStyle = "#a0a0a0";
     ctx.fillRect(0, 0, width, height);
     drawHero();
   }
