@@ -172,7 +172,7 @@
       if(t.type==="FORCE")ctx.rect(width*.953,height*.66,width*.042,height*.20);
       else ctx.rect(width*.947,height*.39,width*.049,height*.22);
     }else if(t.type==="DOCK"){
-      ctx.rect(x-unit*.09,y-unit*.06,unit*.18,unit*.12);
+      ctx.rect(width*.77,height*.23,width*.09,height*.12);
     }else if(t.type==="NPC"){
       ctx.ellipse(x,y-unit*.045,unit*.038,unit*.075,0,0,Math.PI*2);
     }else if(t.type==="LAKE"){
@@ -192,7 +192,7 @@
         return Math.abs(dx)<=w*.52 && dy>=-h*.47 && dy<=h*.55;
       }
       case "LAKE": return (dx/(width*.38))**2+(dy/(height*.27))**2<=1;
-      case "DOCK": return Math.abs(dx)<=unit*.09 && dy>=-unit*.06 && dy<=unit*.06;
+      case "DOCK": return x>=width*.77 && x<=width*.86 && y>=height*.23 && y<=height*.35;
       case "NPC": return Math.abs(dx)<=unit*.038 && dy>=-unit*.12 && dy<=unit*.03;
       case "FORCE": return x>=width*.953 && x<=width*.995 && y>=height*.66 && y<=height*.86;
       case "DOOR": return x>=width*.947 && x<=width*.996 && y>=height*.39 && y<=height*.61;
