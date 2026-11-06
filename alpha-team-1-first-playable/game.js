@@ -36,6 +36,76 @@
     ctx.strokeStyle=color; ctx.lineWidth=thickness; ctx.lineCap="round"; ctx.lineJoin="round";
     ctx.beginPath(); points.forEach(([x,y],i)=>i?ctx.lineTo(x*width,y*height):ctx.moveTo(x*width,y*height)); ctx.stroke();
   }
+  const descriptions = {
+    T: ["Ancient Tree", "Its leafy branches whisper in the breeze. Some say these trees remember the first cats who explored this valley."],
+    B: ["Wild Berry Bush", "A thick tangle of glossy leaves. Tiny berries hide beneath the branches, but the forest creatures seem to have found them first."],
+    H: ["Village Cottage", "A cozy little cottage with warm windows and a sturdy roof. Perhaps a friendly traveler lives here."],
+    HOME: ["Cat's Home", "Home sweet home! A snug little house where a brave cat can dream of grand adventures."],
+    LAKE: ["Moonlight Lake", "Clear blue water ripples gently against the shore. Legends say magical fish swim beneath its surface."],
+    DOCK: ["Wooden Dock", "Weathered boards stretch out over the lake. It's a perfect place to watch the fish dart through the water."],
+    FORCE: ["Magic Force Field", "A shimmering wall of enchanted energy blocks the path. It hums softly, waiting for the magic that can unlock it."]
+  };
+  let nearby=null, dialogOpen=false;
+  const modal=document.createElement("div");
+  modal.id="interaction-modal";
+  modal.style.cssText="position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:#102a2380;z-index:20;padding:20px";
+  modal.innerHTML='<div style="width:min(390px,94vw);background:#fff9e8;border:3px solid #d9c395;border-radius:19px;box-shadow:0 16px 40px #17372b77;padding:22px;text-align:center;font-family:Nunito,system-ui,sans-serif;color:#294739"><h2 id="interaction-title" style="margin:0 0 14px;font-size:22px"></h2><div id="interaction-actions" style="display:flex;justify-content:center;gap:10px"></div><p id="interaction-description" style="display:none;line-height:1.5"></p></div>';
+  document.querySelector("#game").appendChild(modal);
+  function closeInteraction(){dialogOpen=false;modal.style.display="none";}
+  function button(label,action){
+    const b=document.createElement("button");b.textContent=label;b.type="button";
+    b.style.cssText="font:800 15px Nunito,system-ui,sans-serif;padding:10px 20px;border-radius:11px;border:2px solid #b8caa5;background:#e6f3d8;color:#285c3c;cursor:pointer";
+    b.addEventListener("click",action);return b;
+  }
+  function interact(type){
+    if(!descriptions[type])return;
+    dialogOpen=true;modal.style.display="flex";
+    const [title,description]=descriptions[type];
+    modal.querySelector("#interaction-title").textContent=title;
+    const actions=modal.querySelector("#interaction-actions"),p=modal.querySelector("#interaction-description");
+    p.style.display="none";p.textContent=description;actions.replaceChildren();
+    actions.append(button("LOOK",()=>{p.style.display="block";actions.replaceChildren(button("OK",closeInteraction));}),button("CLOSE",closeInteraction));
+  }
+  modal.addEventListener("click",e=>{if(e.target===modal)closeInteraction();});
+  function targets(){
+    const list=(objects[panel]||[]).map(([type,x,y],i)=>({type,x,y,id:i}));
+    if(panel===12)list.push({type:"DOCK",x:.81,y:.29,id:100});
+    if(panel===16)list.push({type:"FORCE",x:.975,y:.50,id:101});
+    return list;
+  }
+  function nearestTarget(){
+    let found=null,dist=Infinity;
+    for(const target of targets()){
+      const d=Math.hypot((hero.x-target.x)*width,(hero.y-target.y)*height);
+      const reach=target.type==="LAKE"?Math.min(width,height)*.32:
+        target.type==="FORCE"?Math.min(width,height)*.20:
+        Math.min(width,height)*.19;
+      if(d<reach&&d<dist){found=target;dist=d;}
+    }
+    return found;
+  }
+  function highlight(){
+    nearby=nearestTarget();
+    if(!nearby||dialogOpen)return;
+    const t=nearby,unit=Math.min(width,height);
+    const pulse=(Math.sin(performance.now()/230)+1)/2;
+    const rx=t.type==="LAKE"?width*.38:t.type==="FORCE"?unit*.04:t.type==="T"?unit*.11:t.type==="B"?unit*.09:unit*.15;
+    const ry=t.type==="LAKE"?height*.27:t.type==="FORCE"?unit*.13:t.type==="T"?unit*.14:t.type==="B"?unit*.08:unit*.15;
+    ctx.save();ctx.strokeStyle="rgba(85,255,115,"+(.65+pulse*.32)+")";
+    ctx.lineWidth=3+pulse*2;ctx.shadowColor="#5dff7e";ctx.shadowBlur=9+pulse*14;
+    ctx.beginPath();ctx.ellipse(t.x*width,t.y*height,rx,ry,0,0,Math.PI*2);ctx.stroke();ctx.restore();
+  }
+  canvas.addEventListener("click",e=>{
+    if(dialogOpen)return;
+    const r=canvas.getBoundingClientRect();
+    const x=(e.clientX-r.left)/r.width,y=(e.clientY-r.top)/r.height;
+    const target=nearestTarget();
+    if(target){
+      const distance=Math.hypot((x-target.x)*width,(y-target.y)*height);
+      const range=target.type==="LAKE"?Math.min(width,height)*.4:Math.min(width,height)*.22;
+      if(distance<range)interact(target.type);
+    }
+  });
   function scenery() {
     // Soft grassy meadow, with tiny deterministic blades and flowers.
     shape(0,0,width,height,"#a4c68b");
@@ -260,17 +330,17 @@
     if(keys.has("ArrowUp")||keys.has("w")) dy--;
     if(keys.has("ArrowDown")||keys.has("s")) dy++;
     if(dx&&dy){dx*=Math.SQRT1_2;dy*=Math.SQRT1_2;}
-    walking = dx !== 0 || dy !== 0;
+    walking = !dialogOpen && (dx !== 0 || dy !== 0);
     if (walking) {
       if (Math.abs(dx) > Math.abs(dy)) facing = dx > 0 ? "right" : "left";
       else facing = dy > 0 ? "down" : "up";
       walkTime += dt;
     }
-    move(dx*hero.speed*dt,dy*hero.speed*dt);
+    if(!dialogOpen)move(dx*hero.speed*dt,dy*hero.speed*dt);
     draw();requestAnimationFrame(update);
   }
   addEventListener("resize",resize);
-  addEventListener("keydown",e=>{const k=e.key.length===1?e.key.toLowerCase():e.key;keys.add(k);if(k.startsWith("Arrow"))e.preventDefault();});
+  addEventListener("keydown",e=>{const k=e.key.length===1?e.key.toLowerCase():e.key;if(k==="Escape"&&dialogOpen)closeInteraction();keys.add(k);if(k.startsWith("Arrow"))e.preventDefault();});
   addEventListener("keyup",e=>keys.delete(e.key.length===1?e.key.toLowerCase():e.key));
   addEventListener("blur",()=>keys.clear());
   resize();requestAnimationFrame(update);
