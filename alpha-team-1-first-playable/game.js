@@ -48,9 +48,13 @@
     NPC: ["Lake Keeper", "A friendly keeper watches over the lake and knows the secret of the locked door."]
   };
   let nearby=null, dialogOpen=false;
-  let fishQuest=false, fish=0, hasKey=false, doorOpen=false;\n  let hasPotion=false, forceFieldRemoved=false;
+  let hasRod=false, fish=0, hasKey=false, doorOpen=false;
+  let hasPotion=false, forceFieldRemoved=false;
   const questEl=document.querySelector("#quest"),itemsEl=document.querySelector("#items");
-  function updateHud(){questEl.textContent=fishQuest&&!hasKey?"• Catch five fish ("+fish+"/5)":hasKey&&!doorOpen?"• Unlock the door in Panel 16":doorOpen?"• Explore beyond the door":"• Explore the Village";itemsEl.textContent=[fish?fish+" Fish":"",hasKey?"Door Key":"",hasPotion?"Magic Potion":""].filter(Boolean).join(" · ")||"Empty";}
+  function updateHud(){
+    questEl.textContent=hasKey&&!doorOpen?"• Unlock the door in Panel 16":doorOpen?"• Explore beyond the door":"• Explore the Village";
+    itemsEl.textContent=[hasRod?"Fishing Rod":"",fish?"Fish":"",hasKey?"Golden Key":"",hasPotion?"Magic Potion":""].filter(Boolean).join(" · ")||"Empty";
+  }
   const modal=document.createElement("section");
   modal.id="interaction-modal";
   modal.setAttribute("role","dialog");
@@ -64,7 +68,8 @@
     b.className="interaction-btn"+(label==="EXAMINE"||label==="CLOSE"||label==="OK"?" secondary":"");
     b.addEventListener("click",action);return b;
   }
-  function interact(target){\n    const type=target.type;
+  function interact(target){
+    const type=target.type;
     if(!descriptions[type])return;
     dialogOpen=true;keys.clear();modal.classList.add("open");
     const [title,description]=descriptions[type];
@@ -83,18 +88,28 @@
       p.textContent="The Magic Potion dissolves the force field. The path is clear!";
       p.hidden=false;updateHud();actions.replaceChildren(button("OK",closeInteraction));
     }));
-    if(type==="NPC")options.push(button("TALK",()=>{
-      if(hasKey){p.textContent="Thank you for the fish! The key should open the door in Panel 16."; }
-      else if(fish>=5){hasKey=true;fish=0;p.textContent="Five fish! Wonderful! Here is the iron key for the door in Panel 16.";updateHud();}
-      else{fishQuest=true;p.textContent="Hello, brave kitty! Catch five fish at the dock and bring them back. I'll trade them for a key to the locked door.";updateHud();}
-      p.hidden=false;actions.replaceChildren(button("OK",closeInteraction));
+    if(panel===12&&type==="H"&&target.id===1){
+      if(!hasRod)options.push(button("GET FISHING ROD",()=>{
+        hasRod=true;p.textContent="You picked up a Fishing Rod!";p.hidden=false;updateHud();
+        actions.replaceChildren(button("OK",closeInteraction));
+      }));
+      if(fish>0&&!hasKey)options.push(button("GIVE FISH",()=>{
+        fish=0;hasKey=true;
+        p.textContent="You traded your fish for a Golden Key!";
+        p.hidden=false;updateHud();actions.replaceChildren(button("OK",closeInteraction));
+      }));
+    }
+    if(type==="DOCK"&&hasRod&&!fish&&!hasKey)options.push(button("CATCH FISH",()=>{
+      fish=1;p.textContent="You caught a fish!";p.hidden=false;updateHud();
+      actions.replaceChildren(button("OK",closeInteraction));
     }));
-    if(type==="DOCK"&&fishQuest&&!hasKey)options.push(button("FISH",()=>{
-      fish=Math.min(5,fish+1);p.textContent=fish===5?"You caught the fifth fish! Return to the Lake Keeper.":"You caught a shimmering lake fish! ("+fish+"/5)";updateHud();p.hidden=false;actions.replaceChildren(button("OK",closeInteraction));
+    if(type==="NPC")options.push(button("TALK",()=>{
+      p.textContent="The lake is peaceful today.";p.hidden=false;
+      actions.replaceChildren(button("OK",closeInteraction));
     }));
     if(type==="DOOR")options.push(button("OPEN",()=>{
-      if(hasKey){doorOpen=true;p.textContent="The iron key turns! The wooden door swings open.";updateHud();}
-      else p.textContent="The door is locked. The Lake Keeper may know where to find a key.";
+      if(hasKey){doorOpen=true;p.textContent="The Golden Key unlocks the wooden door!";updateHud();}
+      else p.textContent="The door is locked. You need a Golden Key.";
       p.hidden=false;actions.replaceChildren(button("OK",closeInteraction));
     }));
     options.push(button("CLOSE",closeInteraction));actions.append(...options);
