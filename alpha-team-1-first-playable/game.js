@@ -48,9 +48,9 @@
     NPC: ["Lake Keeper", "A friendly keeper watches over the lake and knows the secret of the locked door."]
   };
   let nearby=null, dialogOpen=false;
-  let fishQuest=false, fish=0, hasKey=false, doorOpen=false;
+  let fishQuest=false, fish=0, hasKey=false, doorOpen=false;\n  let hasPotion=false, forceFieldRemoved=false;
   const questEl=document.querySelector("#quest"),itemsEl=document.querySelector("#items");
-  function updateHud(){questEl.textContent=fishQuest&&!hasKey?"• Catch five fish ("+fish+"/5)":hasKey&&!doorOpen?"• Unlock the door in Panel 16":doorOpen?"• Explore beyond the door":"• Explore the Village";itemsEl.textContent=(fish?fish+" Fish":"")+(hasKey?(fish?" · ":"")+"Door Key":"")||"Empty";}
+  function updateHud(){questEl.textContent=fishQuest&&!hasKey?"• Catch five fish ("+fish+"/5)":hasKey&&!doorOpen?"• Unlock the door in Panel 16":doorOpen?"• Explore beyond the door":"• Explore the Village";itemsEl.textContent=[fish?fish+" Fish":"",hasKey?"Door Key":"",hasPotion?"Magic Potion":""].filter(Boolean).join(" · ")||"Empty";}
   const modal=document.createElement("section");
   modal.id="interaction-modal";
   modal.setAttribute("role","dialog");
@@ -64,7 +64,7 @@
     b.className="interaction-btn"+(label==="EXAMINE"||label==="CLOSE"||label==="OK"?" secondary":"");
     b.addEventListener("click",action);return b;
   }
-  function interact(type){
+  function interact(target){\n    const type=target.type;
     if(!descriptions[type])return;
     dialogOpen=true;keys.clear();modal.classList.add("open");
     const [title,description]=descriptions[type];
@@ -73,6 +73,16 @@
     p.hidden=true;p.textContent=description;actions.replaceChildren();
     const look=button("EXAMINE",()=>{p.hidden=false;actions.replaceChildren(button("OK",closeInteraction));});
     const options=[look];
+    if(panel===21&&type==="H"&&target.id===2&&!hasPotion)options.push(button("GET POTION",()=>{
+      hasPotion=true;
+      p.textContent="You found a Magic Potion! It has been added to your inventory.";
+      p.hidden=false;updateHud();actions.replaceChildren(button("OK",closeInteraction));
+    }));
+    if(type==="FORCE"&&hasPotion&&!forceFieldRemoved)options.push(button("USE POTION",()=>{
+      hasPotion=false;forceFieldRemoved=true;
+      p.textContent="The Magic Potion dissolves the force field. The path is clear!";
+      p.hidden=false;updateHud();actions.replaceChildren(button("OK",closeInteraction));
+    }));
     if(type==="NPC")options.push(button("TALK",()=>{
       if(hasKey){p.textContent="Thank you for the fish! The key should open the door in Panel 16."; }
       else if(fish>=5){hasKey=true;fish=0;p.textContent="Five fish! Wonderful! Here is the iron key for the door in Panel 16.";updateHud();}
@@ -99,7 +109,7 @@
   function targets(){
     const list=(objects[panel]||[]).map(([type,x,y],i)=>({type,x,y,id:i}));
     if(panel===12){list.push({type:"DOCK",x:.81,y:.29,id:100});list.push({type:"NPC",x:.82,y:.68,id:102});}
-    if(panel===11)list.push({type:"FORCE",x:.975,y:.76,id:101});
+    if(panel===11&&!forceFieldRemoved)list.push({type:"FORCE",x:.975,y:.76,id:101});
     if(panel===16&&!doorOpen)list.push({type:"DOOR",x:.965,y:.50,id:103});
     return list;
   }
@@ -180,7 +190,7 @@
     const bounds=canvas.getBoundingClientRect();
     const x=(e.clientX-bounds.left)*width/bounds.width;
     const y=(e.clientY-bounds.top)*height/bounds.height;
-    if(clickedTarget(target,x,y))interact(target.type);
+    if(clickedTarget(target,x,y))interact(target);
   });
   function scenery() {
     // Soft grassy meadow, with tiny deterministic blades and flowers.
@@ -364,7 +374,7 @@
            Math.abs((y-ny)*height)<r*Math.min(width,height)+radius) return true;
       }
     }
-    if(panel===11 && x>.935 && y>.64 && y<.88) return true;
+    if(panel===11 && !forceFieldRemoved && x>.935 && y>.64 && y<.88) return true;
     if(panel===16 && !doorOpen && x>.935 && y>.37 && y<.63) return true;
     return false;
   }
@@ -397,7 +407,7 @@
         ? Math.max(.045,Math.min(.085,48/height))
         : Math.max(.045,Math.min(.085,48/width));
       // The force field in Panel 16 cannot be crossed.
-      if(exit && !(panel===11&&direction==="right") && !(panel===16&&direction==="right"&&!doorOpen) &&
+      if(exit && !(panel===11&&direction==="right"&&!forceFieldRemoved) && !(panel===16&&direction==="right"&&!doorOpen) &&
           Math.abs(coordinate-exit[1])<=tolerance &&
           panels.has(exit[0])){
         panel=exit[0];
