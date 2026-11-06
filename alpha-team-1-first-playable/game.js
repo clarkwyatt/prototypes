@@ -51,39 +51,41 @@
   let fishQuest=false, fish=0, hasKey=false, doorOpen=false;
   const questEl=document.querySelector("#quest"),itemsEl=document.querySelector("#items");
   function updateHud(){questEl.textContent=fishQuest&&!hasKey?"• Catch five fish ("+fish+"/5)":hasKey&&!doorOpen?"• Unlock the door in Panel 16":doorOpen?"• Explore beyond the door":"• Explore the Village";itemsEl.textContent=(fish?fish+" Fish":"")+(hasKey?(fish?" · ":"")+"Door Key":"")||"Empty";}
-  const modal=document.createElement("div");
+  const modal=document.createElement("section");
   modal.id="interaction-modal";
-  modal.style.cssText="position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:#102a2380;z-index:20;padding:20px";
-  modal.innerHTML='<div style="width:min(390px,94vw);background:#fff9e8;border:3px solid #d9c395;border-radius:19px;box-shadow:0 16px 40px #17372b77;padding:22px;text-align:center;font-family:Nunito,system-ui,sans-serif;color:#294739"><h2 id="interaction-title" style="margin:0 0 14px;font-size:22px"></h2><div id="interaction-actions" style="display:flex;justify-content:center;gap:10px"></div><p id="interaction-description" style="display:none;line-height:1.5"></p></div>';
+  modal.setAttribute("role","dialog");
+  modal.setAttribute("aria-label","Object interaction");
+  modal.innerHTML='<div class="interaction-card"><button class="interaction-close" type="button" aria-label="Close">×</button><h2 id="interaction-title"></h2><p id="interaction-description"></p><div id="interaction-actions"></div></div>';
   document.querySelector("#game").appendChild(modal);
-  function closeInteraction(){dialogOpen=false;modal.style.display="none";}
+  modal.querySelector(".interaction-close").addEventListener("click",closeInteraction);
+  function closeInteraction(){dialogOpen=false;modal.classList.remove("open");}
   function button(label,action){
     const b=document.createElement("button");b.textContent=label;b.type="button";
-    b.style.cssText="font:800 15px Nunito,system-ui,sans-serif;padding:10px 20px;border-radius:11px;border:2px solid #b8caa5;background:#e6f3d8;color:#285c3c;cursor:pointer";
+    b.className="interaction-btn"+(label==="EXAMINE"||label==="CLOSE"||label==="OK"?" secondary":"");
     b.addEventListener("click",action);return b;
   }
   function interact(type){
     if(!descriptions[type])return;
-    dialogOpen=true;modal.style.display="flex";
+    dialogOpen=true;modal.classList.add("open");
     const [title,description]=descriptions[type];
     modal.querySelector("#interaction-title").textContent=title;
     const actions=modal.querySelector("#interaction-actions"),p=modal.querySelector("#interaction-description");
-    p.style.display="none";p.textContent=description;actions.replaceChildren();
-    const look=button("LOOK",()=>{p.style.display="block";actions.replaceChildren(button("OK",closeInteraction));});
+    p.hidden=true;p.textContent=description;actions.replaceChildren();
+    const look=button("EXAMINE",()=>{p.hidden=false;actions.replaceChildren(button("OK",closeInteraction));});
     const options=[look];
     if(type==="NPC")options.push(button("TALK",()=>{
       if(hasKey){p.textContent="Thank you for the fish! The key should open the door in Panel 16."; }
       else if(fish>=5){hasKey=true;fish=0;p.textContent="Five fish! Wonderful! Here is the iron key for the door in Panel 16.";updateHud();}
       else{fishQuest=true;p.textContent="Hello, brave kitty! Catch five fish at the dock and bring them back. I'll trade them for a key to the locked door.";updateHud();}
-      p.style.display="block";actions.replaceChildren(button("OK",closeInteraction));
+      p.hidden=false;actions.replaceChildren(button("OK",closeInteraction));
     }));
     if(type==="DOCK"&&fishQuest&&!hasKey)options.push(button("FISH",()=>{
-      fish=Math.min(5,fish+1);p.textContent=fish===5?"You caught the fifth fish! Return to the Lake Keeper.":"You caught a shimmering lake fish! ("+fish+"/5)";updateHud();p.style.display="block";actions.replaceChildren(button("OK",closeInteraction));
+      fish=Math.min(5,fish+1);p.textContent=fish===5?"You caught the fifth fish! Return to the Lake Keeper.":"You caught a shimmering lake fish! ("+fish+"/5)";updateHud();p.hidden=false;actions.replaceChildren(button("OK",closeInteraction));
     }));
     if(type==="DOOR")options.push(button("OPEN",()=>{
       if(hasKey){doorOpen=true;p.textContent="The iron key turns! The wooden door swings open.";updateHud();}
       else p.textContent="The door is locked. The Lake Keeper may know where to find a key.";
-      p.style.display="block";actions.replaceChildren(button("OK",closeInteraction));
+      p.hidden=false;actions.replaceChildren(button("OK",closeInteraction));
     }));
     options.push(button("CLOSE",closeInteraction));actions.append(...options);
   }
