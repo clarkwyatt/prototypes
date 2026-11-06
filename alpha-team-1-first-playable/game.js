@@ -60,15 +60,15 @@
     }
     if (panel===6) {
       // One clear north-south path with a short branch toward Panel 7.
-      path([[.45,0],[.45,.52],[.45,1]],Math.min(width,height)*.14,"#b89e79");
-      path([[.45,.52],[1,.52]],Math.min(width,height)*.10,"#b89e79");
+      path([[.50,0],[.50,.52],[.50,1]],Math.min(width,height)*.14,"#b89e79");
+      path([[.50,.52],[1,.52]],Math.min(width,height)*.10,"#b89e79");
     }
     if ([11,16,21].includes(panel)) {
-      path([[.45,0],[.47,.32],[.40,.65],[.46,1]],Math.min(width,height)*.17,"#b89e79");
+      path([[.50,0],[.50,.32],[.40,.65],[.50,1]],Math.min(width,height)*.17,"#b89e79");
     }
     if (panel===11) path([[.45,.38],[.63,.48],[1,.76]],Math.min(width,height)*.13,"#b89e79");
     if (panel===12) path([[0,.76],[.50,.78],[1,.82]],Math.min(width,height)*.13,"#b89e79");
-    if (panel===16) path([[.44,.46],[.70,.47],[1,.50]],Math.min(width,height)*.14,"#b89e79");
+    if (panel===16) path([[.40,.46],[.70,.47],[1,.50]],Math.min(width,height)*.14,"#b89e79");
     if (panel===17) path([[0,.50],[.48,.51],[1,.50]],Math.min(width,height)*.14,"#b89e79");
     if (panel===22) path([[.36,1],[.28,.72],[.45,.57],[.78,.52]],Math.min(width,height)*.13,"#b89e79");
     for (const [type,nx,ny] of objects[panel] || []) {
@@ -104,10 +104,10 @@
         ellipse(x+w*.075,y+h*.39,unit*.005,unit*.005,"#74502e");
       }
     }
-    if(panel===11) {
-      // Force field on the eastward route, not yet unlockable.
-      shape(width*.77,height*.61,width*.025,height*.30,"#69c9d9");
-      shape(width*.76,height*.61,width*.045,height*.30,"rgba(95,224,240,.25)");
+    if(panel===16) {
+      // The force field seals the right-hand exit of Panel 16.
+      shape(width*.965,height*.39,width*.018,height*.22,"#69c9d9");
+      shape(width*.958,height*.39,width*.032,height*.22,"rgba(95,224,240,.25)");
     }
   }
   // Four-direction animated ginger cat. Feet, tail and body move while walking.
@@ -200,21 +200,52 @@
            Math.abs((y-ny)*height)<r*Math.min(width,height)+radius) return true;
       }
     }
-    if(panel===11 && x>.75 && y>.60 && y<.93) return true;
+    if(panel===16 && x>.935 && y>.37 && y<.63) return true;
     return false;
   }
+  // Every screen connection must meet a visible path at BOTH edges.
+  // Positions are normalized (0..1) so the entrances match on all screen sizes.
+  const exits = {
+    1: {right:[2,.52],bottom:[6,.50]},
+    2: {left:[1,.52],bottom:[7,.50]},
+    6: {top:[1,.50],right:[7,.52],bottom:[11,.50]},
+    7: {top:[2,.50],left:[6,.52]},
+    11:{top:[6,.50],right:[12,.76],bottom:[16,.50]},
+    12:{left:[11,.76]},
+    16:{top:[11,.50],right:[17,.50],bottom:[21,.50]},
+    17:{left:[16,.50]},
+    21:{top:[16,.50]},
+    22:{}
+  };
   function move(dx,dy) {
-    const nx=hero.x+dx/width,ny=hero.y+dy/height;
-    let next=panel;
-    if(nx<0) next=panel-1;
-    else if(nx>1) next=panel+1;
-    else if(ny<0) next=panel-5;
-    else if(ny>1) next=panel+5;
-    if(next!==panel) {
-      if(panels.has(next) && (Math.abs(next-panel)===5 || Math.floor((next-1)/5)===Math.floor((panel-1)/5))) {
-        panel=next;
-        hero.x=nx<0?.97:nx>1?.03:nx;
-        hero.y=ny<0?.95:ny>1?.05:ny;
+    const nx=hero.x+dx/width, ny=hero.y+dy/height;
+    const margin=22; // keep the cat's body on-screen at closed edges
+    const edgeX=margin/width, edgeY=margin/height;
+    let direction=null, coordinate=0;
+    if(nx>1-edgeX){direction="right";coordinate=hero.y;}
+    else if(nx<edgeX){direction="left";coordinate=hero.y;}
+    else if(ny>1-edgeY){direction="bottom";coordinate=hero.x;}
+    else if(ny<edgeY){direction="top";coordinate=hero.x;}
+    if(direction){
+      const exit=exits[panel]?.[direction];
+      const tolerance=direction==="left"||direction==="right"
+        ? Math.max(.045,Math.min(.085,48/height))
+        : Math.max(.045,Math.min(.085,48/width));
+      // The force field in Panel 16 cannot be crossed.
+      if(exit && !(panel===16&&direction==="right") &&
+          Math.abs(coordinate-exit[1])<=tolerance &&
+          panels.has(exit[0])){
+        panel=exit[0];
+        if(direction==="right") hero.x=edgeX+.012;
+        if(direction==="left") hero.x=1-edgeX-.012;
+        if(direction==="bottom") hero.y=edgeY+.012;
+        if(direction==="top") hero.y=1-edgeY-.012;
+        // Align with the center of the connecting path on entry.
+        if(direction==="right"||direction==="left") hero.y=exit[1];
+        else hero.x=exit[1];
+      } else {
+        hero.x=Math.max(edgeX,Math.min(1-edgeX,hero.x));
+        hero.y=Math.max(edgeY,Math.min(1-edgeY,hero.y));
       }
       return;
     }
