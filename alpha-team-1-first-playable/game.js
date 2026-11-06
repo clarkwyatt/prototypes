@@ -4,7 +4,7 @@
   const canvas = document.querySelector("#game");
   const ctx = canvas.getContext("2d");
   const keys = new Set();
-  const hero = { x: .5, y: .55, speed: 220 };
+  const hero = { x: .5, y: .68, speed: 220 };
   const panels = new Set([1, 2, 6, 7, 11, 12, 16, 17, 21, 22]);
   let panel = 1, width = 0, height = 0, lastTime = performance.now();
   const objects = {
