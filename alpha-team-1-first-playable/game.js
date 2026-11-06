@@ -8,7 +8,7 @@
   const panels = new Set([1, 2, 6, 7, 11, 12, 16, 17, 21, 22]);
   let panel = 1, width = 0, height = 0, lastTime = performance.now();
   const objects = {
-    1: [["T",.16,.20],["H",.78,.19],["H",.18,.78],["B",.82,.78],["HOME",.50,.43]],
+    1: [["T",.16,.20],["H",.78,.19],["H",.18,.78],["B",.82,.78],["HOME",.36,.24]],
     2: [["T",.17,.24],["H",.70,.20],["B",.35,.46],["H",.18,.77],["H",.68,.69]],
     6: [["T",.14,.19],["T",.87,.19],["H",.78,.30],["B",.15,.77],["H",.83,.79]],
     7: [["T",.26,.23],["H",.75,.22],["H",.25,.72],["B",.69,.66]],
@@ -218,6 +218,16 @@
         shape(x-w*.12,y+h*.06,w*.24,h*.49,"#e1bd82");
         shape(x-w*.065,y+h*.12,w*.13,h*.19,"#85bfcb");
         ellipse(x+w*.075,y+h*.39,unit*.005,unit*.005,"#74502e");
+        if(big){
+          // A pair of paw prints on the front wall marks the cat's special home.
+          for(const px of [-.27,.27]){
+            const pawX=x+px*w,pawY=y+h*.30;
+            ellipse(pawX,pawY,unit*.010,unit*.008,"#f2d8a5");
+            for(const [ox,oy] of [[-.012,-.013],[-.004,-.019],[.005,-.019],[.013,-.013]]){
+              ellipse(pawX+unit*ox,pawY+unit*oy,unit*.004,unit*.005,"#f2d8a5");
+            }
+          }
+        }
       }
     }
     if(panel===11) {
