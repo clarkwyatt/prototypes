@@ -92,8 +92,9 @@
   modal.addEventListener("click",e=>{if(e.target===modal)closeInteraction();});
   function targets(){
     const list=(objects[panel]||[]).map(([type,x,y],i)=>({type,x,y,id:i}));
-    if(panel===12)list.push({type:"DOCK",x:.81,y:.29,id:100});
-    if(panel===16)list.push({type:"FORCE",x:.975,y:.50,id:101});
+    if(panel===12){list.push({type:"DOCK",x:.81,y:.29,id:100});list.push({type:"NPC",x:.82,y:.68,id:102});}
+    if(panel===11)list.push({type:"FORCE",x:.80,y:.48,id:101});
+    if(panel===16&&!doorOpen)list.push({type:"DOOR",x:.965,y:.50,id:103});
     return list;
   }
   function nearestTarget(){
