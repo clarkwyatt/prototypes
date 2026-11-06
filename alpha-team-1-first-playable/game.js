@@ -93,7 +93,7 @@
   function targets(){
     const list=(objects[panel]||[]).map(([type,x,y],i)=>({type,x,y,id:i}));
     if(panel===12){list.push({type:"DOCK",x:.81,y:.29,id:100});list.push({type:"NPC",x:.82,y:.68,id:102});}
-    if(panel===11)list.push({type:"FORCE",x:.80,y:.48,id:101});
+    if(panel===11)list.push({type:"FORCE",x:.975,y:.76,id:101});
     if(panel===16&&!doorOpen)list.push({type:"DOOR",x:.965,y:.50,id:103});
     return list;
   }
@@ -220,10 +220,17 @@
         ellipse(x+w*.075,y+h*.39,unit*.005,unit*.005,"#74502e");
       }
     }
-    if(panel===16) {
-      // The force field seals the right-hand exit of Panel 16.
-      shape(width*.965,height*.39,width*.018,height*.22,"#69c9d9");
-      shape(width*.958,height*.39,width*.032,height*.22,"rgba(95,224,240,.25)");
+    if(panel===11) {
+      // Magical barrier across the right-hand path exit, leading to Panel 12.
+      const shimmer=(Math.sin(performance.now()/270)+1)/2;
+      shape(width*.960,height*.66,width*.028,height*.20,"rgba(70,215,238,"+(.70+shimmer*.25)+")");
+      shape(width*.953,height*.66,width*.042,height*.20,"rgba(95,224,240,.28)");
+    }
+    if(panel===16 && !doorOpen) {
+      // Ordinary locked wooden door at the right-hand path exit.
+      shape(width*.947,height*.39,width*.049,height*.22,"#59402d");
+      shape(width*.954,height*.40,width*.035,height*.20,"#a77c51");
+      ellipse(width*.979,height*.51,Math.min(width,height)*.006,Math.min(width,height)*.006,"#e5c66e");
     }
   }
   // Four-direction animated ginger cat. Feet, tail and body move while walking.
@@ -317,7 +324,7 @@
            Math.abs((y-ny)*height)<r*Math.min(width,height)+radius) return true;
       }
     }
-    if(panel===11 && x>.77 && x<.83 && y>.35 && y<.60) return true;
+    if(panel===11 && x>.935 && y>.64 && y<.88) return true;
     if(panel===16 && !doorOpen && x>.935 && y>.37 && y<.63) return true;
     return false;
   }
@@ -350,7 +357,7 @@
         ? Math.max(.045,Math.min(.085,48/height))
         : Math.max(.045,Math.min(.085,48/width));
       // The force field in Panel 16 cannot be crossed.
-      if(exit && !(panel===16&&direction==="right") &&
+      if(exit && !(panel===11&&direction==="right") && !(panel===16&&direction==="right"&&!doorOpen) &&
           Math.abs(coordinate-exit[1])<=tolerance &&
           panels.has(exit[0])){
         panel=exit[0];
