@@ -1,7 +1,7 @@
 // Team 1 first playable: fixed-camera panels from the students' map.
 // Terrain and scenery only; quests and interactions will be added later.
 (() => {
-  const canvas = document.querySelector("#game");
+  const canvas = document.querySelector("#world");
   const ctx = canvas.getContext("2d");
   const keys = new Set();
   const hero = { x: .5, y: .68, speed: 220 };
