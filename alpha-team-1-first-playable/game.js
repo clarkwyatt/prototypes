@@ -110,90 +110,82 @@
       shape(width*.76,height*.61,width*.045,height*.30,"rgba(95,224,240,.25)");
     }
   }
+  // Four-direction animated ginger cat. Feet, tail and body move while walking.
+  let facing = "down", walking = false, walkTime = 0;
   function drawHero() {
-    // Simple friendly placeholder hero, drawn directly in the game file.
+    const t = walking ? walkTime * 12 : 0;
+    const step = walking ? Math.sin(t) : 0;
+    const bob = walking ? Math.abs(Math.sin(t)) * 2.2 : 0;
+    const side = facing === "left" || facing === "right";
+    const back = facing === "up";
     ctx.save();
-    ctx.translate(hero.x, hero.y);
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
-
-    // Shadow
-    ctx.fillStyle = "rgba(0,0,0,.18)";
+    ctx.translate(0, -bob);
+    if (facing === "left") ctx.scale(-1, 1);
+    ctx.lineCap = "round"; ctx.lineJoin = "round";
+    const fur="#e9a457", light="#ffe4b6", dark="#b86b37", outline="#70452d";
+    // Ground shadow stays attached to the cat.
+    ellipse(0, 23+bob, 21, 6, "rgba(35,55,36,.25)");
+    // Tail swishes behind the body.
+    ctx.strokeStyle=dark;ctx.lineWidth=9;
     ctx.beginPath();
-    ctx.ellipse(0, 25, 18, 6, 0, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Legs and shoes
-    ctx.strokeStyle = "#334155";
-    ctx.lineWidth = 7;
-    ctx.beginPath();
-    ctx.moveTo(-6, 7); ctx.lineTo(-8, 19);
-    ctx.moveTo(6, 7); ctx.lineTo(8, 19);
+    const swish=Math.sin(walkTime*5)*5;
+    if(side) {ctx.moveTo(-13,8);ctx.bezierCurveTo(-27,9,-29,-10+swish,-22,-14+swish);}
+    else {ctx.moveTo(15,7);ctx.bezierCurveTo(31,7,32,-12+swish,23,-17+swish);}
     ctx.stroke();
-    ctx.strokeStyle = "#252525";
-    ctx.lineWidth = 5;
+    ctx.strokeStyle=fur;ctx.lineWidth=5;
     ctx.beginPath();
-    ctx.moveTo(-9, 20); ctx.lineTo(-3, 20);
-    ctx.moveTo(5, 20); ctx.lineTo(11, 20);
+    if(side){ctx.moveTo(-22,-14+swish);ctx.lineTo(-24,-17+swish);}
+    else{ctx.moveTo(23,-17+swish);ctx.lineTo(24,-20+swish);}
     ctx.stroke();
-
-    // Shorts
-    ctx.fillStyle = "#386a9b";
-    ctx.beginPath();
-    ctx.roundRect(-11, 2, 22, 11, 4);
-    ctx.fill();
-
-    // Arms
-    ctx.strokeStyle = "#efbd91";
-    ctx.lineWidth = 6;
-    ctx.beginPath();
-    ctx.moveTo(-10, -10); ctx.lineTo(-15, 2);
-    ctx.moveTo(10, -10); ctx.lineTo(15, 2);
-    ctx.stroke();
-
-    // T-shirt
-    ctx.fillStyle = "#5b9a68";
-    ctx.beginPath();
-    ctx.roundRect(-12, -16, 24, 22, 6);
-    ctx.fill();
-
-    // Neck and head
-    ctx.fillStyle = "#efbd91";
-    ctx.fillRect(-4, -20, 8, 7);
-    ctx.beginPath();
-    ctx.arc(0, -27, 11, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Hair and face
-    ctx.fillStyle = "#49372e";
-    ctx.beginPath();
-    ctx.arc(0, -30, 11, Math.PI, Math.PI * 2);
-    ctx.lineTo(10, -27); ctx.quadraticCurveTo(0, -34, -10, -27);
-    ctx.fill();
-    ctx.fillStyle = "#27342f";
-    ctx.beginPath();
-    ctx.arc(-4, -27, 1.1, 0, Math.PI * 2);
-    ctx.arc(4, -27, 1.1, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.strokeStyle = "#9b5947";
-    ctx.lineWidth = 1.4;
-    ctx.beginPath();
-    ctx.arc(0, -24, 3.5, .2, Math.PI - .2);
-    ctx.stroke();
-
+    // Four little paws alternate as the cat walks.
+    for (const [px,py,phase] of [[-11,13,1],[11,13,-1],[-11,19,-1],[11,19,1]]) {
+      ellipse(px+(side?step*phase*4:0),py+step*phase*3,6,7,dark);
+      ellipse(px+(side?step*phase*4:0),py+step*phase*3+2,4,4,light);
+    }
+    ellipse(0,4,side?17:18,19,fur);
+    if(!back) ellipse(side?5:0,8,side?10:12,12,light);
+    // Big ears and face, turned toward the movement direction.
+    const hx=side?8:0;
+    ctx.fillStyle=fur;ctx.strokeStyle=outline;ctx.lineWidth=1.8;
+    for(const e of [-1,1]){
+      ctx.beginPath();ctx.moveTo(hx+e*9,-22);ctx.lineTo(hx+e*16,-43);ctx.lineTo(hx+e*2,-35);ctx.closePath();ctx.fill();ctx.stroke();
+      ctx.fillStyle="#d98983";ctx.beginPath();ctx.moveTo(hx+e*9,-27);ctx.lineTo(hx+e*13,-38);ctx.lineTo(hx+e*5,-33);ctx.closePath();ctx.fill();ctx.fillStyle=fur;
+    }
+    ellipse(hx,-23,side?18:20,18,fur);
+    if(back){
+      // Back view: orange head with three darker fur stripes.
+      ctx.strokeStyle=dark;ctx.lineWidth=3;
+      for(const x of [-7,0,7]){ctx.beginPath();ctx.moveTo(x,-37);ctx.lineTo(x*.65,-30);ctx.stroke();}
+    } else {
+      ellipse(hx+(side?6:0),-17,side?11:14,9,light);
+      ctx.fillStyle="#273b32";
+      if(side){
+        ellipse(hx+10,-27,2.5,3.7,"#273b32");
+        ellipse(hx+16,-19,2.7,2.1,"#b96e76");
+      } else {
+        ellipse(hx-8,-26,2.7,3.8,"#273b32");ellipse(hx+8,-26,2.7,3.8,"#273b32");
+        ellipse(hx,-18,3.3,2.4,"#b96e76");
+      }
+      ctx.strokeStyle=outline;ctx.lineWidth=1.2;
+      ctx.beginPath();ctx.moveTo(hx+(side?14:0),-16);
+      ctx.lineTo(hx+(side?14:0),-13);ctx.stroke();
+      // Small whiskers.
+      for(const sign of [-1,1]){
+        if(side && sign<0) continue;
+        ctx.beginPath();ctx.moveTo(hx+sign*9,-17);ctx.lineTo(hx+sign*22,-20);
+        ctx.moveTo(hx+sign*9,-14);ctx.lineTo(hx+sign*22,-12);ctx.stroke();
+      }
+      ctx.strokeStyle=dark;ctx.lineWidth=2.5;
+      for(const x of [-8,0,8]){ctx.beginPath();ctx.moveTo(hx+x,-39);ctx.lineTo(hx+x*.7,-34);ctx.stroke();}
+    }
     ctx.restore();
   }
 
   function draw() {
     scenery();
     ctx.save();
-    // The original hero art is authored in pixels.
-    const x=hero.x*width,y=hero.y*height;
-    ctx.translate(x,y);
-    const savedX=hero.x,savedY=hero.y;
-    hero.x=0;hero.y=0;
+    ctx.translate(hero.x*width,hero.y*height);
     drawHero();
-    hero.x=savedX;hero.y=savedY;
     ctx.restore();
   }
   function blocked(x,y) {
@@ -237,6 +229,12 @@
     if(keys.has("ArrowUp")||keys.has("w")) dy--;
     if(keys.has("ArrowDown")||keys.has("s")) dy++;
     if(dx&&dy){dx*=Math.SQRT1_2;dy*=Math.SQRT1_2;}
+    walking = dx !== 0 || dy !== 0;
+    if (walking) {
+      if (Math.abs(dx) > Math.abs(dy)) facing = dx > 0 ? "right" : "left";
+      else facing = dy > 0 ? "down" : "up";
+      walkTime += dt;
+    }
     move(dx*hero.speed*dt,dy*hero.speed*dt);
     draw();requestAnimationFrame(update);
   }
