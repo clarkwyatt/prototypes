@@ -108,13 +108,41 @@
   function highlight(){
     nearby=nearestTarget();
     if(!nearby||dialogOpen)return;
-    const t=nearby,unit=Math.min(width,height);
+    const t=nearby,unit=Math.min(width,height),x=t.x*width,y=t.y*height;
     const pulse=(Math.sin(performance.now()/230)+1)/2;
-    const rx=t.type==="LAKE"?width*.38:["FORCE","DOOR"].includes(t.type)?unit*.04:t.type==="T"?unit*.11:t.type==="B"?unit*.09:unit*.15;
-    const ry=t.type==="LAKE"?height*.27:["FORCE","DOOR"].includes(t.type)?unit*.13:t.type==="T"?unit*.14:t.type==="B"?unit*.08:unit*.15;
-    ctx.save();ctx.strokeStyle="rgba(85,255,115,"+(.65+pulse*.32)+")";
-    ctx.lineWidth=3+pulse*2;ctx.shadowColor="#5dff7e";ctx.shadowBlur=9+pulse*14;
-    ctx.beginPath();ctx.ellipse(t.x*width,t.y*height,rx,ry,0,0,Math.PI*2);ctx.stroke();ctx.restore();
+    ctx.save();
+    ctx.strokeStyle="rgba(85,255,115,"+(.65+pulse*.32)+")";
+    ctx.lineWidth=3+pulse*2;ctx.shadowColor="#5dff7e";ctx.shadowBlur=7+pulse*11;
+    ctx.beginPath();
+    if(t.type==="H"||t.type==="HOME"){
+      const w=unit*(t.type==="HOME"?.29:.255),h=unit*(t.type==="HOME"?.23:.205);
+      // Trace the cottage's actual roof and walls, not a circle.
+      ctx.moveTo(x-w*.52,y-h*.47);
+      ctx.lineTo(x+w*.52,y-h*.47);
+      ctx.lineTo(x+w*.52,y-h*.27);
+      ctx.lineTo(x+w*.48,y-h*.27);
+      ctx.lineTo(x+w*.48,y+h*.55);
+      ctx.lineTo(x-w*.48,y+h*.55);
+      ctx.lineTo(x-w*.48,y-h*.27);
+      ctx.lineTo(x-w*.52,y-h*.27);
+      ctx.closePath();
+    }else if(t.type==="T"){
+      // Outline the crown and the exposed trunk.
+      ctx.ellipse(x,y-unit*.038,unit*.093,unit*.108,0,0,Math.PI*2);
+      ctx.moveTo(x-unit*.023,y+unit*.05);
+      ctx.rect(x-unit*.023,y,unit*.046,unit*.11);
+    }else if(t.type==="B"){
+      ctx.ellipse(x,y,unit*.075,unit*.052,0,0,Math.PI*2);
+    }else if(t.type==="FORCE"||t.type==="DOOR"){
+      ctx.rect(x-unit*.023,y-unit*.12,unit*.046,unit*.24);
+    }else if(t.type==="DOCK"){
+      ctx.rect(x-unit*.09,y-unit*.035,unit*.18,unit*.07);
+    }else if(t.type==="NPC"){
+      ctx.ellipse(x,y-unit*.19/2,unit*.035,unit*.07,0,0,Math.PI*2);
+    }else if(t.type==="LAKE"){
+      ctx.ellipse(x,y,width*.38,height*.27,0,0,Math.PI*2);
+    }
+    ctx.stroke();ctx.restore();
   }
   canvas.addEventListener("click",e=>{
     if(dialogOpen)return;
