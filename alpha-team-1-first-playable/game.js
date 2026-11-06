@@ -153,10 +153,34 @@
     }
     ctx.stroke();ctx.restore();
   }
-  canvas.addEventListener("click",()=>{
+  function clickedTarget(target,x,y){
+    const unit=Math.min(width,height);
+    const dx=x-target.x*width,dy=y-target.y*height;
+    switch(target.type){
+      case "T": return (dx/(unit*.095))**2+((dy+unit*.038)/(unit*.108))**2<=1 ||
+        (Math.abs(dx)<=unit*.023 && dy>=0 && dy<=unit*.11);
+      case "B": return (dx/(unit*.075))**2+(dy/(unit*.052))**2<=1;
+      case "H": case "HOME":{
+        const w=unit*(target.type==="HOME"?.29:.255),h=unit*(target.type==="HOME"?.23:.205);
+        return Math.abs(dx)<=w*.52 && dy>=-h*.47 && dy<=h*.55;
+      }
+      case "LAKE": return (dx/(width*.38))**2+(dy/(height*.27))**2<=1;
+      case "DOCK": return Math.abs(dx)<=unit*.09 && Math.abs(dy)<=unit*.07;
+      case "NPC": return Math.abs(dx)<=unit*.04 && dy>=-unit*.12 && dy<=unit*.05;
+      case "FORCE": return Math.abs(dx)<=unit*.03 && Math.abs(dy)<=unit*.12;
+      case "DOOR": return Math.abs(dx)<=unit*.03 && Math.abs(dy)<=unit*.12;
+      default: return false;
+    }
+  }
+  canvas.addEventListener("click",e=>{
     if(dialogOpen)return;
+    // Both conditions must hold: close enough to highlight, AND clicked on the object.
     const target=nearestTarget();
-    if(target)interact(target.type);
+    if(!target)return;
+    const bounds=canvas.getBoundingClientRect();
+    const x=(e.clientX-bounds.left)*width/bounds.width;
+    const y=(e.clientY-bounds.top)*height/bounds.height;
+    if(clickedTarget(target,x,y))interact(target.type);
   });
   function scenery() {
     // Soft grassy meadow, with tiny deterministic blades and flowers.
