@@ -89,7 +89,13 @@
     }));
     options.push(button("CLOSE",closeInteraction));actions.append(...options);
   }
-  modal.addEventListener("click",e=>{if(e.target===modal)closeInteraction();});
+  // Dismiss an open interaction when the player taps anywhere outside its card.
+  // pointerdown runs before the canvas click, so the tap only closes the popup.
+  document.addEventListener("pointerdown",e=>{
+    if(dialogOpen && !modal.querySelector(".interaction-card").contains(e.target)){
+      closeInteraction();
+    }
+  });
   function targets(){
     const list=(objects[panel]||[]).map(([type,x,y],i)=>({type,x,y,id:i}));
     if(panel===12){list.push({type:"DOCK",x:.81,y:.29,id:100});list.push({type:"NPC",x:.82,y:.68,id:102});}
