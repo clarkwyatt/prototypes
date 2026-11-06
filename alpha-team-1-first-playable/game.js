@@ -10,7 +10,7 @@
   const objects = {
     1: [["T",.19,.23],["H",.76,.14],["H",.18,.77],["B",.77,.73],["HOME",.50,.50]],
     2: [["T",.17,.24],["H",.70,.20],["B",.35,.46],["H",.18,.77],["H",.68,.69]],
-    6: [["T",.16,.19],["T",.86,.20],["H",.58,.42],["B",.30,.72],["H",.85,.73]],
+    6: [["T",.16,.19],["T",.86,.20],["H",.72,.32],["B",.17,.75],["H",.83,.78]],
     7: [["T",.26,.23],["H",.75,.22],["H",.25,.72],["B",.69,.66]],
     11: [["B",.14,.22],["B",.48,.73]],
     12: [["LAKE",.48,.29],["H",.88,.80]],
@@ -39,11 +39,16 @@
   function scenery() {
     shape(0,0,width,height,"#729b66");
     // Village clearings and the students' winding route through the lower panels.
-    if ([1,2,6,7].includes(panel)) {
+    if ([1,2,7].includes(panel)) {
       path([[.50,0],[.50,.5],[.50,1]],Math.min(width,height)*.12,"#526a43");
       path([[0,.52],[.50,.52],[1,.52]],Math.min(width,height)*.10,"#526a43");
     }
-    if ([6,11,16,21].includes(panel)) {
+    if (panel===6) {
+      // One clear north-south path with a short branch toward Panel 7.
+      path([[.45,0],[.45,.52],[.45,1]],Math.min(width,height)*.14,"#455b3b");
+      path([[.45,.52],[1,.52]],Math.min(width,height)*.10,"#455b3b");
+    }
+    if ([11,16,21].includes(panel)) {
       path([[.45,0],[.47,.32],[.40,.65],[.46,1]],Math.min(width,height)*.17,"#455b3b");
     }
     if (panel===11) path([[.45,.38],[.63,.48],[1,.76]],Math.min(width,height)*.13,"#455b3b");
