@@ -58,7 +58,7 @@
   modal.innerHTML='<div class="interaction-card"><button class="interaction-close" type="button" aria-label="Close">×</button><h2 id="interaction-title"></h2><p id="interaction-description"></p><div id="interaction-actions"></div></div>';
   document.querySelector("#game").appendChild(modal);
   modal.querySelector(".interaction-close").addEventListener("click",closeInteraction);
-  function closeInteraction(){dialogOpen=false;modal.classList.remove("open");}
+  function closeInteraction(){dialogOpen=false;modal.classList.remove("open");keys.clear();}
   function button(label,action){
     const b=document.createElement("button");b.textContent=label;b.type="button";
     b.className="interaction-btn"+(label==="EXAMINE"||label==="CLOSE"||label==="OK"?" secondary":"");
@@ -66,7 +66,7 @@
   }
   function interact(type){
     if(!descriptions[type])return;
-    dialogOpen=true;modal.classList.add("open");
+    dialogOpen=true;keys.clear();modal.classList.add("open");
     const [title,description]=descriptions[type];
     modal.querySelector("#interaction-title").textContent=title;
     const actions=modal.querySelector("#interaction-actions"),p=modal.querySelector("#interaction-description");
@@ -110,7 +110,7 @@
   }
   function highlight(){
     nearby=nearestTarget();
-    if(!nearby||dialogOpen)return;
+    if(!nearby)return;
     const t=nearby,unit=Math.min(width,height),x=t.x*width,y=t.y*height;
     const pulse=(Math.sin(performance.now()/230)+1)/2;
     ctx.save();
