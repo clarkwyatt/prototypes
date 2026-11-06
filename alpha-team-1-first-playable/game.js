@@ -161,18 +161,20 @@
       ctx.lineTo(x-w*.52,y-h*.27);
       ctx.closePath();
     }else if(t.type==="T"){
-      // Outline the crown and the exposed trunk.
+      // Match the tree's visible leafy crown.
       ctx.ellipse(x,y-unit*.038,unit*.093,unit*.108,0,0,Math.PI*2);
-      ctx.moveTo(x-unit*.023,y+unit*.05);
-      ctx.rect(x-unit*.023,y,unit*.046,unit*.11);
     }else if(t.type==="B"){
+      // The smaller, lighter leaf cluster extends up and left of the main bush.
       ctx.ellipse(x,y,unit*.075,unit*.052,0,0,Math.PI*2);
+      ctx.moveTo(x-unit*.027+unit*.048,y-unit*.023);
+      ctx.ellipse(x-unit*.027,y-unit*.023,unit*.048,unit*.045,0,0,Math.PI*2);
     }else if(t.type==="FORCE"||t.type==="DOOR"){
-      ctx.rect(x-unit*.023,y-unit*.12,unit*.046,unit*.24);
+      if(t.type==="FORCE")ctx.rect(width*.953,height*.66,width*.042,height*.20);
+      else ctx.rect(width*.947,height*.39,width*.049,height*.22);
     }else if(t.type==="DOCK"){
-      ctx.rect(x-unit*.09,y-unit*.035,unit*.18,unit*.07);
+      ctx.rect(x-unit*.09,y-unit*.06,unit*.18,unit*.12);
     }else if(t.type==="NPC"){
-      ctx.ellipse(x,y-unit*.19/2,unit*.035,unit*.07,0,0,Math.PI*2);
+      ctx.ellipse(x,y-unit*.045,unit*.038,unit*.075,0,0,Math.PI*2);
     }else if(t.type==="LAKE"){
       ctx.ellipse(x,y,width*.38,height*.27,0,0,Math.PI*2);
     }
@@ -182,18 +184,18 @@
     const unit=Math.min(width,height);
     const dx=x-target.x*width,dy=y-target.y*height;
     switch(target.type){
-      case "T": return (dx/(unit*.095))**2+((dy+unit*.038)/(unit*.108))**2<=1 ||
+      case "T": return (dx/(unit*.093))**2+((dy+unit*.038)/(unit*.108))**2<=1 ||
         (Math.abs(dx)<=unit*.023 && dy>=0 && dy<=unit*.11);
-      case "B": return (dx/(unit*.075))**2+(dy/(unit*.052))**2<=1;
+      case "B": return (dx/(unit*.075))**2+(dy/(unit*.052))**2<=1 || ((dx+unit*.027)/(unit*.048))**2+((dy+unit*.023)/(unit*.045))**2<=1;
       case "H": case "HOME":{
         const w=unit*(target.type==="HOME"?.29:.255),h=unit*(target.type==="HOME"?.23:.205);
         return Math.abs(dx)<=w*.52 && dy>=-h*.47 && dy<=h*.55;
       }
       case "LAKE": return (dx/(width*.38))**2+(dy/(height*.27))**2<=1;
-      case "DOCK": return Math.abs(dx)<=unit*.09 && Math.abs(dy)<=unit*.07;
-      case "NPC": return Math.abs(dx)<=unit*.04 && dy>=-unit*.12 && dy<=unit*.05;
-      case "FORCE": return Math.abs(dx)<=unit*.03 && Math.abs(dy)<=unit*.12;
-      case "DOOR": return Math.abs(dx)<=unit*.03 && Math.abs(dy)<=unit*.12;
+      case "DOCK": return Math.abs(dx)<=unit*.09 && dy>=-unit*.06 && dy<=unit*.06;
+      case "NPC": return Math.abs(dx)<=unit*.038 && dy>=-unit*.12 && dy<=unit*.03;
+      case "FORCE": return x>=width*.953 && x<=width*.995 && y>=height*.66 && y<=height*.86;
+      case "DOOR": return x>=width*.947 && x<=width*.996 && y>=height*.39 && y<=height*.61;
       default: return false;
     }
   }
@@ -285,7 +287,7 @@
         }
       }
     }
-    if(panel===11) {
+    if(panel===11 && !forceFieldRemoved) {
       // Magical barrier across the right-hand path exit, leading to Panel 12.
       const shimmer=(Math.sin(performance.now()/270)+1)/2;
       shape(width*.960,height*.66,width*.028,height*.20,"rgba(70,215,238,"+(.70+shimmer*.25)+")");
