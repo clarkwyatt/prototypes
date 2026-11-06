@@ -43,9 +43,9 @@
     HOME: ["Cat's Home", "Home sweet home! A snug little house where a brave cat can dream of grand adventures."],
     LAKE: ["Moonlight Lake", "Clear blue water ripples gently against the shore. Legends say magical fish swim beneath its surface."],
     DOCK: ["Wooden Dock", "Weathered boards stretch out over the lake. It's a perfect place to watch the fish dart through the water."],
-    FORCE: ["Magic Force Field", "A shimmering wall of enchanted energy blocks the path. It hums softly, waiting for the magic that can unlock it."]
+    FORCE: ["Magic Force Field", "A shimmering wall of enchanted energy blocks a hidden trail. It hums with old magic."],\n    DOOR: ["Locked Wooden Door", "An old oak door with an iron lock. A key is needed to open the way."],\n    NPC: ["Lake Keeper", "A friendly keeper watches over the lake and knows the secret of the locked door."]
   };
-  let nearby=null, dialogOpen=false;
+  let nearby=null, dialogOpen=false;\n  let fishQuest=false, fish=0, hasKey=false, doorOpen=false;\n  const questEl=document.querySelector("#quest"),itemsEl=document.querySelector("#items");\n  function updateHud(){questEl.textContent=fishQuest&&!hasKey?"• Catch five fish ("+fish+"/5)":hasKey&&!doorOpen?"• Unlock the door in Panel 16":doorOpen?"• Explore beyond the door":"• Explore the Village";itemsEl.textContent=(fish?fish+" Fish":"")+(hasKey?(fish?" · ":"")+"Door Key":"")||"Empty";}
   const modal=document.createElement("div");
   modal.id="interaction-modal";
   modal.style.cssText="position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:#102a2380;z-index:20;padding:20px";
@@ -64,7 +64,23 @@
     modal.querySelector("#interaction-title").textContent=title;
     const actions=modal.querySelector("#interaction-actions"),p=modal.querySelector("#interaction-description");
     p.style.display="none";p.textContent=description;actions.replaceChildren();
-    actions.append(button("LOOK",()=>{p.style.display="block";actions.replaceChildren(button("OK",closeInteraction));}),button("CLOSE",closeInteraction));
+    const look=button("LOOK",()=>{p.style.display="block";actions.replaceChildren(button("OK",closeInteraction));});
+    const options=[look];
+    if(type==="NPC")options.push(button("TALK",()=>{
+      if(hasKey){p.textContent="Thank you for the fish! The key should open the door in Panel 16."; }
+      else if(fish>=5){hasKey=true;fish=0;p.textContent="Five fish! Wonderful! Here is the iron key for the door in Panel 16.";updateHud();}
+      else{fishQuest=true;p.textContent="Hello, brave kitty! Catch five fish at the dock and bring them back. I'll trade them for a key to the locked door.";updateHud();}
+      p.style.display="block";actions.replaceChildren(button("OK",closeInteraction));
+    }));
+    if(type==="DOCK"&&fishQuest&&!hasKey)options.push(button("FISH",()=>{
+      fish=Math.min(5,fish+1);p.textContent=fish===5?"You caught the fifth fish! Return to the Lake Keeper.":"You caught a shimmering lake fish! ("+fish+"/5)";updateHud();p.style.display="block";actions.replaceChildren(button("OK",closeInteraction));
+    }));
+    if(type==="DOOR")options.push(button("OPEN",()=>{
+      if(hasKey){doorOpen=true;p.textContent="The iron key turns! The wooden door swings open.";updateHud();}
+      else p.textContent="The door is locked. The Lake Keeper may know where to find a key.";
+      p.style.display="block";actions.replaceChildren(button("OK",closeInteraction));
+    }));
+    options.push(button("CLOSE",closeInteraction));actions.append(...options);
   }
   modal.addEventListener("click",e=>{if(e.target===modal)closeInteraction();});
   function targets(){
@@ -78,7 +94,7 @@
     for(const target of targets()){
       const d=Math.hypot((hero.x-target.x)*width,(hero.y-target.y)*height);
       const reach=target.type==="LAKE"?Math.min(width,height)*.32:
-        target.type==="FORCE"?Math.min(width,height)*.20:
+        ["FORCE","DOOR","NPC","DOCK"].includes(target.type)?Math.min(width,height)*.23:
         Math.min(width,height)*.19;
       if(d<reach&&d<dist){found=target;dist=d;}
     }
@@ -89,8 +105,8 @@
     if(!nearby||dialogOpen)return;
     const t=nearby,unit=Math.min(width,height);
     const pulse=(Math.sin(performance.now()/230)+1)/2;
-    const rx=t.type==="LAKE"?width*.38:t.type==="FORCE"?unit*.04:t.type==="T"?unit*.11:t.type==="B"?unit*.09:unit*.15;
-    const ry=t.type==="LAKE"?height*.27:t.type==="FORCE"?unit*.13:t.type==="T"?unit*.14:t.type==="B"?unit*.08:unit*.15;
+    const rx=t.type==="LAKE"?width*.38:["FORCE","DOOR"].includes(t.type)?unit*.04:t.type==="T"?unit*.11:t.type==="B"?unit*.09:unit*.15;
+    const ry=t.type==="LAKE"?height*.27:["FORCE","DOOR"].includes(t.type)?unit*.13:t.type==="T"?unit*.14:t.type==="B"?unit*.08:unit*.15;
     ctx.save();ctx.strokeStyle="rgba(85,255,115,"+(.65+pulse*.32)+")";
     ctx.lineWidth=3+pulse*2;ctx.shadowColor="#5dff7e";ctx.shadowBlur=9+pulse*14;
     ctx.beginPath();ctx.ellipse(t.x*width,t.y*height,rx,ry,0,0,Math.PI*2);ctx.stroke();ctx.restore();
@@ -270,7 +286,7 @@
            Math.abs((y-ny)*height)<r*Math.min(width,height)+radius) return true;
       }
     }
-    if(panel===16 && x>.935 && y>.37 && y<.63) return true;
+    if(panel===11 && x>.77 && x<.83 && y>.35 && y<.60) return true;\n    if(panel===16 && !doorOpen && x>.935 && y>.37 && y<.63) return true;
     return false;
   }
   // Every screen connection must meet a visible path at BOTH edges.
@@ -343,5 +359,5 @@
   addEventListener("keydown",e=>{const k=e.key.length===1?e.key.toLowerCase():e.key;if(k==="Escape"&&dialogOpen)closeInteraction();keys.add(k);if(k.startsWith("Arrow"))e.preventDefault();});
   addEventListener("keyup",e=>keys.delete(e.key.length===1?e.key.toLowerCase():e.key));
   addEventListener("blur",()=>keys.clear());
-  resize();requestAnimationFrame(update);
+  updateHud();resize();requestAnimationFrame(update);
 })();
