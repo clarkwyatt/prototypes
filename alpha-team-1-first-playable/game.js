@@ -43,9 +43,14 @@
     HOME: ["Cat's Home", "Home sweet home! A snug little house where a brave cat can dream of grand adventures."],
     LAKE: ["Moonlight Lake", "Clear blue water ripples gently against the shore. Legends say magical fish swim beneath its surface."],
     DOCK: ["Wooden Dock", "Weathered boards stretch out over the lake. It's a perfect place to watch the fish dart through the water."],
-    FORCE: ["Magic Force Field", "A shimmering wall of enchanted energy blocks a hidden trail. It hums with old magic."],\n    DOOR: ["Locked Wooden Door", "An old oak door with an iron lock. A key is needed to open the way."],\n    NPC: ["Lake Keeper", "A friendly keeper watches over the lake and knows the secret of the locked door."]
+    FORCE: ["Magic Force Field", "A shimmering wall of enchanted energy blocks a hidden trail. It hums with old magic."],
+    DOOR: ["Locked Wooden Door", "An old oak door with an iron lock. A key is needed to open the way."],
+    NPC: ["Lake Keeper", "A friendly keeper watches over the lake and knows the secret of the locked door."]
   };
-  let nearby=null, dialogOpen=false;\n  let fishQuest=false, fish=0, hasKey=false, doorOpen=false;\n  const questEl=document.querySelector("#quest"),itemsEl=document.querySelector("#items");\n  function updateHud(){questEl.textContent=fishQuest&&!hasKey?"• Catch five fish ("+fish+"/5)":hasKey&&!doorOpen?"• Unlock the door in Panel 16":doorOpen?"• Explore beyond the door":"• Explore the Village";itemsEl.textContent=(fish?fish+" Fish":"")+(hasKey?(fish?" · ":"")+"Door Key":"")||"Empty";}
+  let nearby=null, dialogOpen=false;
+  let fishQuest=false, fish=0, hasKey=false, doorOpen=false;
+  const questEl=document.querySelector("#quest"),itemsEl=document.querySelector("#items");
+  function updateHud(){questEl.textContent=fishQuest&&!hasKey?"• Catch five fish ("+fish+"/5)":hasKey&&!doorOpen?"• Unlock the door in Panel 16":doorOpen?"• Explore beyond the door":"• Explore the Village";itemsEl.textContent=(fish?fish+" Fish":"")+(hasKey?(fish?" · ":"")+"Door Key":"")||"Empty";}
   const modal=document.createElement("div");
   modal.id="interaction-modal";
   modal.style.cssText="position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:#102a2380;z-index:20;padding:20px";
@@ -273,6 +278,7 @@
     ctx.translate(hero.x*width,hero.y*height);
     drawHero();
     ctx.restore();
+    highlight();
   }
   function blocked(x,y) {
     const radius=Math.min(width,height)*.025;
@@ -286,7 +292,8 @@
            Math.abs((y-ny)*height)<r*Math.min(width,height)+radius) return true;
       }
     }
-    if(panel===11 && x>.77 && x<.83 && y>.35 && y<.60) return true;\n    if(panel===16 && !doorOpen && x>.935 && y>.37 && y<.63) return true;
+    if(panel===11 && x>.77 && x<.83 && y>.35 && y<.60) return true;
+    if(panel===16 && !doorOpen && x>.935 && y>.37 && y<.63) return true;
     return false;
   }
   // Every screen connection must meet a visible path at BOTH edges.
