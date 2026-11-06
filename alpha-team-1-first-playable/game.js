@@ -147,16 +147,10 @@
     }
     ctx.stroke();ctx.restore();
   }
-  canvas.addEventListener("click",e=>{
+  canvas.addEventListener("click",()=>{
     if(dialogOpen)return;
-    const r=canvas.getBoundingClientRect();
-    const x=(e.clientX-r.left)/r.width,y=(e.clientY-r.top)/r.height;
     const target=nearestTarget();
-    if(target){
-      const distance=Math.hypot((x-target.x)*width,(y-target.y)*height);
-      const range=target.type==="LAKE"?Math.min(width,height)*.4:Math.min(width,height)*.22;
-      if(distance<range)interact(target.type);
-    }
+    if(target)interact(target.type);
   });
   function scenery() {
     // Soft grassy meadow, with tiny deterministic blades and flowers.
