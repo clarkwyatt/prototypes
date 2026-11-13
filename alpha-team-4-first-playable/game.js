@@ -4,9 +4,69 @@ const canvas=document.querySelector('#world'),ctx=canvas.getContext('2d'),game=d
 const questEl=document.querySelector('#quest-text'),itemsEl=document.querySelector('#items');
 const layer=document.querySelector('#popup-layer'),titleEl=document.querySelector('#popup-title'),copyEl=document.querySelector('#popup-copy'),actionsEl=document.querySelector('#popup-actions');
 const W=1120,H=720,keys=new Set(),hero={x:W/2,y:H/2,speed:215};
-let last=performance.now(),panel=13,elapsed=0;
+let last=performance.now(),panel=1,elapsed=0;
+let treehouseIntro=true;
 const inventory=new Set(),flags=new Set();
 const panels=Array.from({length:25},(_,i)=>({id:i+1,exits:{},objects:[]}));
+const quest={started:false,emeralds:0,gateKey:false,gateOpen:false};
+const passage=(a,side,b,at=360)=>{panels[a-1].exits[side]={to:b,at,halfWidth:90}};
+passage(1,'east',2);passage(2,'west',1);passage(2,'east',3);passage(3,'west',2);
+// Only the first village route is enabled until the remaining map is built.
+const housePositions=[[310,235],[515,205],[710,240],[405,490],[755,490]];
+const house=(x,y,index)=>({
+ id:'house'+index,name:'Village House',x,y,w:104,h:100,shape:'rect',solid:true,reach:145,
+ description:'A little village house with a wooden door.',
+ draw(ctx){drawHouse(ctx,x,y)},
+ actions:[{label:'OPEN',primary:true,run:()=>{
+  if(!quest.started){copyEl.textContent='A cozy room with shelves and a small chest.';actionsEl.replaceChildren();return}
+  if(flags.has('emerald'+index)){copyEl.textContent='You already searched this house.';actionsEl.replaceChildren();return}
+  flags.add('emerald'+index);quest.emeralds++;addItem(quest.emeralds+' / 5 Emeralds');
+  for(const name of [...inventory])if(/^\\d+ \\/ 5 Emeralds$/.test(name)&&name!==quest.emeralds+' / 5 Emeralds')removeItem(name);
+  copyEl.textContent='You search the house and find an emerald!';actionsEl.replaceChildren();
+  setQuest(quest.emeralds<5?'Find 5 Emeralds ('+quest.emeralds+'/5)':'Bring 5 Emeralds to the Villager');
+ }}]
+});
+panels[1].objects.push(...housePositions.map(([x,y],i)=>house(x,y,i+1)));
+panels[1].objects.push({
+ id:'villager',name:'Villager',kind:'npc',x:905,y:310,w:35,h:60,reach:95,
+ description:'A villager waiting near the houses.',
+ dialogue:'Can you search the houses and bring me five emeralds? I will give you the gate key.',
+ draw(ctx){drawVillager(ctx,this.x,this.y)},
+ actions:[{label:'TALK',primary:true,run:()=>{
+  if(quest.gateKey){copyEl.textContent='Good luck on your adventure!';return}
+  if(!quest.started){quest.started=true;setQuest('Find 5 Emeralds (0/5)');copyEl.textContent='Please find five emeralds hidden in the village houses.';return}
+  if(quest.emeralds<5){copyEl.textContent='You have '+quest.emeralds+' of the five emeralds.';return}
+  quest.gateKey=true;inventory.clear();addItem('Gate Key');setQuest('Unlock the Village Gate');copyEl.textContent='Thank you! Here is the key to the gate.';
+ }}]
+});
+panels[1].objects.push({
+ id:'gate',name:'Village Gate',x:1080,y:360,w:35,h:125,solid:true,reach:115,
+ description:'A locked wooden gate blocks the way east.',
+ visible:true,draw(ctx){if(!quest.gateOpen)drawGate(ctx,this.x,this.y)},
+ actions:[{label:'OPEN',primary:true,run:()=>{
+ if(!quest.gateKey){copyEl.textContent='The gate is locked. A villager might have the key.';return}
+ quest.gateOpen=true;this.solid=false;this.removed=true;removeItem('Gate Key');setQuest('Explore Beyond the Village');closePopup();
+ }}]
+});
+function drawHouse(ctx,x,y){
+ ctx.save();ctx.translate(x,y);ctx.fillStyle='#9b744d';ctx.fillRect(-43,-23,86,67);
+ ctx.fillStyle='#f4d9a4';ctx.fillRect(-38,-18,76,58);
+ ctx.fillStyle='#8e4936';ctx.beginPath();ctx.moveTo(-53,-24);ctx.lineTo(0,-65);ctx.lineTo(53,-24);ctx.closePath();ctx.fill();
+ ctx.fillStyle='#79543c';ctx.fillRect(-11,8,22,32);ctx.fillStyle='#e4b967';ctx.fillRect(6,23,4,4);
+ ctx.fillStyle='#7cbdcf';ctx.fillRect(-30,-5,15,17);ctx.fillRect(15,-5,15,17);ctx.restore();
+}
+function drawVillager(ctx,x,y){
+ ctx.save();ctx.translate(x,y);ctx.fillStyle='#2e5c8c';ctx.fillRect(-13,-4,26,29);
+ ctx.fillStyle='#e9b788';ctx.beginPath();ctx.arc(0,-16,13,0,Math.PI*2);ctx.fill();
+ ctx.fillStyle='#6a4932';ctx.fillRect(-12,-29,24,8);ctx.fillStyle='#4b392b';ctx.fillRect(-9,24,7,13);ctx.fillRect(3,24,7,13);ctx.restore();
+}
+function drawGate(ctx,x,y){ctx.save();ctx.translate(x,y);ctx.fillStyle='#6c4931';ctx.fillRect(-19,-68,10,136);ctx.fillRect(9,-68,10,136);for(let j=-55;j<55;j+=21){ctx.fillStyle='#a8774a';ctx.fillRect(-17,j,34,13)}ctx.restore()}
+function drawPath(){
+ // Only draw the confirmed village route; do not draw through map dead ends.
+ if(panel>3)return;
+ ctx.fillStyle='#688d59';ctx.fillRect(0,325,W,70);
+ ctx.strokeStyle='#7e9c66';ctx.lineWidth=2;for(let x=12;x<W;x+=53){ctx.beginPath();ctx.moveTo(x,343);ctx.lineTo(x+12,347);ctx.stroke()}
+}
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 function resize(){const rect=game.getBoundingClientRect(),dpr=Math.min(devicePixelRatio||1,2);canvas.width=Math.round(rect.width*dpr);canvas.height=Math.round(rect.height*dpr);ctx.setTransform(canvas.width/W,0,0,canvas.height/H,0,0)}
 new ResizeObserver(resize).observe(game);resize();
@@ -54,7 +114,7 @@ function drawHero(){
  ctx.strokeStyle='#9b5947';ctx.lineWidth=1.4;ctx.beginPath();ctx.arc(0,-24,3.5,.2,Math.PI-.2);ctx.stroke();ctx.restore();
 }
 function draw(){
- drawGrass();
+ drawGrass();drawPath();
  for(const o of visibleObjects()){o.draw?.(ctx);if(nearby(o)){ctx.save();shapePath(o);ctx.strokeStyle='rgba(48,196,94,'+(0.65+0.3*Math.sin(elapsed*5))+')';ctx.lineWidth=4;ctx.shadowColor='#6af08c';ctx.shadowBlur=15;ctx.stroke();ctx.restore()}}
  drawHero();
 }
@@ -64,6 +124,7 @@ function tryExit(x,y){
  const side=x<22?'west':x>W-22?'east':y<42?'north':y>H-22?'south':null;
  if(!side)return false;
  const exit=exits[side];if(!exit||exit.to<1||exit.to>25)return false;
+ if(panel===2&&side==='east'&&!quest.gateOpen)return false;
  const axis=(side==='west'||side==='east')?y:x;
  if(Math.abs(axis-exit.at)>(exit.halfWidth||48))return false;
  panel=exit.to;
@@ -73,7 +134,7 @@ function tryExit(x,y){
 }
 function tick(now){
  const dt=Math.min((now-last)/1000,.04);last=now;elapsed+=dt;
- if(!layer.classList.contains('open')){
+ if(!layer.classList.contains('open')&&!treehouseIntro){
  let dx=Number(keys.has('ArrowRight')||keys.has('d'))-Number(keys.has('ArrowLeft')||keys.has('a'));
  let dy=Number(keys.has('ArrowDown')||keys.has('s'))-Number(keys.has('ArrowUp')||keys.has('w'));
  if(dx&&dy){dx*=Math.SQRT1_2;dy*=Math.SQRT1_2}
@@ -87,12 +148,19 @@ window.addEventListener('keydown',e=>{const key=e.key.length===1?e.key.toLowerCa
 window.addEventListener('keyup',e=>keys.delete(e.key.length===1?e.key.toLowerCase():e.key));
 window.addEventListener('blur',()=>keys.clear());
 canvas.addEventListener('pointerdown',e=>{
- if(layer.classList.contains('open'))return;
+ if(layer.classList.contains('open')||treehouseIntro)return;
  const r=canvas.getBoundingClientRect(),x=(e.clientX-r.left)*W/r.width,y=(e.clientY-r.top)*H/r.height;
  // Click must hit the actual object shape AND the player must be nearby.
  for(const o of visibleObjects().slice().reverse()){if(!nearby(o))continue;shapePath(o);if(ctx.isPointInPath(x,y)){openPopup(o);break}}
 });
-setQuest('');updateInventory();requestAnimationFrame(tick);
+setQuest('Explore Village');updateInventory();requestAnimationFrame(tick);
+function showTreehouse(){
+ treehouseIntro=true;titleEl.textContent='Treehouse';copyEl.textContent='The boy is inside his treehouse.';
+ actionsEl.replaceChildren();const b=document.createElement('button');b.className='primary';b.textContent='EXIT DOOR';
+ b.addEventListener('click',()=>{treehouseIntro=false;closePopup()});actionsEl.appendChild(b);layer.classList.add('open');
+ layer.style.background='rgba(9,25,20,.65)';
+}
+showTreehouse();
 // Internal foundation API for later student-designed content.
 window.team4={panels,hero,inventory,flags,setQuest,addItem,removeItem,openPopup,closePopup,get panel(){return panel}};
 })();
