@@ -21,7 +21,7 @@ const house=(x,y,index)=>({
   if(!quest.started){copyEl.textContent='A cozy room with shelves and a small chest.';actionsEl.replaceChildren();return}
   if(flags.has('emerald'+index)){copyEl.textContent='You already searched this house.';actionsEl.replaceChildren();return}
   flags.add('emerald'+index);quest.emeralds++;addItem(quest.emeralds+' / 5 Emeralds');
-  for(const name of [...inventory])if(/^\\d+ \\/ 5 Emeralds$/.test(name)&&name!==quest.emeralds+' / 5 Emeralds')removeItem(name);
+  for(const name of [...inventory])if(name.endsWith(' / 5 Emeralds')&&name!==quest.emeralds+' / 5 Emeralds')removeItem(name);
   copyEl.textContent='You search the house and find an emerald!';actionsEl.replaceChildren();
   setQuest(quest.emeralds<5?'Find 5 Emeralds ('+quest.emeralds+'/5)':'Bring 5 Emeralds to the Villager');
  }}]
