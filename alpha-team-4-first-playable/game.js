@@ -154,10 +154,12 @@ canvas.addEventListener('pointerdown',e=>{
 });
 setQuest('Explore Village');updateInventory();requestAnimationFrame(tick);
 function showTreehouse(){
- treehouseIntro=true;titleEl.textContent='Treehouse';copyEl.textContent='The boy is inside his treehouse.';
- actionsEl.replaceChildren();const b=document.createElement('button');b.className='primary';b.textContent='EXIT DOOR';
- b.addEventListener('click',()=>{treehouseIntro=false;closePopup();layer.style.background='transparent'});actionsEl.appendChild(b);layer.classList.add('open');
- layer.style.background='rgba(9,25,20,.65)';
+ treehouseIntro=true;
+ const scene=document.querySelector('#treehouse-scene');
+ scene.hidden=false;
+ document.querySelector('#treehouse-door').addEventListener('click',()=>{
+  treehouseIntro=false;scene.hidden=true;hero.x=210;hero.y=360;keys.clear();
+ },{once:true});
 }
 showTreehouse();
 // Internal foundation API for later student-designed content.
