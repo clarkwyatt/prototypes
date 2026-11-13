@@ -5,7 +5,7 @@ const questEl=document.querySelector('#quest-text'),itemsEl=document.querySelect
 const layer=document.querySelector('#popup-layer'),titleEl=document.querySelector('#popup-title'),copyEl=document.querySelector('#popup-copy'),actionsEl=document.querySelector('#popup-actions');
 const W=1120,H=720,keys=new Set(),hero={x:W/2,y:H/2,speed:215};
 let last=performance.now(),panel=1,elapsed=0;
-let treehouseIntro=true;
+let treehouseIntro=true;const roomHero={x:50,y:57};
 const inventory=new Set(),flags=new Set();
 const panels=Array.from({length:25},(_,i)=>({id:i+1,exits:{},objects:[]}));
 const quest={started:false,emeralds:0,gateKey:false,gateOpen:false};
@@ -47,6 +47,17 @@ panels[1].objects.push({
  quest.gateOpen=true;this.solid=false;this.removed=true;removeItem('Gate Key');setQuest('Explore Beyond the Village');closePopup();
  }}]
 });
+function drawTreehouse(){
+ const x=340,y=230;
+ ctx.save();ctx.translate(x,y);
+ ctx.fillStyle='#72503a';ctx.beginPath();ctx.ellipse(0,92,65,20,0,0,Math.PI*2);ctx.fill();
+ ctx.fillStyle='#825331';ctx.fillRect(-19,-4,38,108);
+ ctx.fillStyle='#4b8a51';for(const [dx,dy,r] of [[-70,-52,66],[0,-100,84],[75,-55,65]]){ctx.beginPath();ctx.arc(dx,dy,r,0,Math.PI*2);ctx.fill()}
+ ctx.fillStyle='#c2935c';ctx.fillRect(-55,-36,110,85);
+ ctx.fillStyle='#8a5437';ctx.beginPath();ctx.moveTo(-67,-37);ctx.lineTo(0,-91);ctx.lineTo(67,-37);ctx.closePath();ctx.fill();
+ ctx.fillStyle='#6c452c';ctx.fillRect(-13,5,26,44);ctx.fillStyle='#b6dfdf';ctx.fillRect(20,-19,22,24);
+ ctx.strokeStyle='#8b603d';ctx.lineWidth=8;ctx.beginPath();ctx.moveTo(-18,45);ctx.lineTo(-18,116);ctx.moveTo(18,45);ctx.lineTo(18,116);for(let yy=60;yy<116;yy+=17){ctx.moveTo(-18,yy);ctx.lineTo(18,yy)}ctx.stroke();ctx.restore();
+}
 function drawHouse(ctx,x,y){
  ctx.save();ctx.translate(x,y);ctx.fillStyle='#9b744d';ctx.fillRect(-43,-23,86,67);
  ctx.fillStyle='#f4d9a4';ctx.fillRect(-38,-18,76,58);
@@ -99,21 +110,22 @@ function drawGrass(){
  for(let i=0;i<760;i++){const x=random()*W,y=random()*H;ctx.strokeStyle=random()>.5?'#7eb46f':'#b5d99b';ctx.lineWidth=1.1;ctx.beginPath();ctx.moveTo(x,y+3);ctx.lineTo(x-2,y-2);ctx.moveTo(x,y+3);ctx.lineTo(x+2,y-3);ctx.stroke()}
  for(let i=0;i<24;i++){const x=18+random()*(W-36),y=18+random()*(H-36);ctx.fillStyle=random()>.5?'#fff4d2':'#f9e4f1';for(let p=0;p<5;p++){const a=p*Math.PI*2/5;ctx.beginPath();ctx.arc(x+Math.cos(a)*3,y+Math.sin(a)*3,2.2,0,Math.PI*2);ctx.fill()}ctx.fillStyle='#e8bb58';ctx.beginPath();ctx.arc(x,y,1.8,0,Math.PI*2);ctx.fill()}
 }
-function drawHero(){
- ctx.save();ctx.translate(hero.x,hero.y);ctx.lineCap='round';ctx.lineJoin='round';
- ctx.fillStyle='#0003';ctx.beginPath();ctx.ellipse(0,25,18,6,0,0,Math.PI*2);ctx.fill();
- ctx.strokeStyle='#334155';ctx.lineWidth=7;ctx.beginPath();ctx.moveTo(-6,7);ctx.lineTo(-8,19);ctx.moveTo(6,7);ctx.lineTo(8,19);ctx.stroke();
- ctx.strokeStyle='#252525';ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(-9,20);ctx.lineTo(-3,20);ctx.moveTo(5,20);ctx.lineTo(11,20);ctx.stroke();
- ctx.fillStyle='#386a9b';ctx.beginPath();ctx.roundRect(-11,2,22,11,4);ctx.fill();
- ctx.strokeStyle='#efbd91';ctx.lineWidth=6;ctx.beginPath();ctx.moveTo(-10,-10);ctx.lineTo(-15,2);ctx.moveTo(10,-10);ctx.lineTo(15,2);ctx.stroke();
- ctx.fillStyle='#5b9a68';ctx.beginPath();ctx.roundRect(-12,-16,24,22,6);ctx.fill();
- ctx.fillStyle='#efbd91';ctx.fillRect(-4,-20,8,7);ctx.beginPath();ctx.arc(0,-27,11,0,Math.PI*2);ctx.fill();
- ctx.fillStyle='#49372e';ctx.beginPath();ctx.arc(0,-30,11,Math.PI,Math.PI*2);ctx.lineTo(10,-27);ctx.quadraticCurveTo(0,-34,-10,-27);ctx.fill();
- ctx.fillStyle='#27342f';for(const x of [-4,4]){ctx.beginPath();ctx.arc(x,-27,1.1,0,Math.PI*2);ctx.fill()}
- ctx.strokeStyle='#9b5947';ctx.lineWidth=1.4;ctx.beginPath();ctx.arc(0,-24,3.5,.2,Math.PI-.2);ctx.stroke();ctx.restore();
+function drawHero(c=ctx,x=hero.x,y=hero.y){
+ c.save();c.translate(x,y);c.lineCap='round';c.lineJoin='round';
+ c.fillStyle='#0003';c.beginPath();c.ellipse(0,25,18,6,0,0,Math.PI*2);c.fill();
+ c.strokeStyle='#334155';c.lineWidth=7;c.beginPath();c.moveTo(-6,7);c.lineTo(-8,19);c.moveTo(6,7);c.lineTo(8,19);c.stroke();
+ c.strokeStyle='#252525';c.lineWidth=5;c.beginPath();c.moveTo(-9,20);c.lineTo(-3,20);c.moveTo(5,20);c.lineTo(11,20);c.stroke();
+ c.fillStyle='#386a9b';c.beginPath();c.roundRect(-11,2,22,11,4);c.fill();
+ c.strokeStyle='#efbd91';c.lineWidth=6;c.beginPath();c.moveTo(-10,-10);c.lineTo(-15,2);c.moveTo(10,-10);c.lineTo(15,2);c.stroke();
+ c.fillStyle='#5b9a68';c.beginPath();c.roundRect(-12,-16,24,22,6);c.fill();
+ c.fillStyle='#efbd91';c.fillRect(-4,-20,8,7);c.beginPath();c.arc(0,-27,11,0,Math.PI*2);c.fill();
+ c.fillStyle='#49372e';c.beginPath();c.arc(0,-30,11,Math.PI,Math.PI*2);c.lineTo(10,-27);c.quadraticCurveTo(0,-34,-10,-27);c.fill();
+ c.fillStyle='#27342f';for(const x of [-4,4]){c.beginPath();c.arc(x,-27,1.1,0,Math.PI*2);c.fill()}
+ c.strokeStyle='#9b5947';c.lineWidth=1.4;c.beginPath();c.arc(0,-24,3.5,.2,Math.PI-.2);c.stroke();c.restore();
 }
 function draw(){
  drawGrass();drawPath();
+ if(panel===1)drawTreehouse();
  for(const o of visibleObjects()){o.draw?.(ctx);if(nearby(o)){ctx.save();shapePath(o);ctx.strokeStyle='rgba(48,196,94,'+(0.65+0.3*Math.sin(elapsed*5))+')';ctx.lineWidth=4;ctx.shadowColor='#6af08c';ctx.shadowBlur=15;ctx.stroke();ctx.restore()}}
  drawHero();
 }
@@ -133,7 +145,12 @@ function tryExit(x,y){
 }
 function tick(now){
  const dt=Math.min((now-last)/1000,.04);last=now;elapsed+=dt;
- if(!layer.classList.contains('open')&&!treehouseIntro){
+ if(treehouseIntro){
+ const rx=Number(keys.has('ArrowRight')||keys.has('d'))-Number(keys.has('ArrowLeft')||keys.has('a'));
+ const ry=Number(keys.has('ArrowDown')||keys.has('s'))-Number(keys.has('ArrowUp')||keys.has('w'));
+ roomHero.x=clamp(roomHero.x+rx*dt*25,33,76);roomHero.y=clamp(roomHero.y+ry*dt*30,32,76);
+ const el=document.querySelector('#room-hero');el.style.left=roomHero.x+'%';el.style.top=roomHero.y+'%';
+ }else if(!layer.classList.contains('open')){
  let dx=Number(keys.has('ArrowRight')||keys.has('d'))-Number(keys.has('ArrowLeft')||keys.has('a'));
  let dy=Number(keys.has('ArrowDown')||keys.has('s'))-Number(keys.has('ArrowUp')||keys.has('w'));
  if(dx&&dy){dx*=Math.SQRT1_2;dy*=Math.SQRT1_2}
@@ -157,8 +174,9 @@ function showTreehouse(){
  treehouseIntro=true;
  const scene=document.querySelector('#treehouse-scene');
  scene.hidden=false;
+ const hc=document.querySelector('#room-hero'),hctx=hc.getContext('2d');hctx.clearRect(0,0,100,130);hctx.setTransform(1.6,0,0,1.6,50,83);drawHero(hctx,0,0);
  document.querySelector('#treehouse-door').addEventListener('click',()=>{
-  treehouseIntro=false;scene.hidden=true;hero.x=210;hero.y=360;keys.clear();
+  treehouseIntro=false;scene.hidden=true;hero.x=340;hero.y=390;keys.clear();
  },{once:true});
 }
 showTreehouse();
