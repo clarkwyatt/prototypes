@@ -1,16 +1,31 @@
-// Team 4 foundation. Add panel exits and game objects only after receiving the team's map.
+// Team 4 foundation. Keep the existing route and wait for the team's map before adding more.
 (() => {
 const canvas=document.querySelector('#world'),ctx=canvas.getContext('2d'),game=document.querySelector('#game');
 const questEl=document.querySelector('#quest-text'),itemsEl=document.querySelector('#items');
 const layer=document.querySelector('#popup-layer'),titleEl=document.querySelector('#popup-title'),copyEl=document.querySelector('#popup-copy'),actionsEl=document.querySelector('#popup-actions');
 const W=1120,H=720,keys=new Set(),hero={x:W/2,y:H/2,speed:215};
+const GRID_SIZE=5;
+const sides={west:[-1,0,'east'],east:[1,0,'west'],north:[0,-1,'south'],south:[0,1,'north']};
+const bounds={left:22,right:W-22,top:42,bottom:H-22};
 let last=performance.now(),panel=1,elapsed=0;
 let treehouseIntro=true;const roomHero={x:50,y:57};
 const inventory=new Set(),flags=new Set();
-const panels=Array.from({length:25},(_,i)=>({id:i+1,exits:{},objects:[]}));
+const panels=Array.from({length:GRID_SIZE*GRID_SIZE},(_,i)=>({
+ id:i+1,row:Math.floor(i/GRID_SIZE),col:i%GRID_SIZE,exits:{},objects:[]
+}));
 const quest={started:false,emeralds:0,gateKey:false,gateOpen:false};
-const passage=(a,side,b,at=360)=>{panels[a-1].exits[side]={to:b,at,halfWidth:90}};
-passage(1,'east',2);passage(2,'west',1);passage(2,'east',3);passage(3,'west',2);
+// Register both ends together so the opening and path line up across the seam.
+function connect(id,side,at,halfWidth,canExit=()=>true){
+ const from=panels[id-1], [dx,dy,opposite]=sides[side];
+ if(!from)return;
+ const col=from.col+dx,row=from.row+dy;
+ if(col<0||col>=GRID_SIZE||row<0||row>=GRID_SIZE)return;
+ const to=panels[row*GRID_SIZE+col];
+ from.exits[side]={to:to.id,at,halfWidth,canExit};
+ to.exits[opposite]={to:from.id,at,halfWidth,canExit};
+}
+connect(1,'east',H/2,35);
+connect(2,'east',H/2,35,()=>quest.gateOpen);
 // Only the first village route is enabled until the remaining map is built.
 const housePositions=[[210,230],[410,230],[610,230],[310,520],[570,520]];
 const house=(x,y,index)=>({
@@ -72,13 +87,21 @@ function drawVillager(ctx,x,y){
 }
 function drawGate(ctx,x,y){ctx.save();ctx.translate(x,y);ctx.fillStyle='#6c4931';ctx.fillRect(-19,-68,10,136);ctx.fillRect(9,-68,10,136);for(let j=-55;j<55;j+=21){ctx.fillStyle='#a8774a';ctx.fillRect(-17,j,34,13)}ctx.restore()}
 function drawPath(){
- // Only draw the confirmed village route; do not draw through map dead ends.
+ // Render only the existing village route. Its ends stop inside panels 1 and 3.
  if(panel>3)return;
- ctx.fillStyle='#668657';ctx.fillRect(0,325,W,70);
- ctx.strokeStyle='#7e9c66';ctx.lineWidth=2;for(let x=12;x<W;x+=53){ctx.beginPath();ctx.moveTo(x,343);ctx.lineTo(x+12,347);ctx.stroke()}
+ const {west,east}=panels[panel-1].exits,exit=west||east;
+ const left=west?0:W/2,right=east?W:W/2;
+ ctx.fillStyle='#668657';
+ ctx.fillRect(left,exit.at-exit.halfWidth,right-left,2*exit.halfWidth);
+ ctx.strokeStyle='#7e9c66';ctx.lineWidth=2;
+ for(let x=left+12;x<right-14;x+=53){ctx.beginPath();ctx.moveTo(x,exit.at-17);ctx.lineTo(x+12,exit.at-13);ctx.stroke()}
 }
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
-function resize(){const rect=game.getBoundingClientRect(),dpr=Math.min(devicePixelRatio||1,2);canvas.width=Math.round(rect.width*dpr);canvas.height=Math.round(rect.height*dpr);ctx.setTransform(canvas.width/W,0,0,canvas.height/H,0,0)}
+function resize(){
+ const rect=canvas.getBoundingClientRect(),dpr=Math.min(devicePixelRatio||1,2);
+ canvas.width=Math.max(1,Math.round(rect.width*dpr));canvas.height=Math.max(1,Math.round(rect.height*dpr));
+ ctx.setTransform(canvas.width/W,0,0,canvas.height/H,0,0);
+}
 new ResizeObserver(resize).observe(game);resize();
 function setQuest(value=''){questEl.textContent=value}
 function updateInventory(){itemsEl.textContent=[...inventory].join(' · ')||'Empty'}
@@ -103,12 +126,33 @@ function openPopup(object){
 function visibleObjects(){return panels[panel-1].objects.filter(o=>o.visible!==false&&!o.removed)}
 function shapePath(o){const x=o.x,y=o.y,w=o.w||48,h=o.h||48;ctx.beginPath();if(o.shape==='ellipse')ctx.ellipse(x,y,w/2,h/2,0,0,Math.PI*2);else if(o.shape==='polygon'&&o.points?.length){o.points.forEach(([px,py],i)=>i?ctx.lineTo(x+px,y+py):ctx.moveTo(x+px,y+py));ctx.closePath()}else ctx.roundRect(x-w/2,y-h/2,w,h,o.radius||4)}
 function nearby(o){const dx=Math.max(0,Math.abs(hero.x-o.x)-(o.w||0)/2),dy=Math.max(0,Math.abs(hero.y-o.y)-(o.h||0)/2);return Math.hypot(dx,dy)<(o.reach||85)}
+const grass=document.createElement('canvas'),ground=grass.getContext('2d');
+grass.width=W;grass.height=H;
+let grassPanel=0;
 function drawGrass(){
- ctx.fillStyle='#9ecb87';ctx.fillRect(0,0,W,H);
- // Deterministic grass and flowers: same locations on every redraw and resize.
- let seed=(panel*1973+17)>>>0;const random=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296};
- for(let i=0;i<760;i++){const x=random()*W,y=random()*H;ctx.strokeStyle=random()>.5?'#7eb46f':'#b5d99b';ctx.lineWidth=1.1;ctx.beginPath();ctx.moveTo(x,y+3);ctx.lineTo(x-2,y-2);ctx.moveTo(x,y+3);ctx.lineTo(x+2,y-3);ctx.stroke()}
- for(let i=0;i<24;i++){const x=18+random()*(W-36),y=18+random()*(H-36);ctx.fillStyle=random()>.5?'#fff4d2':'#f9e4f1';for(let p=0;p<5;p++){const a=p*Math.PI*2/5;ctx.beginPath();ctx.arc(x+Math.cos(a)*3,y+Math.sin(a)*3,2.2,0,Math.PI*2);ctx.fill()}ctx.fillStyle='#e8bb58';ctx.beginPath();ctx.arc(x,y,1.8,0,Math.PI*2);ctx.fill()}
+ if(grassPanel!==panel){
+  grassPanel=panel;
+  ground.fillStyle='#b4d6a3';ground.fillRect(0,0,W,H);
+  // Each panel has a stable texture that does not shift as the player moves.
+  let seed=(panel*1973+17)>>>0;
+  const random=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296};
+  for(let i=0;i<680;i++){
+   const x=random()*W,y=random()*H,lean=(random()-.5)*3;
+   ground.strokeStyle=random()>.5?'#a3c794':'#c1deaf';ground.lineWidth=1;
+   ground.beginPath();ground.moveTo(x-2,y-2);ground.lineTo(x,y+2);ground.lineTo(x+2+lean,y-3);ground.stroke();
+  }
+  for(let i=0;i<14;i++){
+   const x=18+random()*(W-36),y=18+random()*(H-36);
+   ground.fillStyle=random()>.5?'#fff2d2':'#f5e2ed';
+   ground.beginPath();
+   for(let p=0;p<5;p++){
+    const a=p*Math.PI*2/5,px=x+Math.cos(a)*2,py=y+Math.sin(a)*2;
+    ground.moveTo(px+1.5,py);ground.arc(px,py,1.5,0,Math.PI*2);
+   }
+   ground.fill();ground.fillStyle='#dfb451';ground.beginPath();ground.arc(x,y,1.3,0,Math.PI*2);ground.fill();
+  }
+ }
+ ctx.drawImage(grass,0,0);
 }
 function drawHero(c=ctx,x=hero.x,y=hero.y){
  c.save();c.translate(x,y);c.lineCap='round';c.lineJoin='round';
@@ -129,19 +173,26 @@ function draw(){
  for(const o of visibleObjects()){o.draw?.(ctx);if(nearby(o)){ctx.save();shapePath(o);ctx.strokeStyle='rgba(48,196,94,'+(0.65+0.3*Math.sin(elapsed*5))+')';ctx.lineWidth=4;ctx.shadowColor='#6af08c';ctx.shadowBlur=15;ctx.stroke();ctx.restore()}}
  drawHero();
 }
-function blocked(x,y){for(const o of visibleObjects()){if(!o.solid)continue;ctx.save();shapePath(o);const hit=[[0,0],[-12,-12],[12,-12],[-12,12],[12,12]].some(([dx,dy])=>ctx.isPointInPath(x+dx,y+dy));ctx.restore();if(hit)return true}return false}
-function tryExit(x,y){
- const exits=panels[panel-1].exits;
- const side=x<22?'west':x>W-22?'east':y<42?'north':y>H-22?'south':null;
- if(!side)return false;
- const exit=exits[side];if(!exit||exit.to<1||exit.to>25)return false;
- if(panel===2&&side==='east'&&!quest.gateOpen)return false;
- const axis=(side==='west'||side==='east')?y:x;
- if(Math.abs(axis-exit.at)>(exit.halfWidth||48))return false;
+function hitsPath(x,y){return ctx.isPointInPath(x*canvas.width/W,y*canvas.height/H)}
+function blocked(x,y){for(const o of visibleObjects()){if(!o.solid)continue;shapePath(o);if([[0,0],[-12,-12],[12,-12],[-12,12],[12,12]].some(([dx,dy])=>hitsPath(x+dx,y+dy)))return true}return false}
+function tryExit(side,axis){
+ const exit=panels[panel-1].exits[side];
+ if(!exit||Math.abs(axis-exit.at)>exit.halfWidth||!exit.canExit())return false;
  panel=exit.to;
- hero.x=side==='west'?W-28:side==='east'?28:clamp(x,22,W-22);
- hero.y=side==='north'?H-28:side==='south'?48:clamp(y,42,H-22);
+ if(side==='west')hero.x=bounds.right-6;
+ if(side==='east')hero.x=bounds.left+6;
+ if(side==='north')hero.y=bounds.bottom-6;
+ if(side==='south')hero.y=bounds.top+6;
  return true;
+}
+function moveHero(dx,dy){
+ const x=hero.x+dx,y=hero.y+dy;
+ if(dx&&(x<bounds.left?tryExit('west',hero.y):x>bounds.right&&tryExit('east',hero.y)))return;
+ const nextX=clamp(x,bounds.left,bounds.right);
+ if(!blocked(nextX,hero.y))hero.x=nextX;
+ if(dy&&(y<bounds.top?tryExit('north',hero.x):y>bounds.bottom&&tryExit('south',hero.x)))return;
+ const nextY=clamp(y,bounds.top,bounds.bottom);
+ if(!blocked(hero.x,nextY))hero.y=nextY;
 }
 function tick(now){
  const dt=Math.min((now-last)/1000,.04);last=now;elapsed+=dt;
@@ -154,9 +205,7 @@ function tick(now){
  let dx=Number(keys.has('ArrowRight')||keys.has('d'))-Number(keys.has('ArrowLeft')||keys.has('a'));
  let dy=Number(keys.has('ArrowDown')||keys.has('s'))-Number(keys.has('ArrowUp')||keys.has('w'));
  if(dx&&dy){dx*=Math.SQRT1_2;dy*=Math.SQRT1_2}
- const x=hero.x+dx*hero.speed*dt,y=hero.y+dy*hero.speed*dt;
- if(tryExit(x,hero.y)){}else if(!blocked(clamp(x,22,W-22),hero.y))hero.x=clamp(x,22,W-22);
- if(tryExit(hero.x,y)){}else if(!blocked(hero.x,clamp(y,42,H-22)))hero.y=clamp(y,42,H-22);
+ moveHero(dx*hero.speed*dt,dy*hero.speed*dt);
  }
  draw();requestAnimationFrame(tick);
 }
@@ -167,7 +216,7 @@ canvas.addEventListener('pointerdown',e=>{
  if(layer.classList.contains('open')||treehouseIntro)return;
  const r=canvas.getBoundingClientRect(),x=(e.clientX-r.left)*W/r.width,y=(e.clientY-r.top)*H/r.height;
  // Click must hit the actual object shape AND the player must be nearby.
- for(const o of visibleObjects().slice().reverse()){if(!nearby(o))continue;shapePath(o);if(ctx.isPointInPath(x,y)){openPopup(o);break}}
+ for(const o of visibleObjects().slice().reverse()){if(!nearby(o))continue;shapePath(o);if(hitsPath(x,y)){openPopup(o);break}}
 });
 setQuest('Explore Village');updateInventory();requestAnimationFrame(tick);
 function showTreehouse(){
