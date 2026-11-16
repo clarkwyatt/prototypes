@@ -279,7 +279,29 @@
     const delta=Math.atan2(Math.sin(angle-dogFacing(d)),Math.cos(angle-dogFacing(d)));
     // Match the exact visible red cone. Previously the drawn cone was larger
     // than detection and hidden hedge checks rejected visibly covered meat.
-    return distance < Math.min(width,height)*.37 && Math.abs(delta) < Math.PI/5;
+    return distance <= Math.min(width,height)*.37 && Math.abs(delta) <= Math.PI/5;
+  }
+  // Check the cat's visible body, not only its center point. A cat touching
+  // any part of the rendered vision sector is spotted, including its outer edge.
+  function catOverlapsVisionCone(d){
+    const cx=hero.x*width,cy=hero.y*height;
+    const dx=d.x*width,dy=d.y*height;
+    const radius=Math.min(width,height)*.37;
+    const angle=dogFacing(d);
+    const halfAngle=Math.PI/5;
+    const catRadius=Math.min(width,height)*.022;
+    // Sample the cat's circular footprint, including its outer boundary.
+    if(sight(d,hero.x,hero.y))return true;
+    for(let i=0;i<24;i++){
+      const a=i*Math.PI/12;
+      const px=cx+Math.cos(a)*catRadius;
+      const py=cy+Math.sin(a)*catRadius;
+      const vx=px-dx,vy=py-dy;
+      const dist=Math.hypot(vx,vy);
+      const diff=Math.atan2(Math.sin(Math.atan2(vy,vx)-angle),Math.cos(Math.atan2(vy,vx)-angle));
+      if(dist<=radius && Math.abs(diff)<=halfAngle)return true;
+    }
+    return false;
   }
   function updateDogs(dt){
     if(panel!==18||caught||dialogOpen)return;
@@ -305,7 +327,7 @@
         continue;
       }
       // The cat is always caught when visible, even if meat is in the same cone.
-      if(sight(d,hero.x,hero.y)){
+      if(sight(d,hero.x,hero.y) || catOverlapsVisionCone(d)){
         d.mode="chase";chaseTime=0;
       }else if(d.mode==="watch"){
         const bait=meat.find(m=>m.placed&&!m.used&&!m.claimed&&sight(d,m.x,m.y));
