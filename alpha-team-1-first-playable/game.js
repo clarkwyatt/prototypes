@@ -214,9 +214,8 @@
         // Drop at the cat's feet; only nearby clicks are accepted.
         if(Math.hypot((x-hero.x)*width,(y-hero.y)*height)<Math.min(width,height)*.14){
           const drop={x:hero.x,y:hero.y};carrying=false;
-          meat.push({...drop,used:false});
-          const d=dogs.filter(d=>d.mode==="watch").sort((a,b)=>Math.hypot(a.x-drop.x,a.y-drop.y)-Math.hypot(b.x-drop.x,b.y-drop.y))[0];
-          if(d&&Math.hypot((d.x-drop.x)*width,(d.y-drop.y)*height)<Math.min(width,height)*.48){d.mode="investigate";d.target=drop;}
+          meat.push({...drop,used:false,placed:true});
+          // Dogs notice placed meat only when their cone actually turns toward it.
         }
       }
       return;
@@ -295,18 +294,21 @@
     if(panel!==18||caught||dialogOpen)return;
     mazeClock+=dt;
     for(const d of dogs){
-      if(d.mode==="distracted"){d.timer-=dt;if(d.timer<=0){d.mode="watch";d.target=null;}continue;}
+      if(d.mode==="asleep")continue;
       if(d.mode==="investigate"){
         const dx=(d.target.x-d.x)*width,dy=(d.target.y-d.y)*height,dist=Math.hypot(dx,dy);
-        if(dist<9){d.mode="distracted";d.timer=7;continue;}
+        if(dist<9){d.mode="asleep";d.timer=0;d.target=null;continue;}
         const step=Math.min(dist,Math.min(width,height)*.18*dt);
         const nx=d.x+dx/dist*step/width,ny=d.y+dy/dist*step/height;
-        if(!blocked(nx,ny)){d.x=nx;d.y=ny;}else{d.mode="distracted";d.timer=7;}
+        if(!blocked(nx,ny)){d.x=nx;d.y=ny;}else{d.mode="watch";d.target=null;}
         continue;
       }
+      // The cat is always caught when visible, even if meat is in the same cone.
       if(sight(d,hero.x,hero.y)){
-        // A visible cat triggers a short rush, then the caught popup.
         d.mode="chase";chaseTime=0;
+      }else if(d.mode==="watch"){
+        const bait=meat.find(m=>m.placed&&!m.used&&sight(d,m.x,m.y));
+        if(bait){bait.used=true;d.mode="investigate";d.target={x:bait.x,y:bait.y};}
       }
       if(d.mode==="chase"){
         const dx=(hero.x-d.x)*width,dy=(hero.y-d.y)*height,dist=Math.hypot(dx,dy);
@@ -344,6 +346,12 @@
       ellipse(u*.036,-u*.007,u*.003,u*.003,"#2d302a");
       ellipse(u*.036,u*.007,u*.003,u*.003,"#2d302a");
       ctx.restore();
+      if(d.mode==="asleep"){
+        // Gentle rising sleep letters above the dog, no permanent HUD text.
+        ctx.save();ctx.fillStyle="#f9f4dd";ctx.strokeStyle="#315d48";ctx.lineWidth=2;ctx.font=`900 ${Math.max(15,u*.023)}px Nunito,system-ui,sans-serif`;ctx.textAlign="center";
+        for(let j=0;j<3;j++){const rise=(mazeClock*.35+j/3)%1;const zx=x+u*(.018+j*.018),zy=y-u*(.045+rise*.075);ctx.strokeText("z",zx,zy);ctx.fillText("z",zx,zy);}
+        ctx.restore();
+      }
     }
     if(carrying){ellipse(hero.x*width+u*.020,hero.y*height-u*.013,u*.014,u*.009,"#8b4b2b");}
   }
@@ -404,16 +412,17 @@
 
     if(panel===22)path([[1,.55],[.84,.55],[.84,.73]],unit*.12,"#b89e79");
     if(panel===18){
-      // Leafy maze hedges: three staggered turns and protected pockets.
+      // Garden-maze walls: leafy hedges with flowering corners and textured bases.
       for(const [a,b] of mazeHedges){
         const x1=a[0]*width,y1=a[1]*height,x2=b[0]*width,y2=b[1]*height;
-        ctx.strokeStyle="#275e3c";ctx.lineWidth=unit*.075;ctx.lineCap="round";
+        ctx.strokeStyle="#275e3c";ctx.lineWidth=unit*.080;ctx.lineCap="round";
         ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();
         const len=Math.hypot(x2-x1,y2-y1);
         for(let d=0;d<=len;d+=unit*.034){
           const t=len?d/len:0,x=x1+(x2-x1)*t,y=y1+(y2-y1)*t;
           ellipse(x-unit*.012,y-unit*.012,unit*.034,unit*.030,"#3b8050");
           ellipse(x+unit*.013,y+unit*.009,unit*.029,unit*.026,"#4c945a");
+          if(Math.floor(d/(unit*.034))%7===0){ellipse(x-unit*.004,y-unit*.023,unit*.008,unit*.008,"#f4d9a3");ellipse(x+unit*.002,y-unit*.024,unit*.004,unit*.004,"#fff8dd");}
         }
       }
     }
