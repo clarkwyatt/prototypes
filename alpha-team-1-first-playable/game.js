@@ -277,18 +277,9 @@
     const dx=(px-d.x)*width,dy=(py-d.y)*height;
     const distance=Math.hypot(dx,dy),angle=Math.atan2(dy,dx);
     const delta=Math.atan2(Math.sin(angle-dogFacing(d)),Math.cos(angle-dogFacing(d)));
-    if(distance>=Math.min(width,height)*.28 || Math.abs(delta)>=Math.PI/5)return false;
-    // Hedge walls block sight as well as movement.
-    for(let i=1;i<16;i++){
-      const t=i/16,sx=d.x+(px-d.x)*t,sy=d.y+(py-d.y)*t;
-      for(const [a,b] of mazeHedges){
-        const ax=a[0]*width,ay=a[1]*height,bx=b[0]*width,by=b[1]*height;
-        const vx=bx-ax,vy=by-ay,qx=sx*width-ax,qy=sy*height-ay;
-        const k=Math.max(0,Math.min(1,(qx*vx+qy*vy)/(vx*vx+vy*vy)));
-        if(Math.hypot(qx-k*vx,qy-k*vy)<Math.min(width,height)*.038)return false;
-      }
-    }
-    return true;
+    // Match the exact visible red cone. Previously the drawn cone was larger
+    // than detection and hidden hedge checks rejected visibly covered meat.
+    return distance < Math.min(width,height)*.37 && Math.abs(delta) < Math.PI/5;
   }
   function updateDogs(dt){
     if(panel!==18||caught||dialogOpen)return;
@@ -300,7 +291,9 @@
         if(dist<9){d.mode="asleep";d.timer=0;d.target=null;continue;}
         const step=Math.min(dist,Math.min(width,height)*.18*dt);
         const nx=d.x+dx/dist*step/width,ny=d.y+dy/dist*step/height;
-        if(!blocked(nx,ny)){d.x=nx;d.y=ny;}else{d.mode="watch";d.target=null;}
+        // A distracted dog follows the bait it spotted, even across hedge geometry.
+        // Keep this distinct from the cat's hedge collision.
+        d.x=nx;d.y=ny;
         continue;
       }
       // The cat is always caught when visible, even if meat is in the same cone.
