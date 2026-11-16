@@ -769,9 +769,9 @@
     catAssetsReady=true;
     catStatus.textContent="";
     let saved=null;try{saved=localStorage.getItem("alpha-team1-cat");}catch(_){}
-    if(catKinds.some(([id])=>id===saved)){
-      selectedCat=saved;catScreen.remove();
-    }else chooseCat("tuxedo");
+    // Always show character selection at launch. Remember the last choice
+    // only as the highlighted default, never auto-start the adventure.
+    chooseCat(catKinds.some(([id])=>id===saved) ? saved : "tuxedo");
   }
   loadCatSprites().catch(error=>{
     console.error("Cat sprite loading failed:",error);
