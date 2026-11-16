@@ -73,9 +73,9 @@
   }
   function interact(target){
     const type=target.type;
-    if(!descriptions[type])return;
+    if(type!=="VILLAGE_ART"&&!descriptions[type])return;
     dialogOpen=true;keys.clear();modal.classList.add("open");
-    const [title,description]=descriptions[type];
+    const [title,description]=type==="VILLAGE_ART"?[target.title,target.description]:descriptions[type];
     modal.querySelector("#interaction-title").textContent=title;
     const actions=modal.querySelector("#interaction-actions"),p=modal.querySelector("#interaction-description");
     p.hidden=true;p.textContent=description;actions.replaceChildren();
@@ -124,7 +124,49 @@
       closeInteraction();
     }
   });
+  // Art-matched, nonblocking interactions for the four illustrated village panels.
+  // Each rectangle is normalized to the full illustrated screen.
+  const villageHotspots={
+    1:[
+      ["Cat's Home","A welcoming cottage with a blue door and a golden paw print. This is where your adventure begins.",.35,.40,.35,.45],
+      ["Village Cottage","A cozy cottage with a sunny yellow roof and flower-filled window box.",.83,.26,.21,.34],
+      ["Blue-Roof Cottage","A little cottage with a bright blue roof and a wooden crate outside.",.86,.72,.24,.30],
+      ["Old Oak Tree","An enormous tree spreads its branches over the village lawn.",.19,.38,.27,.52],
+      ["Berry Bush","A leafy bush covered in ripe red berries.",.22,.83,.18,.19],
+      ["Paw Sign","A wooden sign marked with a paw print stands beside your home.",.65,.65,.08,.13],
+      ["Flower Garden","Colorful flowers brighten the grass beside the cottages.",.67,.89,.10,.10]
+    ],
+    2:[
+      ["Blue-Roof Cottage","A cheerful blue-roofed home with a barrel and a neat stack of logs.",.28,.43,.28,.43],
+      ["Golden-Roof Cottage","A sunny cottage with a wooden door, flowers, and a crate outside.",.79,.47,.26,.46],
+      ["Old Oak Tree","A towering tree provides shade between the village houses.",.54,.25,.27,.48],
+      ["Flower Bush","A flowering shrub full of bright pink blossoms.",.28,.82,.13,.14],
+      ["Garden Bush","A thick green bush grows near the center of the lawn.",.51,.67,.16,.20],
+      ["Village Flowers","Little white and pink flowers sway in the grass.",.84,.86,.15,.13]
+    ],
+    6:[
+      ["Purple-Roof Cottage","A lovely home with a purple tiled roof and warm glowing windows.",.29,.39,.32,.43],
+      ["Blue-Roof Cottage","A small blue-roofed cottage sits beside the path.",.85,.42,.25,.35],
+      ["Old Oak Tree","A broad green tree shades the village crossroads.",.59,.26,.28,.46],
+      ["Village Gate","A sturdy locked wooden gate. The village continues beyond it, but the gate is shut.",.61,.80,.28,.18],
+      ["Gate Lantern","A lantern glows warmly beside the village gate.",.50,.67,.08,.14],
+      ["Flower Bed","Pink flowers grow beside the fence.",.92,.69,.10,.12]
+    ],
+    7:[
+      ["Golden-Roof Cottage","A cottage with a golden roof, climbing vines, and a wooden barrel.",.27,.36,.28,.45],
+      ["Blue-Roof Cottage","A cozy blue-roofed home with a bright window box.",.78,.50,.26,.42],
+      ["Apple Tree","A healthy tree is loaded with shiny red apples.",.60,.26,.26,.49],
+      ["Garden Bush","A leafy green bush grows beside the blue-roofed cottage.",.64,.62,.14,.16],
+      ["Flower Patch","A cheerful patch of flowers adds color to the village lawn.",.48,.69,.13,.12]
+    ]
+  };
+  function villageTargets(){
+    return (villageHotspots[panel]||[]).map(([title,description,x,y,w,h],i)=>({
+      type:"VILLAGE_ART",title,description,x,y,w,h,id:i
+    }));
+  }
   function targets(){
+    if(illustratedPanels.has(panel))return villageTargets();
     const list=(objects[panel]||[]).map(([type,x,y],i)=>({type,x,y,id:i}));
     if(panel===12){list.push({type:"DOCK",x:.81,y:.29,id:100});}
     if(panel===11&&!forceFieldRemoved)list.push({type:"FORCE",x:.975,y:.76,id:101});
@@ -135,7 +177,8 @@
     let found=null,dist=Infinity;
     for(const target of targets()){
       const d=Math.hypot((hero.x-target.x)*width,(hero.y-target.y)*height);
-      const reach=target.type==="LAKE"?Math.min(width,height)*.32:
+      const reach=target.type==="VILLAGE_ART"?Math.min(width,height)*.27:
+        target.type==="LAKE"?Math.min(width,height)*.32:
         ["FORCE","DOOR","NPC","DOCK"].includes(target.type)?Math.min(width,height)*.23:
         Math.min(width,height)*.19;
       if(d<reach&&d<dist){found=target;dist=d;}
@@ -151,7 +194,9 @@
     ctx.strokeStyle="rgba(85,255,115,"+(.65+pulse*.32)+")";
     ctx.lineWidth=3+pulse*2;ctx.shadowColor="#5dff7e";ctx.shadowBlur=7+pulse*11;
     ctx.beginPath();
-    if(t.type==="H"||t.type==="HOME"){
+    if(t.type==="VILLAGE_ART"){
+      ctx.roundRect((t.x-t.w/2)*width,(t.y-t.h/2)*height,t.w*width,t.h*height,9);
+    }else if(t.type==="H"||t.type==="HOME"){
       const w=unit*(t.type==="HOME"?.29:.255),h=unit*(t.type==="HOME"?.23:.205);
       // Trace the cottage's actual roof and walls, not a circle.
       ctx.moveTo(x-w*.52,y-h*.47);
@@ -187,6 +232,7 @@
     const unit=Math.min(width,height);
     const dx=x-target.x*width,dy=y-target.y*height;
     switch(target.type){
+      case "VILLAGE_ART": return Math.abs(x/width-target.x)<=target.w/2 && Math.abs(y/height-target.y)<=target.h/2;
       case "T": return (dx/(unit*.093))**2+((dy+unit*.038)/(unit*.108))**2<=1 ||
         (Math.abs(dx)<=unit*.023 && dy>=0 && dy<=unit*.11);
       case "B": return (dx/(unit*.075))**2+(dy/(unit*.052))**2<=1 || ((dx+unit*.027)/(unit*.048))**2+((dy+unit*.023)/(unit*.045))**2<=1;
