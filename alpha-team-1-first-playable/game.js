@@ -53,10 +53,11 @@
   let nearby=null, dialogOpen=false;
   let hasRod=false, fish=0, hasKey=false, doorOpen=false;
   let hasPotion=false, forceFieldRemoved=false;
+  let hasGateKey=false; // Temporary pickup at the cat\'s home
   const questEl=document.querySelector("#quest"),itemsEl=document.querySelector("#items");
   function updateHud(){
     questEl.textContent=hasKey&&!doorOpen?"• Unlock the old wooden door":doorOpen?"• Explore beyond the door":"• Explore the Village";
-    itemsEl.textContent=[hasRod?"Fishing Rod":"",fish?"Fish":"",hasKey?"Golden Key":"",hasPotion?"Magic Potion":""].filter(Boolean).join(" · ")||"Empty";
+    itemsEl.textContent=[hasRod?"Fishing Rod":"",fish?"Fish":"",hasKey?"Golden Key":"",hasPotion?"Magic Potion":"",hasGateKey?"Gate Key":""].filter(Boolean).join(" · ")||"Empty";
   }
   const modal=document.createElement("section");
   modal.id="interaction-modal";
@@ -81,6 +82,15 @@
     p.hidden=true;p.textContent=description;actions.replaceChildren();
     const look=button("EXAMINE",()=>{p.hidden=false;actions.replaceChildren(button("OK",closeInteraction));});
     const options=[look];
+    if(panel===1&&type==="VILLAGE_ART"&&target.title==="Cat's Home"&&!hasGateKey){
+      options.push(button("GET GATE KEY",()=>{
+        hasGateKey=true;
+        p.textContent="You picked up the Gate Key!";
+        p.hidden=false;
+        updateHud();
+        actions.replaceChildren(button("OK",closeInteraction));
+      }));
+    }
     if(panel===21&&type==="H"&&target.id===2&&!hasPotion)options.push(button("GET POTION",()=>{
       hasPotion=true;
       p.textContent="You found a Magic Potion! It has been added to your inventory.";
