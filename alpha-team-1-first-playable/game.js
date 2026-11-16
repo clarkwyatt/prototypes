@@ -240,7 +240,7 @@
     [[.76,.31],[.76,1]],
     // Small cul-de-sacs off the main route (not blocking the intended route).
     [[.05,.17],[.13,.17]],[[.13,.17],[.13,.30]],
-    [[.28,.83],[.33,.83]],
+    [[.28,.83],[.315,.83]],[[.28,.83],[.28,1]],
     [[.46,.15],[.52,.15]],
     [[.64,.83],[.69,.83]],
     [[.83,.17],[.91,.17]],[[.91,.17],[.91,.28]]
@@ -263,7 +263,7 @@
   catchModal.querySelector("button").addEventListener("click",resetMaze);
   function resetMaze(){
     dogs=dogSeeds.map((d,i)=>({...d,id:i,mode:"watch",timer:0,target:null,x:d.x,y:d.y}));
-    meat=[{x:.10,y:.51,used:false},{x:.29,y:.79,used:false},{x:.47,y:.21,used:false},{x:.65,y:.79,used:false}];
+    // Each bait sits beyond a guarded sightline, requiring a timed crossing to collect it, then a return to bait the dog.\n    meat=[{x:.345,y:.80,used:false},{x:.50,y:.19,used:false},{x:.705,y:.80,used:false},{x:.885,y:.20,used:false}];
     carrying=false;caught=false;chaseTime=0;mazeClock=0;
     hero.x=.065;hero.y=.50;facing="right";
     catchModal.classList.remove("open");keys.clear();
