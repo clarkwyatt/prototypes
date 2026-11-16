@@ -288,7 +288,7 @@
       if(d.mode==="asleep")continue;
       if(d.mode==="investigate"){
         const dx=(d.target.x-d.x)*width,dy=(d.target.y-d.y)*height,dist=Math.hypot(dx,dy);
-        if(dist<9){d.mode="asleep";d.timer=0;d.target=null;continue;}
+        if(dist<9){d.mode="eating";d.timer=0;continue;}
         const step=Math.min(dist,Math.min(width,height)*.18*dt);
         const nx=d.x+dx/dist*step/width,ny=d.y+dy/dist*step/height;
         // A distracted dog follows the bait it spotted, even across hedge geometry.
@@ -296,12 +296,20 @@
         d.x=nx;d.y=ny;
         continue;
       }
+      if(d.mode==="eating"){
+        d.timer+=dt;
+        if(d.timer>=3){
+          if(d.bait)d.bait.used=true;
+          d.bait=null;d.target=null;d.mode="asleep";d.timer=0;
+        }
+        continue;
+      }
       // The cat is always caught when visible, even if meat is in the same cone.
       if(sight(d,hero.x,hero.y)){
         d.mode="chase";chaseTime=0;
       }else if(d.mode==="watch"){
-        const bait=meat.find(m=>m.placed&&!m.used&&sight(d,m.x,m.y));
-        if(bait){bait.used=true;d.mode="investigate";d.target={x:bait.x,y:bait.y};}
+        const bait=meat.find(m=>m.placed&&!m.used&&!m.claimed&&sight(d,m.x,m.y));
+        if(bait){bait.claimed=true;d.bait=bait;d.mode="investigate";d.target={x:bait.x,y:bait.y};}
       }
       if(d.mode==="chase"){
         const dx=(hero.x-d.x)*width,dy=(hero.y-d.y)*height,dist=Math.hypot(dx,dy);
@@ -350,7 +358,14 @@
         ctx.fillStyle="rgba(225,45,45,.24)";ctx.beginPath();ctx.moveTo(x,y);
         ctx.arc(x,y,radius,a-Math.PI/5,a+Math.PI/5);ctx.closePath();ctx.fill();
       }
-      ctx.save();ctx.translate(x,y);ctx.rotate(d.mode==="watch"?dogFacing(d):d.target?Math.atan2((d.target.y-d.y)*height,(d.target.x-d.x)*width):0);
+      ctx.save();ctx.translate(x,y);
+      ctx.rotate(d.mode==="watch"?dogFacing(d):d.target?Math.atan2((d.target.y-d.y)*height,(d.target.x-d.x)*width):0);
+      if(d.mode==="eating"){
+        // Three seconds of rhythmic head dips while chewing at the steak.
+        const chew=Math.sin(d.timer*15);
+        ctx.translate(u*.007*chew,0);
+        ctx.rotate(chew*.11);
+      }
       ellipse(0,0,u*.029,u*.023,"#9d7047");
       ellipse(u*.019,0,u*.022,u*.020,"#c59159");
       ellipse(u*.024,-u*.019,u*.010,u*.012,"#6b4631");
