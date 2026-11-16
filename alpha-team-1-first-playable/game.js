@@ -315,7 +315,9 @@
     hero.x=.065;hero.y=.50;facing="right";
     catchModal.classList.remove("open");keys.clear();
   }
+  // Initialize dog state without moving the cat away from the village spawn.
   resetMaze();
+  hero.x=.51;hero.y=.81;facing="down";
   function dogFacing(d){
     const alternate=Math.floor((mazeClock+d.phase)/3)%2===0;
     return d.axis==="horizontal"?(alternate?0:Math.PI):(alternate?Math.PI/2:-Math.PI/2);
