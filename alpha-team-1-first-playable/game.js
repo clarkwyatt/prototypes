@@ -670,6 +670,126 @@
       ellipse(width*.979,height*.51,Math.min(width,height)*.006,Math.min(width,height)*.006,"#e5c66e");
     }
   }
+
+  // Four cosmetic cats, read directly from the checked-in sprite archive.
+  // Keep the ZIP intact: browser-native streaming decompression avoids a build step.
+  const catKinds = [
+    ["tuxedo","Tuxedo"],["gray_tabby","Gray Tabby"],
+    ["calico","Calico"],["black","Black"]
+  ];
+  const catFrames = {};
+  let selectedCat = null, catAssetsReady = false;
+  const catScreen = document.createElement("section");
+  catScreen.id = "choose-cat";
+  catScreen.style.cssText = "position:absolute;inset:0;z-index:100;display:grid;place-items:center;background:linear-gradient(155deg,#1a4438,#32644a);padding:20px;overflow:auto";
+  catScreen.innerHTML = '<div style="width:min(690px,100%);padding:26px;border:3px solid #e9d9aa;border-radius:24px;background:#fff9e8;box-shadow:0 20px 60px #102e2566;text-align:center"><h1 style="margin:0 0 20px;color:#286348;font-size:clamp(26px,4vw,38px)">Choose Your Cat</h1><div id="cat-choices" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px"></div><p id="cat-loading" role="status" style="min-height:24px;font-weight:800;color:#53705c">Loading cats…</p><button id="cat-play" type="button" disabled style="background:#2b9257;color:white;border:0;border-radius:14px;padding:14px 34px;font:900 18px Nunito,system-ui,sans-serif;cursor:pointer;opacity:.5">LET\'S PLAY!</button></div>';
+  document.querySelector("#game").appendChild(catScreen);
+  const catChoices = catScreen.querySelector("#cat-choices");
+  const catPlay = catScreen.querySelector("#cat-play");
+  const catStatus = catScreen.querySelector("#cat-loading");
+  const catCards = new Map();
+  function chooseCat(id) {
+    selectedCat = id;
+    for (const [key,card] of catCards) {
+      const active = key === id;
+      card.style.borderColor = active ? "#2b9257" : "#e7d7ad";
+      card.style.background = active ? "#d8f3df" : "#fffdf6";
+      card.setAttribute("aria-pressed",String(active));
+    }
+    catPlay.disabled = !catAssetsReady;
+    catPlay.style.opacity = catAssetsReady ? "1" : ".5";
+  }
+  for (const [id,name] of catKinds) {
+    const card = document.createElement("button");
+    card.type = "button";
+    card.style.cssText = "display:flex;flex-direction:column;align-items:center;gap:5px;min-width:0;padding:10px;border:3px solid #e7d7ad;border-radius:16px;background:#fffdf6;color:#254a37;font:900 16px Nunito,system-ui,sans-serif;cursor:pointer";
+    const portrait = document.createElement("img");
+    portrait.alt = ""; portrait.width = 80; portrait.height = 80;
+    portrait.style.cssText = "width:80px;height:80px;object-fit:contain;image-rendering:pixelated";
+    card.append(portrait,document.createTextNode(name));
+    card.addEventListener("click",()=>chooseCat(id));
+    catChoices.appendChild(card); catCards.set(id,card);
+  }
+  catPlay.addEventListener("click",()=>{
+    if (!catAssetsReady || !selectedCat) return;
+    try { localStorage.setItem("alpha-team1-cat",selectedCat); } catch (_) {}
+    catScreen.remove(); keys.clear();
+  });
+  async function loadCatSprites() {
+    const response = await fetch("assets/cats/team1_cat_sprites_v1.zip");
+    if (!response.ok) throw Error("Sprite archive HTTP "+response.status);
+    const data = new Uint8Array(await response.arrayBuffer());
+    const view = new DataView(data.buffer);
+    const decoder = new TextDecoder();
+    const files = new Map();
+    // Read the ZIP central directory, which supplies the authoritative sizes/offsets.
+    for(let p=0;p+46<=data.length;p++){
+      if(view.getUint32(p,true)!==0x02014b50)continue;
+      const method=view.getUint16(p+10,true), compressed=view.getUint32(p+20,true);
+      const nameLen=view.getUint16(p+28,true),extra=view.getUint16(p+30,true),comment=view.getUint16(p+32,true);
+      const name=decoder.decode(data.subarray(p+46,p+46+nameLen));
+      const local=view.getUint32(p+42,true);
+      if(view.getUint32(local,true)!==0x04034b50)throw Error("Invalid ZIP entry");
+      const start=local+30+view.getUint16(local+26,true)+view.getUint16(local+28,true);
+      files.set(name,{start,compressed,method});
+      p+=45+nameLen+extra+comment;
+    }
+    const expected=catKinds.length*4*3;
+    if([...files.keys()].filter(n=>/\.png$/.test(n)).length!==expected)throw Error("Expected 48 cat frames");
+    async function unpack(name){
+      const f=files.get("cat_sprites/"+name);
+      if(!f)throw Error("Missing sprite: "+name);
+      const bytes=data.slice(f.start,f.start+f.compressed);
+      let raw;
+      if(f.method===0)raw=bytes;
+      else if(f.method===8){
+        const stream=new Blob([bytes]).stream().pipeThrough(new DecompressionStream("deflate-raw"));
+        raw=new Uint8Array(await new Response(stream).arrayBuffer());
+      } else throw Error("Unsupported ZIP compression");
+      if(raw.length<26||raw[0]!==137||raw[1]!==80||raw[2]!==78||raw[3]!==71)throw Error("Invalid PNG "+name);
+      // PNG color type 6 is RGBA, 4 is grayscale+alpha, 3 can use tRNS.
+      if(![3,4,6].includes(raw[25]))throw Error("Sprite missing transparency: "+name);
+      const url=URL.createObjectURL(new Blob([raw],{type:"image/png"}));
+      const img=new Image();
+      try {img.src=url;await img.decode();return img;}
+      finally {URL.revokeObjectURL(url);}
+    }
+    for(const [id] of catKinds){
+      catFrames[id]={};
+      for(const direction of ["up","down","left","right"]){
+        catFrames[id][direction]=await Promise.all([0,1,2].map(i=>unpack(id+"_"+direction+"_"+i+".png")));
+      }
+      const portrait=catCards.get(id).querySelector("img");
+      const img=catFrames[id].down[0];
+      const portraitCanvas=document.createElement("canvas");
+      portraitCanvas.width=img.naturalWidth;portraitCanvas.height=img.naturalHeight;
+      portraitCanvas.getContext("2d").drawImage(img,0,0);
+      portrait.src=portraitCanvas.toDataURL("image/png");
+    }
+    catAssetsReady=true;
+    catStatus.textContent="";
+    let saved=null;try{saved=localStorage.getItem("alpha-team1-cat");}catch(_){}
+    if(catKinds.some(([id])=>id===saved)){
+      selectedCat=saved;catScreen.remove();
+    }else chooseCat("tuxedo");
+  }
+  loadCatSprites().catch(error=>{
+    console.error("Cat sprite loading failed:",error);
+    catStatus.textContent="Unable to load cat sprites. Refresh to try again.";
+  });
+  function drawPixelCat(){
+    const sprites=catFrames[selectedCat];
+    const frames=sprites && sprites[facing];
+    if(!frames)return;
+    const img=frames[walking ? Math.floor(walkTime*9)%3 : 0];
+    // Match the original cat's small footprint, without changing collision dimensions.
+    const h=64, w=h*img.naturalWidth/img.naturalHeight;
+    ctx.save();ctx.imageSmoothingEnabled=false;
+    ellipse(0,19,18,5,"rgba(35,55,36,.24)");
+    ctx.drawImage(img,-w/2,-h+23,w,h);
+    ctx.restore();
+  }
+
   // Four-direction animated ginger cat. Feet, tail and body move while walking.
 
   function drawHero() {
@@ -747,7 +867,8 @@
     ctx.translate(hero.x*width,hero.y*height);
     // Keep the cat proportional to houses and maze dogs across all panels.
     ctx.scale(.72,.72);
-    drawHero();
+    if(catAssetsReady && selectedCat) drawPixelCat();
+    else drawHero();
     ctx.restore();
     drawMazeActors();
     highlight();
@@ -1103,7 +1224,7 @@
       else facing = dy > 0 ? "down" : "up";
       walkTime += dt;
     }
-    if(!dialogOpen&&!caught)move(dx*hero.speed*dt,dy*hero.speed*dt);
+    if(!dialogOpen&&!caught&&catAssetsReady&&!catScreen.isConnected)move(dx*hero.speed*dt,dy*hero.speed*dt);
     updateDogs(dt);
     try { draw(); } catch(error) { console.error("Rendering failed:",error); }
     requestAnimationFrame(update);
