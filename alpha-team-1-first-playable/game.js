@@ -230,20 +230,24 @@
     if(clickedTarget(target,x,y))interact(target);
   });
   // Normalized maze hedge segments; same geometry drives drawing and collision.
+  // Staggered garden hedges create one readable west-to-east route.
+  // The bends and short branches add variety without closing the central passage.
   const mazeHedges=[
-    [[.18,.10],[.18,.32]],[[.18,.32],[.43,.32]],
-    [[.40,.10],[.40,.21]],[[.58,.10],[.58,.38]],
-    [[.35,.47],[.35,.76]],[[.35,.47],[.56,.47]],
-    [[.13,.68],[.25,.68]],[[.57,.60],[.57,.87]],
-    [[.57,.60],[.78,.60]],[[.79,.16],[.79,.45]],
-    [[.79,.76],[.79,.90]]
+    [[.16,.09],[.16,.30]],[[.16,.30],[.31,.30]],
+    [[.37,.08],[.37,.20]],[[.37,.20],[.44,.20]],
+    [[.55,.08],[.55,.29]],[[.55,.29],[.63,.29]],
+    [[.77,.10],[.77,.29]],
+    [[.19,.70],[.19,.86]],[[.19,.70],[.29,.70]],
+    [[.40,.73],[.40,.91]],[[.40,.73],[.48,.73]],
+    [[.61,.70],[.61,.87]],[[.61,.70],[.71,.70]],
+    [[.83,.72],[.83,.89]]
   ];
-  // Four sentries scan opposite directions, holding each for five seconds.
+  // Four sequential lookouts, with meat available before each guarded stretch.
   const dogSeeds=[
-    {x:.31,y:.18,axis:"horizontal",phase:0},
-    {x:.70,y:.36,axis:"vertical",phase:4.2},
-    {x:.70,y:.73,axis:"horizontal",phase:7.8},
-    {x:.29,y:.83,axis:"vertical",phase:2.5}
+    {x:.27,y:.35,axis:"vertical",phase:0},
+    {x:.47,y:.65,axis:"vertical",phase:4.2},
+    {x:.68,y:.35,axis:"vertical",phase:7.8},
+    {x:.88,y:.65,axis:"vertical",phase:2.5}
   ];
   let facing = "down", walking = false, walkTime = 0;
   let dogs=[], meat=[], carrying=false, caught=false, mazeClock=0, chaseTime=0;
@@ -256,7 +260,7 @@
   catchModal.querySelector("button").addEventListener("click",resetMaze);
   function resetMaze(){
     dogs=dogSeeds.map((d,i)=>({...d,id:i,mode:"watch",timer:0,target:null,x:d.x,y:d.y}));
-    meat=[{x:.09,y:.73,used:false},{x:.49,y:.38,used:false},{x:.92,y:.56,used:false},{x:.44,y:.83,used:false}];
+    meat=[{x:.12,y:.49,used:false},{x:.36,y:.49,used:false},{x:.57,y:.49,used:false},{x:.77,y:.49,used:false}];
     carrying=false;caught=false;chaseTime=0;mazeClock=0;
     hero.x=.065;hero.y=.50;facing="right";
     catchModal.classList.remove("open");keys.clear();
