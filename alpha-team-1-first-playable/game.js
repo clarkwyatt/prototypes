@@ -520,8 +520,23 @@
     ctx.restore();
   }
 
+  // Illustrated panel backgrounds: only Panel 1 is available so far.
+  // Missing/failed images fall back to the original vector scenery.
+  const panelArt=new Image();
+  let panelArtReady=false;
+  panelArt.onload=()=>{panelArtReady=true;};
+  panelArt.onerror=()=>{panelArtReady=false;};
+  panelArt.src="art/panel-01.webp";
+  function drawIllustratedPanel(){
+    if(panel!==1||!panelArtReady)return false;
+    ctx.save();
+    ctx.imageSmoothingEnabled=true;
+    ctx.drawImage(panelArt,0,0,width,height);
+    ctx.restore();
+    return true;
+  }
   function scenery() {
-    if(panel===1){pixelVillage();return;}
+    if(drawIllustratedPanel())return;
     // Soft grassy meadow, with tiny deterministic blades and flowers.
     shape(0,0,width,height,"#a4c68b");
     const unit=Math.min(width,height);
