@@ -242,7 +242,7 @@
     [[.05,.17],[.13,.17]],[[.13,.17],[.13,.30]],
     [[.28,.83],[.315,.83]],[[.28,.83],[.28,1]],
     [[.46,.15],[.52,.15]],
-    [[.64,.83],[.69,.83]],
+    [[.64,.83],[.69,.83]],[[.64,.83],[.64,1]],
     [[.83,.17],[.91,.17]],[[.91,.17],[.91,.28]]
   ];
   // Each dog guards the next bend, with meat accessible on the approach.
@@ -264,7 +264,7 @@
   function resetMaze(){
     dogs=dogSeeds.map((d,i)=>({...d,id:i,mode:"watch",timer:0,target:null,x:d.x,y:d.y}));
     // Each bait sits beyond a guarded sightline, requiring a timed crossing to collect it, then a return to bait the dog.
-    meat=[{x:.155,y:.78,used:false},{x:.345,y:.23,used:false},{x:.515,y:.79,used:false},{x:.695,y:.20,used:false}];
+    meat=[{x:.082,y:.24,used:false},{x:.31,y:.06,used:false},{x:.335,y:.94,used:false},{x:.695,y:.94,used:false}];
     carrying=false;caught=false;chaseTime=0;mazeClock=0;
     hero.x=.065;hero.y=.50;facing="right";
     catchModal.classList.remove("open");keys.clear();
