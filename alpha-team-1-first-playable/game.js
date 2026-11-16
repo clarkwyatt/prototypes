@@ -203,7 +203,24 @@
     }
   }
   canvas.addEventListener("click",e=>{
-    if(dialogOpen)return;
+    if(caught||dialogOpen)return;
+    if(panel===18){
+      const bounds=canvas.getBoundingClientRect();
+      const x=(e.clientX-bounds.left)/bounds.width,y=(e.clientY-bounds.top)/bounds.height;
+      if(!carrying){
+        const m=meat.find(m=>!m.used&&Math.hypot((m.x-x)*width,(m.y-y)*height)<Math.min(width,height)*.05&&Math.hypot((m.x-hero.x)*width,(m.y-hero.y)*height)<Math.min(width,height)*.10);
+        if(m){m.used=true;carrying=true;}
+      }else{
+        // Drop at the cat's feet; only nearby clicks are accepted.
+        if(Math.hypot((x-hero.x)*width,(y-hero.y)*height)<Math.min(width,height)*.14){
+          const drop={x:hero.x,y:hero.y};carrying=false;
+          meat.push({...drop,used:false});
+          const d=dogs.filter(d=>d.mode==="watch").sort((a,b)=>Math.hypot(a.x-drop.x,a.y-drop.y)-Math.hypot(b.x-drop.x,b.y-drop.y))[0];
+          if(d&&Math.hypot((d.x-drop.x)*width,(d.y-drop.y)*height)<Math.min(width,height)*.48){d.mode="investigate";d.target=drop;}
+        }
+      }
+      return;
+    }
     // Both conditions must hold: close enough to highlight, AND clicked on the object.
     const target=nearestTarget();
     if(!target)return;
@@ -221,6 +238,94 @@
     [[.57,.60],[.78,.60]],[[.79,.16],[.79,.45]],
     [[.79,.76],[.79,.90]]
   ];
+  // Three sentries scan opposing 180-degree directions, holding each for five seconds.
+  const dogSeeds=[
+    {x:.31,y:.18,axis:"horizontal",phase:0},
+    {x:.70,y:.36,axis:"vertical",phase:4.2},
+    {x:.70,y:.73,axis:"horizontal",phase:7.8}
+  ];
+  let dogs=[], meat=[], carrying=false, caught=false, mazeClock=0, chaseTime=0;
+  const catchModal=document.createElement("section");
+  catchModal.id="caught-modal";
+  catchModal.setAttribute("role","dialog");
+  catchModal.setAttribute("aria-label","You got caught");
+  catchModal.innerHTML='<div class="interaction-card"><h2>YOU GOT CAUGHT!</h2><div id="caught-actions"><button type="button" class="interaction-btn">TRY AGAIN</button></div></div>';
+  document.querySelector("#game").appendChild(catchModal);
+  catchModal.querySelector("button").addEventListener("click",resetMaze);
+  function resetMaze(){
+    dogs=dogSeeds.map((d,i)=>({...d,id:i,mode:"watch",timer:0,target:null,x:d.x,y:d.y}));
+    meat=[{x:.09,y:.73,used:false},{x:.49,y:.38,used:false},{x:.92,y:.56,used:false}];
+    carrying=false;caught=false;chaseTime=0;mazeClock=0;
+    hero.x=.065;hero.y=.50;facing="right";
+    catchModal.classList.remove("open");keys.clear();
+  }
+  resetMaze();
+  function dogFacing(d){
+    const alternate=Math.floor((mazeClock+d.phase)/5)%2===0;
+    return d.axis==="horizontal"?(alternate?0:Math.PI):(alternate?Math.PI/2:-Math.PI/2);
+  }
+  function sight(d,px,py){
+    const dx=(px-d.x)*width,dy=(py-d.y)*height;
+    const distance=Math.hypot(dx,dy),angle=Math.atan2(dy,dx);
+    const delta=Math.atan2(Math.sin(angle-dogFacing(d)),Math.cos(angle-dogFacing(d)));
+    return distance<Math.min(width,height)*.37 && Math.abs(delta)<Math.PI/5;
+  }
+  function updateDogs(dt){
+    if(panel!==18||caught||dialogOpen)return;
+    mazeClock+=dt;
+    for(const d of dogs){
+      if(d.mode==="distracted"){d.timer-=dt;if(d.timer<=0){d.mode="watch";d.target=null;}continue;}
+      if(d.mode==="investigate"){
+        const dx=(d.target.x-d.x)*width,dy=(d.target.y-d.y)*height,dist=Math.hypot(dx,dy);
+        if(dist<9){d.mode="distracted";d.timer=7;continue;}
+        const step=Math.min(dist,Math.min(width,height)*.18*dt);
+        const nx=d.x+dx/dist*step/width,ny=d.y+dy/dist*step/height;
+        if(!blocked(nx,ny)){d.x=nx;d.y=ny;}else{d.mode="distracted";d.timer=7;}
+        continue;
+      }
+      if(sight(d,hero.x,hero.y)){
+        // A visible cat triggers a short rush, then the caught popup.
+        d.mode="chase";chaseTime=0;
+      }
+      if(d.mode==="chase"){
+        const dx=(hero.x-d.x)*width,dy=(hero.y-d.y)*height,dist=Math.hypot(dx,dy);
+        if(dist>1){const step=Math.min(dist,Math.min(width,height)*.62*dt);d.x+=dx/dist*step/width;d.y+=dy/dist*step/height;}
+      }
+    }
+    if(dogs.some(d=>d.mode==="chase")){
+      chaseTime+=dt;
+      if(chaseTime>.45||dogs.some(d=>Math.hypot((hero.x-d.x)*width,(hero.y-d.y)*height)<30)){
+        caught=true;keys.clear();catchModal.classList.add("open");
+      }
+    }
+  }
+  function drawMazeActors(){
+    if(panel!==18)return;
+    const u=Math.min(width,height);
+    for(const m of meat)if(!m.used){
+      const x=m.x*width,y=m.y*height;
+      ellipse(x,y,u*.017,u*.012,"#8b4b2b");
+      ellipse(x-u*.012,y-u*.003,u*.008,u*.008,"#f5e7ce");
+      ellipse(x+u*.012,y-u*.003,u*.008,u*.008,"#f5e7ce");
+    }
+    for(const d of dogs){
+      const x=d.x*width,y=d.y*height;
+      if(d.mode==="watch"){
+        const a=dogFacing(d),radius=u*.37;
+        ctx.fillStyle="rgba(245,204,83,.19)";ctx.beginPath();ctx.moveTo(x,y);
+        ctx.arc(x,y,radius,a-Math.PI/5,a+Math.PI/5);ctx.closePath();ctx.fill();
+      }
+      ctx.save();ctx.translate(x,y);ctx.rotate(d.mode==="watch"?dogFacing(d):d.target?Math.atan2((d.target.y-d.y)*height,(d.target.x-d.x)*width):0);
+      ellipse(0,0,u*.029,u*.023,"#9d7047");
+      ellipse(u*.019,0,u*.022,u*.020,"#c59159");
+      ellipse(u*.024,-u*.019,u*.010,u*.012,"#6b4631");
+      ellipse(u*.024,u*.019,u*.010,u*.012,"#6b4631");
+      ellipse(u*.036,-u*.007,u*.003,u*.003,"#2d302a");
+      ellipse(u*.036,u*.007,u*.003,u*.003,"#2d302a");
+      ctx.restore();
+    }
+    if(carrying){ellipse(hero.x*width+u*.020,hero.y*height-u*.013,u*.014,u*.009,"#8b4b2b");}
+  }
   function scenery() {
     // Soft grassy meadow, with tiny deterministic blades and flowers.
     shape(0,0,width,height,"#a4c68b");
@@ -431,6 +536,7 @@
     ctx.translate(hero.x*width,hero.y*height);
     drawHero();
     ctx.restore();
+    drawMazeActors();
     highlight();
   }
   function blocked(x,y) {
@@ -751,7 +857,9 @@
       if(exit && !(panel===11&&direction==="right"&&!forceFieldRemoved) && !(panel===16&&direction==="right"&&!doorOpen) &&
           Math.abs(coordinate-exit[1])<=tolerance &&
           panels.has(exit[0])){
+        const previousPanel=panel;
         panel=exit[0];
+        if(panel===18&&previousPanel!==18)resetMaze();
         if(direction==="right") hero.x=edgeX+.012;
         if(direction==="left") hero.x=1-edgeX-.012;
         if(direction==="bottom") hero.y=edgeY+.012;
@@ -776,13 +884,14 @@
     if(keys.has("ArrowUp")||keys.has("w")) dy--;
     if(keys.has("ArrowDown")||keys.has("s")) dy++;
     if(dx&&dy){dx*=Math.SQRT1_2;dy*=Math.SQRT1_2;}
-    walking = !dialogOpen && (dx !== 0 || dy !== 0);
+    walking = !dialogOpen && !caught && (dx !== 0 || dy !== 0);
     if (walking) {
       if (Math.abs(dx) > Math.abs(dy)) facing = dx > 0 ? "right" : "left";
       else facing = dy > 0 ? "down" : "up";
       walkTime += dt;
     }
-    if(!dialogOpen)move(dx*hero.speed*dt,dy*hero.speed*dt);
+    if(!dialogOpen&&!caught)move(dx*hero.speed*dt,dy*hero.speed*dt);
+    updateDogs(dt);
     draw();requestAnimationFrame(update);
   }
   addEventListener("resize",resize);
