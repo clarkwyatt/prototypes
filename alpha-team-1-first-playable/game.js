@@ -54,6 +54,7 @@
   let hasRod=false, fish=0, hasKey=false, doorOpen=false;
   let hasPotion=false, forceFieldRemoved=false;
   let hasGateKey=false; // Temporary pickup at the cat\'s home
+  let villageGateOpen=false;
   const questEl=document.querySelector("#quest"),itemsEl=document.querySelector("#items");
   function updateHud(){
     questEl.textContent=hasKey&&!doorOpen?"• Unlock the old wooden door":doorOpen?"• Explore beyond the door":"• Explore the Village";
@@ -108,6 +109,13 @@
         actions.replaceChildren(button("OK",closeInteraction));
       }));
     }
+    if(panel===6&&type==="VILLAGE_ART"&&target.title==="Village Gate"&&!villageGateOpen){
+      if(hasGateKey)options.push(button("USE GATE KEY",()=>{
+        villageGateOpen=true;hasGateKey=false;
+        p.textContent="The Gate Key unlocks the village gate! The way ahead is open.";
+        p.hidden=false;updateHud();actions.replaceChildren(button("OK",closeInteraction));
+      }));
+    }
     if(panel===21&&type==="H"&&target.id===2&&!hasPotion)options.push(button("GET POTION",()=>{
       hasPotion=true;
       p.textContent="You found a Magic Potion! It has been added to your inventory.";
@@ -156,7 +164,7 @@
   // Each rectangle is normalized to the full illustrated screen.
   const villageHotspots={
     1:[
-      ["Cat's Home","A welcoming cottage with a blue door and a golden paw print. This is where your adventure begins.",.475,.367,.345,.47],
+      ["Cat's Home","A welcoming cottage with a blue door and a golden paw print. This is where your adventure begins.",.525,.419,.350,.470],
       ["Village Cottage","A cozy cottage with a sunny yellow roof and flower-filled window box.",.835,.225,.205,.31],
       ["Blue-Roof Cottage","A little cottage with a bright blue roof and a wooden crate outside.",.865,.715,.245,.315],
       ["Old Oak Tree","An enormous tree spreads its branches over the village lawn.",.177,.33,.30,.50],
@@ -203,6 +211,7 @@
   ];
   function villageTargets(){
     const art=panel===11?panel11Hotspots:(villageHotspots[panel]||[]);
+    if(panel===6&&villageGateOpen)return art.filter(entry=>entry[0]!=="Village Gate").map(([title,description,x,y,w,h],i)=>({type:"VILLAGE_ART",title,description,x,y,w,h,id:i}));
     return art.map(([title,description,x,y,w,h],i)=>({
       type:"VILLAGE_ART",title,description,x,y,w,h,id:i
     }));
@@ -1054,6 +1063,7 @@
       if(!forceFieldRemoved && x>.865&&y>.30&&y<.69)return true;
       return false;
     }
+    if(panel===6&&!villageGateOpen&&y>.76&&x>.49&&x<.72)return true;
     if(illustratedPanels.has(panel)){
       const radius=Math.min(width,height)*.016;
       for(const t of villageTargets()){
@@ -1392,7 +1402,7 @@
         ? Math.max(.045,Math.min(.085,48/height))
         : Math.max(.045,Math.min(.085,48/width));
       // Story gates cannot be bypassed through screen transitions.
-      if(exit && !(panel===11&&direction==="right"&&!forceFieldRemoved) && !(panel===16&&direction==="right"&&!doorOpen) &&
+      if(exit && !(panel===6&&direction==="bottom"&&!villageGateOpen) && !(panel===11&&direction==="right"&&!forceFieldRemoved) && !(panel===16&&direction==="right"&&!doorOpen) &&
           (villageLink || Math.abs(coordinate-exit[1])<=tolerance) &&
           panels.has(exit[0])){
         const previousPanel=panel;
