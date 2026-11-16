@@ -232,22 +232,26 @@
   // Normalized maze hedge segments; same geometry drives drawing and collision.
   // Staggered garden hedges create one readable west-to-east route.
   // The bends and short branches add variety without closing the central passage.
+  // Four alternating gates force a winding, continuous route through the maze.
+  // Walls reach the screen edges, so the cat must go around each open end.
   const mazeHedges=[
-    [[.16,.09],[.16,.30]],[[.16,.30],[.31,.30]],
-    [[.37,.08],[.37,.20]],[[.37,.20],[.44,.20]],
-    [[.55,.08],[.55,.29]],[[.55,.29],[.63,.29]],
-    [[.77,.10],[.77,.29]],
-    [[.19,.70],[.19,.86]],[[.19,.70],[.29,.70]],
-    [[.40,.73],[.40,.91]],[[.40,.73],[.48,.73]],
-    [[.61,.70],[.61,.87]],[[.61,.70],[.71,.70]],
-    [[.83,.72],[.83,.89]]
+    [[.22,0],[.22,.69]],
+    [[.40,.31],[.40,1]],
+    [[.58,0],[.58,.69]],
+    [[.76,.31],[.76,1]],
+    // Small cul-de-sacs off the main route (not blocking the intended route).
+    [[.05,.17],[.13,.17]],[[.13,.17],[.13,.30]],
+    [[.28,.83],[.33,.83]],
+    [[.46,.15],[.52,.15]],
+    [[.64,.83],[.69,.83]],
+    [[.83,.17],[.91,.17]],[[.91,.17],[.91,.28]]
   ];
-  // Four sequential lookouts, with meat available before each guarded stretch.
+  // Each dog guards the next bend, with meat accessible on the approach.
   const dogSeeds=[
-    {x:.27,y:.35,axis:"vertical",phase:0},
-    {x:.47,y:.65,axis:"vertical",phase:4.2},
-    {x:.68,y:.35,axis:"vertical",phase:7.8},
-    {x:.88,y:.65,axis:"vertical",phase:2.5}
+    {x:.17,y:.63,axis:"vertical",phase:0},
+    {x:.35,y:.39,axis:"vertical",phase:4.2},
+    {x:.53,y:.63,axis:"vertical",phase:7.8},
+    {x:.71,y:.39,axis:"vertical",phase:2.5}
   ];
   let facing = "down", walking = false, walkTime = 0;
   let dogs=[], meat=[], carrying=false, caught=false, mazeClock=0, chaseTime=0;
@@ -260,7 +264,7 @@
   catchModal.querySelector("button").addEventListener("click",resetMaze);
   function resetMaze(){
     dogs=dogSeeds.map((d,i)=>({...d,id:i,mode:"watch",timer:0,target:null,x:d.x,y:d.y}));
-    meat=[{x:.12,y:.49,used:false},{x:.36,y:.49,used:false},{x:.57,y:.49,used:false},{x:.77,y:.49,used:false}];
+    meat=[{x:.10,y:.51,used:false},{x:.29,y:.79,used:false},{x:.47,y:.21,used:false},{x:.65,y:.79,used:false}];
     carrying=false;caught=false;chaseTime=0;mazeClock=0;
     hero.x=.065;hero.y=.50;facing="right";
     catchModal.classList.remove("open");keys.clear();
@@ -274,7 +278,18 @@
     const dx=(px-d.x)*width,dy=(py-d.y)*height;
     const distance=Math.hypot(dx,dy),angle=Math.atan2(dy,dx);
     const delta=Math.atan2(Math.sin(angle-dogFacing(d)),Math.cos(angle-dogFacing(d)));
-    return distance<Math.min(width,height)*.37 && Math.abs(delta)<Math.PI/5;
+    if(distance>=Math.min(width,height)*.28 || Math.abs(delta)>=Math.PI/5)return false;
+    // Hedge walls block sight as well as movement.
+    for(let i=1;i<16;i++){
+      const t=i/16,sx=d.x+(px-d.x)*t,sy=d.y+(py-d.y)*t;
+      for(const [a,b] of mazeHedges){
+        const ax=a[0]*width,ay=a[1]*height,bx=b[0]*width,by=b[1]*height;
+        const vx=bx-ax,vy=by-ay,qx=sx*width-ax,qy=sy*height-ay;
+        const k=Math.max(0,Math.min(1,(qx*vx+qy*vy)/(vx*vx+vy*vy)));
+        if(Math.hypot(qx-k*vx,qy-k*vy)<Math.min(width,height)*.038)return false;
+      }
+    }
+    return true;
   }
   function updateDogs(dt){
     if(panel!==18||caught||dialogOpen)return;
