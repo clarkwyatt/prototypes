@@ -402,7 +402,7 @@
         ctx.restore();
       }
     }
-    if(carrying){
+    if(carrying && facing!=="up"){
       const mouth=mouthPosition();
       drawMeat(mouth.x,mouth.y,.65);
     }
