@@ -735,10 +735,10 @@
       files.set(name,{start,compressed,method});
       p+=45+nameLen+extra+comment;
     }
-    const expected=catKinds.length*4*3;
-    if([...files.keys()].filter(n=>/\.png$/.test(n)).length!==expected)throw Error("Expected 48 cat frames");
+    const expected=catKinds.length*4*4;
+    if([...files.keys()].filter(n=>/_(up|down|left|right)_[0-3]\.png$/.test(n)).length!==expected)throw Error("Expected 64 directional cat frames");
     async function unpack(name){
-      const f=files.get("cat_sprites/"+name);
+      const f=files.get(name);
       if(!f)throw Error("Missing sprite: "+name);
       const bytes=data.slice(f.start,f.start+f.compressed);
       let raw;
@@ -758,7 +758,7 @@
     for(const [id] of catKinds){
       catFrames[id]={};
       for(const direction of ["up","down","left","right"]){
-        catFrames[id][direction]=await Promise.all([0,1,2].map(i=>unpack(id+"_"+direction+"_"+i+".png")));
+        catFrames[id][direction]=await Promise.all([0,1,2,3].map(i=>unpack(id+"_"+direction+"_"+i+".png")));
       }
       // Find one consistent visible bounding box for every frame of this cat.
       // Cropping transparent padding prevents the cat from hovering above its shadow.
@@ -780,7 +780,7 @@
       }
       catBounds[id]=Number.isFinite(minX)?{x:minX,y:minY,w:maxX-minX,h:maxY-minY}:null;
       const portrait=catCards.get(id).querySelector("img");
-      const img=catFrames[id].down[0];
+      const img=await unpack(id+"_portrait.png");
       const portraitCanvas=document.createElement("canvas");
       portraitCanvas.width=img.naturalWidth;portraitCanvas.height=img.naturalHeight;
       portraitCanvas.getContext("2d").drawImage(img,0,0);
@@ -801,34 +801,20 @@
     const sprites=catFrames[selectedCat];
     const frames=sprites && sprites[facing];
     if(!frames)return;
-    // Source ZIP contains inconsistent silhouettes between walking frames
-    // (including disappearing tails). Use the clearest complete pose for each
-    // direction until a properly redrawn animation sheet is available.
-    const stableFrame={down:0,left:0,right:2,up:0};
-    const img=frames[stableFrame[facing]];
-    const t=performance.now()/1000;
-    // Use the original 48x66 source canvas rather than a union crop from all
-    // directions. Each pose is grounded independently on its visible feet.
-    const scan=document.createElement("canvas");
-    scan.width=img.naturalWidth;scan.height=img.naturalHeight;
-    const scanCtx=scan.getContext("2d",{willReadFrequently:true});
-    scanCtx.drawImage(img,0,0);
-    const pixels=scanCtx.getImageData(0,0,scan.width,scan.height).data;
-    let minX=scan.width,maxX=0,minY=scan.height,maxY=0;
-    for(let y=0;y<scan.height;y++)for(let x=0;x<scan.width;x++){
-      if(pixels[(y*scan.width+x)*4+3]>16){
-        minX=Math.min(minX,x);maxX=Math.max(maxX,x+1);
-        minY=Math.min(minY,y);maxY=Math.max(maxY,y+1);
-      }
-    }
-    const cropW=Math.max(1,maxX-minX),cropH=Math.max(1,maxY-minY);
-    const h=59,w=h*cropW/cropH;
-    // Small rhythmic movement while walking; very subtle breathing at rest.
-    const lift=walking ? Math.round(Math.abs(Math.sin(walkTime*11))*1.4)
-      : Math.round(Math.sin(t*2.2)*.55);
+    // New sprite package supplies four complete directional walking frames.
+    // Keep their shared source-canvas registration stable across frames.
+    const frame=walking ? Math.floor(walkTime*9)%4 : 0;
+    const img=frames[frame];
+    const bounds=catBounds[selectedCat];
+    const h=59;
+    const scale=h/(bounds?.h||img.naturalHeight);
+    const w=img.naturalWidth*scale;
+    // Align the bottom of the full frame with the ground point; no frame-by-
+    // frame cropping or simulated hopping that makes paws float.
+    const bottom=(bounds?.y||0)+(bounds?.h||img.naturalHeight);
     ctx.save();ctx.imageSmoothingEnabled=false;
     ellipse(0,22,18,5,"rgba(35,55,36,.24)");
-    ctx.drawImage(img,minX,minY,cropW,cropH,-w/2,22-h-lift,w,h);
+    ctx.drawImage(img,-w/2,22-bottom*scale,w,img.naturalHeight*scale);
     ctx.restore();
   }
 
