@@ -55,7 +55,7 @@
   let hasPotion=false, forceFieldRemoved=false;
   const questEl=document.querySelector("#quest"),itemsEl=document.querySelector("#items");
   function updateHud(){
-    questEl.textContent=hasKey&&!doorOpen?"• Unlock the door in Panel 16":doorOpen?"• Explore beyond the door":"• Explore the Village";
+    questEl.textContent=hasKey&&!doorOpen?"• Unlock the old wooden door":doorOpen?"• Explore beyond the door":"• Explore the Village";
     itemsEl.textContent=[hasRod?"Fishing Rod":"",fish?"Fish":"",hasKey?"Golden Key":"",hasPotion?"Magic Potion":""].filter(Boolean).join(" · ")||"Empty";
   }
   const modal=document.createElement("section");
