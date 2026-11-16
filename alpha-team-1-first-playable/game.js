@@ -238,11 +238,12 @@
     [[.57,.60],[.78,.60]],[[.79,.16],[.79,.45]],
     [[.79,.76],[.79,.90]]
   ];
-  // Three sentries scan opposing 180-degree directions, holding each for five seconds.
+  // Four sentries scan opposite directions, holding each for five seconds.
   const dogSeeds=[
     {x:.31,y:.18,axis:"horizontal",phase:0},
     {x:.70,y:.36,axis:"vertical",phase:4.2},
-    {x:.70,y:.73,axis:"horizontal",phase:7.8}
+    {x:.70,y:.73,axis:"horizontal",phase:7.8},
+    {x:.29,y:.83,axis:"vertical",phase:2.5}
   ];
   let facing = "down", walking = false, walkTime = 0;
   let dogs=[], meat=[], carrying=false, caught=false, mazeClock=0, chaseTime=0;
@@ -255,7 +256,7 @@
   catchModal.querySelector("button").addEventListener("click",resetMaze);
   function resetMaze(){
     dogs=dogSeeds.map((d,i)=>({...d,id:i,mode:"watch",timer:0,target:null,x:d.x,y:d.y}));
-    meat=[{x:.09,y:.73,used:false},{x:.49,y:.38,used:false},{x:.92,y:.56,used:false}];
+    meat=[{x:.09,y:.73,used:false},{x:.49,y:.38,used:false},{x:.92,y:.56,used:false},{x:.44,y:.83,used:false}];
     carrying=false;caught=false;chaseTime=0;mazeClock=0;
     hero.x=.065;hero.y=.50;facing="right";
     catchModal.classList.remove("open");keys.clear();
@@ -313,7 +314,7 @@
       const x=d.x*width,y=d.y*height;
       if(d.mode==="watch"){
         const a=dogFacing(d),radius=u*.37;
-        ctx.fillStyle="rgba(245,204,83,.19)";ctx.beginPath();ctx.moveTo(x,y);
+        ctx.fillStyle="rgba(225,45,45,.24)";ctx.beginPath();ctx.moveTo(x,y);
         ctx.arc(x,y,radius,a-Math.PI/5,a+Math.PI/5);ctx.closePath();ctx.fill();
       }
       ctx.save();ctx.translate(x,y);ctx.rotate(d.mode==="watch"?dogFacing(d):d.target?Math.atan2((d.target.y-d.y)*height,(d.target.x-d.x)*width):0);
