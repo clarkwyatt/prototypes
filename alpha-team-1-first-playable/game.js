@@ -564,6 +564,8 @@
     scenery();
     ctx.save();
     ctx.translate(hero.x*width,hero.y*height);
+    // Keep the cat proportional to houses and maze dogs across all panels.
+    ctx.scale(.72,.72);
     drawHero();
     ctx.restore();
     drawMazeActors();
