@@ -315,7 +315,7 @@
         const nx=d.x+dx/dist*step/width,ny=d.y+dy/dist*step/height;
         // A distracted dog follows the bait it spotted, even across hedge geometry.
         // Keep this distinct from the cat's hedge collision.
-        d.x=nx;d.y=ny;
+        d.heading=Math.atan2(dy,dx);d.x=nx;d.y=ny;
         continue;
       }
       if(d.mode==="eating"){
@@ -335,7 +335,7 @@
       }
       if(d.mode==="chase"){
         const dx=(hero.x-d.x)*width,dy=(hero.y-d.y)*height,dist=Math.hypot(dx,dy);
-        if(dist>1){const step=Math.min(dist,Math.min(width,height)*.62*dt);d.x+=dx/dist*step/width;d.y+=dy/dist*step/height;}
+        if(dist>1){d.heading=Math.atan2(dy,dx);const step=Math.min(dist,Math.min(width,height)*.62*dt);d.x+=dx/dist*step/width;d.y+=dy/dist*step/height;}
       }
     }
     if(dogs.some(d=>d.mode==="chase")){
@@ -381,7 +381,7 @@
         ctx.arc(x,y,radius,a-Math.PI/5,a+Math.PI/5);ctx.closePath();ctx.fill();
       }
       ctx.save();ctx.translate(x,y);
-      ctx.rotate(d.mode==="watch"?dogFacing(d):d.target?Math.atan2((d.target.y-d.y)*height,(d.target.x-d.x)*width):0);
+      ctx.rotate(d.mode==="watch"?dogFacing(d):(d.heading ?? 0));
       if(d.mode==="eating"){
         // Three seconds of rhythmic head dips while chewing at the steak.
         const chew=Math.sin(d.timer*15);
