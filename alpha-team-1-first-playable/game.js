@@ -244,6 +244,7 @@
     {x:.70,y:.36,axis:"vertical",phase:4.2},
     {x:.70,y:.73,axis:"horizontal",phase:7.8}
   ];
+  let facing = "down", walking = false, walkTime = 0;
   let dogs=[], meat=[], carrying=false, caught=false, mazeClock=0, chaseTime=0;
   const catchModal=document.createElement("section");
   catchModal.id="caught-modal";
@@ -460,7 +461,7 @@
     }
   }
   // Four-direction animated ginger cat. Feet, tail and body move while walking.
-  let facing = "down", walking = false, walkTime = 0;
+
   function drawHero() {
     const t = walking ? walkTime * 12 : 0;
     const step = walking ? Math.sin(t) : 0;
