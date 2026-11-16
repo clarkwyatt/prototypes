@@ -520,18 +520,21 @@
     ctx.restore();
   }
 
-  // Illustrated panel backgrounds: only Panel 1 is available so far.
-  // Missing/failed images fall back to the original vector scenery.
-  const panelArt=new Image();
-  let panelArtReady=false;
-  panelArt.onload=()=>{panelArtReady=true;};
-  panelArt.onerror=()=>{panelArtReady=false;};
-  panelArt.src="art/team1_panel_01.webp";
+  // Illustrated village screens. Load each independently, retaining vector
+  // fallback if an image is unavailable.
+  const illustratedPanels = new Set([1,2,6,7]);
+  const panelArt = new Map();
+  for(const id of illustratedPanels){
+    const img=new Image();
+    img.src="art/team1_panel_"+String(id).padStart(2,"0")+".webp";
+    panelArt.set(id,img);
+  }
   function drawIllustratedPanel(){
-    if(panel!==1||!panelArtReady)return false;
+    const img=panelArt.get(panel);
+    if(!img||!img.complete||!img.naturalWidth)return false;
     ctx.save();
     ctx.imageSmoothingEnabled=true;
-    ctx.drawImage(panelArt,0,0,width,height);
+    ctx.drawImage(img,0,0,width,height);
     ctx.restore();
     return true;
   }
@@ -915,6 +918,8 @@
     highlight();
   }
   function blocked(x,y) {
+    // The four village screens are free-roam: decorative art is nonblocking.
+    if(illustratedPanels.has(panel))return false;
     const radius=Math.min(width,height)*.025;
     for(const [type,nx,ny] of objects[panel]||[]) {
       if(type==="LAKE") {
@@ -1225,12 +1230,13 @@
     else if(ny<edgeY){direction="top";coordinate=hero.x;}
     if(direction){
       const exit=exits[panel]?.[direction];
+      const villageLink=illustratedPanels.has(panel) && illustratedPanels.has(exits[panel]?.[direction]?.[0]);
       const tolerance=direction==="left"||direction==="right"
         ? Math.max(.045,Math.min(.085,48/height))
         : Math.max(.045,Math.min(.085,48/width));
       // Story gates cannot be bypassed through screen transitions.
       if(exit && !(panel===11&&direction==="right"&&!forceFieldRemoved) && !(panel===16&&direction==="right"&&!doorOpen) &&
-          Math.abs(coordinate-exit[1])<=tolerance &&
+          (villageLink || Math.abs(coordinate-exit[1])<=tolerance) &&
           panels.has(exit[0])){
         const previousPanel=panel;
         panel=exit[0];
@@ -1240,8 +1246,10 @@
         if(direction==="bottom") hero.y=edgeY+.012;
         if(direction==="top") hero.y=1-edgeY-.012;
         // Align with the center of the connecting path on entry.
-        if(direction==="right"||direction==="left") hero.y=exit[1];
-        else hero.x=exit[1];
+        if(!villageLink){
+          if(direction==="right"||direction==="left") hero.y=exit[1];
+          else hero.x=exit[1];
+        }
       } else {
         hero.x=Math.max(edgeX,Math.min(1-edgeX,hero.x));
         hero.y=Math.max(edgeY,Math.min(1-edgeY,hero.y));
