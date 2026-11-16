@@ -892,13 +892,16 @@
     }
     if(!dialogOpen&&!caught)move(dx*hero.speed*dt,dy*hero.speed*dt);
     updateDogs(dt);
-    draw();requestAnimationFrame(update);
+    try { draw(); } catch(error) { console.error("Rendering failed:",error); }
+    requestAnimationFrame(update);
   }
   addEventListener("resize",resize);
   addEventListener("keydown",e=>{const k=e.key.length===1?e.key.toLowerCase():e.key;if(k==="Escape"&&dialogOpen)closeInteraction();keys.add(k);if(k.startsWith("Arrow"))e.preventDefault();});
   addEventListener("keyup",e=>keys.delete(e.key.length===1?e.key.toLowerCase():e.key));
   addEventListener("blur",()=>keys.clear());
-  updateHud();resize();requestAnimationFrame(update);
+  updateHud();
+  try { resize(); } catch(error) { console.error("Initial rendering failed:",error); }
+  requestAnimationFrame(update);
   // Debug controls are initialized after the game loop starts, so UI issues cannot prevent rendering.
   try {
   // Developer-only panel teleporter. It does not grant or require inventory items.
