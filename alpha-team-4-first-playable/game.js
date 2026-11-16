@@ -2,7 +2,7 @@
 (() => {
 const canvas=document.querySelector('#world'),ctx=canvas.getContext('2d'),game=document.querySelector('#game');
 const questEl=document.querySelector('#quest-text'),itemsEl=document.querySelector('#items');
-const layer=document.querySelector('#popup-layer'),titleEl=document.querySelector('#popup-title'),copyEl=document.querySelector('#popup-copy'),actionsEl=document.querySelector('#popup-actions');
+const layer=document.querySelector('#popup-layer'),closeButton=document.querySelector('#popup-close'),titleEl=document.querySelector('#popup-title'),copyEl=document.querySelector('#popup-copy'),actionsEl=document.querySelector('#popup-actions');
 const W=1120,H=720,keys=new Set(),hero={x:W/2,y:H/2,speed:215};
 const GRID_SIZE=5;
 const sides={west:[-1,0,'east'],east:[1,0,'west'],north:[0,-1,'south'],south:[0,1,'north']};
@@ -28,13 +28,19 @@ connect(1,'east',H/2,35);
 connect(2,'east',H/2,35,()=>quest.gateOpen);
 // Only the first village route is enabled until the remaining map is built.
 const housePositions=[[210,230],[410,230],[610,230],[310,520],[570,520]];
+// These local outlines are shared by the art, green glow, clicks, and collision.
+const houseOutline=new Path2D('M -53 -24 L 0 -65 L 53 -24 H 43 V 44 H -43 V -24 Z');
+const villagerOutline=new Path2D('M -12 -29 H 12 V -21 C 17 -11 8 -4 6 -4 H 13 V 25 H 10 V 37 H 3 V 25 H -2 V 37 H -9 V 25 H -13 V -4 H -6 C -8 -4 -17 -11 -12 -21 Z');
+const gateOutline=new Path2D('M -19 -68 H -9 V -55 H 9 V -68 H 19 V 68 H 9 V 63 H -9 V 68 H -19 Z');
+for(let y=-42;y<50;y+=21){
+ gateOutline.moveTo(-9,y);gateOutline.lineTo(-9,y+8);gateOutline.lineTo(9,y+8);gateOutline.lineTo(9,y);gateOutline.closePath();
+}
 const house=(x,y,index)=>({
- id:'house'+index,name:'Village House',x,y,w:112,h:113,shape:'polygon',points:[[-56,-25],[0,-75],[56,-25],[47,-25],[47,43],[-47,43],[-47,-25]],solid:true,reach:125,
+ id:'house'+index,name:'Village House',x,y,outline:houseOutline,solid:true,reach:125,
  description:'A little village house with a wooden door.',
  draw(ctx){drawHouse(ctx,x,y)},
- actions:[{label:'OPEN',primary:true,run:()=>{
+ actions:[{label:'OPEN',primary:true,available:()=>!flags.has('emerald'+index),run:()=>{
   if(!quest.started){copyEl.textContent='A cozy room with shelves and a small chest.';actionsEl.replaceChildren();return}
-  if(flags.has('emerald'+index)){copyEl.textContent='You already searched this house.';actionsEl.replaceChildren();return}
   flags.add('emerald'+index);quest.emeralds++;for(const name of [...inventory])if(name.endsWith(' / 5 Emeralds'))removeItem(name);addItem(quest.emeralds+' / 5 Emeralds');
   copyEl.textContent='You search the house and find an emerald!';actionsEl.replaceChildren();
   setQuest(quest.emeralds<5?'Find 5 Emeralds ('+quest.emeralds+'/5)':'Bring 5 Emeralds to the Villager');
@@ -42,24 +48,24 @@ const house=(x,y,index)=>({
 });
 panels[1].objects.push(...housePositions.map(([x,y],i)=>house(x,y,i+1)));
 panels[1].objects.push({
- id:'villager',name:'Villager',kind:'npc',x:855,y:470,w:38,h:68,shape:'polygon',points:[[-13,-29],[13,-29],[17,25],[10,36],[-10,36],[-17,25]],reach:100,
+ id:'villager',name:'Villager',kind:'npc',x:855,y:470,outline:villagerOutline,reach:100,
  description:'A villager waiting near the houses.',
  dialogue:'Can you search the houses and bring me five emeralds? I will give you the gate key.',
  draw(ctx){drawVillager(ctx,this.x,this.y)},
  actions:[{label:'TALK',primary:true,run:()=>{
-  if(quest.gateKey){copyEl.textContent='Good luck on your adventure!';return}
+  if(quest.gateKey||quest.gateOpen){copyEl.textContent='Good luck on your adventure!';return}
   if(!quest.started){quest.started=true;setQuest('Find 5 Emeralds (0/5)');copyEl.textContent='Please find five emeralds hidden in the village houses.';return}
   if(quest.emeralds<5){copyEl.textContent='You have '+quest.emeralds+' of the five emeralds.';return}
   quest.gateKey=true;for(const name of [...inventory])if(name.endsWith(' / 5 Emeralds'))removeItem(name);addItem('Gate Key');setQuest('Unlock the Village Gate');copyEl.textContent='Thank you! Here is the key to the gate.';
  }}]
 });
 panels[1].objects.push({
- id:'gate',name:'Village Gate',x:1085,y:360,w:40,h:125,solid:true,reach:115,
+ id:'gate',name:'Village Gate',x:1085,y:360,outline:gateOutline,solid:true,reach:115,isVisible:()=>!quest.gateOpen,
  description:'A locked wooden gate blocks the way east.',
- visible:true,draw(ctx){if(!quest.gateOpen)drawGate(ctx,this.x,this.y)},
+ draw(ctx){drawGate(ctx,this.x,this.y)},
  actions:[{label:'OPEN',primary:true,run:()=>{
  if(!quest.gateKey){copyEl.textContent='The gate is locked. A villager might have the key.';return}
- quest.gateOpen=true;this.solid=false;this.removed=true;removeItem('Gate Key');setQuest('Explore Beyond the Village');closePopup();
+ quest.gateOpen=true;quest.gateKey=false;removeItem('Gate Key');setQuest('Explore Beyond the Village');closePopup();
  }}]
 });
 function drawTreehouse(){
@@ -74,18 +80,18 @@ function drawTreehouse(){
  ctx.strokeStyle='#8b603d';ctx.lineWidth=8;ctx.beginPath();ctx.moveTo(-18,45);ctx.lineTo(-18,116);ctx.moveTo(18,45);ctx.lineTo(18,116);for(let yy=60;yy<116;yy+=17){ctx.moveTo(-18,yy);ctx.lineTo(18,yy)}ctx.stroke();ctx.restore();
 }
 function drawHouse(ctx,x,y){
- ctx.save();ctx.translate(x,y);ctx.fillStyle='#9b744d';ctx.fillRect(-43,-23,86,67);
+ ctx.save();ctx.translate(x,y);ctx.fillStyle='#9b744d';ctx.fill(houseOutline);
  ctx.fillStyle='#f4d9a4';ctx.fillRect(-38,-18,76,58);
  ctx.fillStyle='#8e4936';ctx.beginPath();ctx.moveTo(-53,-24);ctx.lineTo(0,-65);ctx.lineTo(53,-24);ctx.closePath();ctx.fill();
  ctx.fillStyle='#79543c';ctx.fillRect(-11,8,22,32);ctx.fillStyle='#e4b967';ctx.fillRect(6,23,4,4);
  ctx.fillStyle='#7cbdcf';ctx.fillRect(-30,-5,15,17);ctx.fillRect(15,-5,15,17);ctx.restore();
 }
 function drawVillager(ctx,x,y){
- ctx.save();ctx.translate(x,y);ctx.fillStyle='#2e5c8c';ctx.fillRect(-13,-4,26,29);
+ ctx.save();ctx.translate(x,y);ctx.fillStyle='#2e5c8c';ctx.fill(villagerOutline);ctx.clip(villagerOutline);
  ctx.fillStyle='#e9b788';ctx.beginPath();ctx.arc(0,-16,13,0,Math.PI*2);ctx.fill();
  ctx.fillStyle='#6a4932';ctx.fillRect(-12,-29,24,8);ctx.fillStyle='#4b392b';ctx.fillRect(-9,24,7,13);ctx.fillRect(3,24,7,13);ctx.restore();
 }
-function drawGate(ctx,x,y){ctx.save();ctx.translate(x,y);ctx.fillStyle='#6c4931';ctx.fillRect(-19,-68,10,136);ctx.fillRect(9,-68,10,136);for(let j=-55;j<55;j+=21){ctx.fillStyle='#a8774a';ctx.fillRect(-17,j,34,13)}ctx.restore()}
+function drawGate(ctx,x,y){ctx.save();ctx.translate(x,y);ctx.fillStyle='#6c4931';ctx.fill(gateOutline);for(let j=-55;j<55;j+=21){ctx.fillStyle='#a8774a';ctx.fillRect(-17,j,34,13)}ctx.restore()}
 function drawPath(){
  // Render only the existing village route. Its ends stop inside panels 1 and 3.
  if(panel>3)return;
@@ -107,25 +113,68 @@ function setQuest(value=''){questEl.textContent=value}
 function updateInventory(){itemsEl.textContent=[...inventory].join(' · ')||'Empty'}
 function addItem(name){inventory.add(name);updateInventory()}
 function removeItem(name){inventory.delete(name);updateInventory()}
-function closePopup(){layer.classList.remove('open');actionsEl.replaceChildren();keys.clear()}
-document.querySelector('#popup-close').addEventListener('click',()=>{if(!treehouseIntro)closePopup()});
-layer.addEventListener('pointerdown',e=>{if(e.target===layer&&!treehouseIntro)closePopup()});
+let activeObject=null;
+function closePopup(){
+ if(!activeObject)return;
+ activeObject=null;
+ layer.hidden=true;
+ actionsEl.replaceChildren();
+ canvas.focus({preventScroll:true});
+}
+closeButton.addEventListener('click',closePopup);
+layer.addEventListener('click',e=>{if(e.target===layer)closePopup()});
+layer.addEventListener('keydown',e=>{
+ if(e.key!=='Tab')return;
+ const buttons=[closeButton,...actionsEl.querySelectorAll('button')];
+ const edge=e.shiftKey?buttons[0]:buttons.at(-1);
+ if(document.activeElement===edge){
+  e.preventDefault();
+  (e.shiftKey?buttons.at(-1):buttons[0]).focus();
+ }
+});
 function openPopup(object){
- if(!object||object.removed||object.visible===false)return;
+ if(treehouseIntro||activeObject||!visibleObjects().includes(object)||!canInteract(object)||!nearby(object))return;
+ activeObject=object;
  titleEl.textContent=object.name||'';
  copyEl.textContent='';
  actionsEl.replaceChildren();
+ const state={inventory,flags,panel,addItem,removeItem,setQuest,closePopup};
+ const available=(object.actions||[]).filter(action=>!action.available||action.available(state));
  const options=[{label:'EXAMINE',primary:false,run:()=>{copyEl.textContent=object.description||''}}];
- if(object.kind==='npc'&&object.dialogue)options.push({label:'TALK',primary:true,run:()=>{copyEl.textContent=object.dialogue}});
- for(const action of object.actions||[])if(!action.available||action.available({inventory,flags,panel}))options.push(action);
- for(const option of options){const b=document.createElement('button');b.textContent=option.label;b.className=option.primary?'primary':'';b.addEventListener('click',()=>{option.run?.({inventory,flags,addItem,removeItem,setQuest,closePopup});updateInventory()});actionsEl.appendChild(b)}
- layer.classList.add('open');keys.clear();
+ if(object.kind==='npc'&&object.dialogue&&!(object.actions||[]).some(action=>action.label==='TALK')){
+  options.push({label:'TALK',primary:true,run:()=>{copyEl.textContent=object.dialogue}});
+ }
+ options.push(...available);
+ for(const option of options){
+  const button=document.createElement('button');
+  button.type='button';
+  button.textContent=option.label;
+  button.classList.toggle('primary',Boolean(option.primary));
+  button.addEventListener('click',()=>{
+   option.run?.(state);
+   updateInventory();
+   if(activeObject&&!actionsEl.contains(button))closeButton.focus();
+  });
+  actionsEl.appendChild(button);
+ }
+ layer.hidden=false;
+ closeButton.focus();
 }
-// Objects are registered per panel later. Each object's shape defines its visible silhouette,
-// proximity glow, hit testing, and optional collision. No invisible objects are interactive.
-function visibleObjects(){return panels[panel-1].objects.filter(o=>o.visible!==false&&!o.removed)}
-function shapePath(o){const x=o.x,y=o.y,w=o.w||48,h=o.h||48;ctx.beginPath();if(o.shape==='ellipse')ctx.ellipse(x,y,w/2,h/2,0,0,Math.PI*2);else if(o.shape==='polygon'&&o.points?.length){o.points.forEach(([px,py],i)=>i?ctx.lineTo(x+px,y+py):ctx.moveTo(x+px,y+py));ctx.closePath()}else ctx.roundRect(x-w/2,y-h/2,w,h,o.radius||4)}
-function nearby(o){const dx=Math.max(0,Math.abs(hero.x-o.x)-(o.w||0)/2),dy=Math.max(0,Math.abs(hero.y-o.y)-(o.h||0)/2);return Math.hypot(dx,dy)<(o.reach||85)}
+function visibleObjects(){
+ return panels[panel-1].objects.filter(o=>o.visible!==false&&!o.removed&&o.draw&&o.outline&&(!o.isVisible||o.isVisible()));
+}
+const canInteract=o=>o.interactive!==false;
+function hitsOutline(o,x,y,margin=0){
+ const localX=x-o.x,localY=y-o.y;
+ ctx.save();
+ ctx.resetTransform();
+ const inside=ctx.isPointInPath(o.outline,localX,localY);
+ if(margin){ctx.lineWidth=2*margin;ctx.lineJoin='round';}
+ const hit=inside||(margin>0&&ctx.isPointInStroke(o.outline,localX,localY));
+ ctx.restore();
+ return hit;
+}
+const nearby=o=>hitsOutline(o,hero.x,hero.y,o.reach??85);
 const grass=document.createElement('canvas'),ground=grass.getContext('2d');
 grass.width=W;grass.height=H;
 let grassPanel=0;
@@ -170,11 +219,21 @@ function drawHero(c=ctx,x=hero.x,y=hero.y){
 function draw(){
  drawGrass();drawPath();
  if(panel===1)drawTreehouse();
- for(const o of visibleObjects()){o.draw?.(ctx);if(nearby(o)){ctx.save();shapePath(o);ctx.strokeStyle='rgba(48,196,94,'+(0.65+0.3*Math.sin(elapsed*5))+')';ctx.lineWidth=4;ctx.shadowColor='#6af08c';ctx.shadowBlur=15;ctx.stroke();ctx.restore()}}
+ for(const o of visibleObjects()){
+  o.draw(ctx);
+  if(!canInteract(o)||!nearby(o))continue;
+  ctx.save();
+  ctx.translate(o.x,o.y);
+  ctx.strokeStyle='rgba(48,196,94,'+(0.65+0.3*Math.sin(elapsed*5))+')';
+  ctx.lineWidth=4;
+  ctx.shadowColor='#6af08c';
+  ctx.shadowBlur=15;
+  ctx.stroke(o.outline);
+  ctx.restore();
+ }
  drawHero();
 }
-function hitsPath(x,y){return ctx.isPointInPath(x*canvas.width/W,y*canvas.height/H)}
-function blocked(x,y){for(const o of visibleObjects()){if(!o.solid)continue;shapePath(o);if([[0,0],[-12,-12],[12,-12],[-12,12],[12,12]].some(([dx,dy])=>hitsPath(x+dx,y+dy)))return true}return false}
+function blocked(x,y){return visibleObjects().some(o=>o.solid&&hitsOutline(o,x,y,12))}
 function tryExit(side,axis){
  const exit=panels[panel-1].exits[side];
  if(!exit||Math.abs(axis-exit.at)>exit.halfWidth||!exit.canExit())return false;
@@ -201,7 +260,7 @@ function tick(now){
  const ry=Number(keys.has('ArrowDown')||keys.has('s'))-Number(keys.has('ArrowUp')||keys.has('w'));
  roomHero.x=clamp(roomHero.x+rx*dt*25,33,76);roomHero.y=clamp(roomHero.y+ry*dt*30,32,76);
  const el=document.querySelector('#room-hero');el.style.left=roomHero.x+'%';el.style.top=roomHero.y+'%';
- }else if(!layer.classList.contains('open')){
+ }else if(!activeObject){
  let dx=Number(keys.has('ArrowRight')||keys.has('d'))-Number(keys.has('ArrowLeft')||keys.has('a'));
  let dy=Number(keys.has('ArrowDown')||keys.has('s'))-Number(keys.has('ArrowUp')||keys.has('w'));
  if(dx&&dy){dx*=Math.SQRT1_2;dy*=Math.SQRT1_2}
@@ -209,14 +268,15 @@ function tick(now){
  }
  draw();requestAnimationFrame(tick);
 }
-window.addEventListener('keydown',e=>{const key=e.key.length===1?e.key.toLowerCase():e.key;if(key.startsWith('Arrow'))e.preventDefault();if(key==='Escape'&&!treehouseIntro)closePopup();else keys.add(key)});
+window.addEventListener('keydown',e=>{const key=e.key.length===1?e.key.toLowerCase():e.key;if(key.startsWith('Arrow'))e.preventDefault();if(key==='Escape'&&activeObject){e.preventDefault();closePopup()}else keys.add(key)});
 window.addEventListener('keyup',e=>keys.delete(e.key.length===1?e.key.toLowerCase():e.key));
 window.addEventListener('blur',()=>keys.clear());
-canvas.addEventListener('pointerdown',e=>{
- if(layer.classList.contains('open')||treehouseIntro)return;
+canvas.addEventListener('click',e=>{
+ if(activeObject||treehouseIntro)return;
  const r=canvas.getBoundingClientRect(),x=(e.clientX-r.left)*W/r.width,y=(e.clientY-r.top)*H/r.height;
  // Click must hit the actual object shape AND the player must be nearby.
- for(const o of visibleObjects().slice().reverse()){if(!nearby(o))continue;shapePath(o);if(hitsPath(x,y)){openPopup(o);break}}
+ const object=visibleObjects().reverse().find(o=>hitsOutline(o,x,y));
+ if(object)openPopup(object);
 });
 setQuest('Explore Village');updateInventory();requestAnimationFrame(tick);
 function showTreehouse(){
@@ -225,7 +285,7 @@ function showTreehouse(){
  scene.hidden=false;
  const hc=document.querySelector('#room-hero'),hctx=hc.getContext('2d');hctx.clearRect(0,0,100,130);hctx.setTransform(1.6,0,0,1.6,50,83);drawHero(hctx,0,0);
  document.querySelector('#treehouse-door').addEventListener('click',()=>{
-  treehouseIntro=false;scene.hidden=true;hero.x=340;hero.y=390;keys.clear();
+  treehouseIntro=false;scene.hidden=true;hero.x=340;hero.y=390;keys.clear();canvas.focus({preventScroll:true});
  },{once:true});
 }
 showTreehouse();
