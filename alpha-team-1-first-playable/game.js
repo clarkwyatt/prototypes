@@ -526,7 +526,7 @@
   let panelArtReady=false;
   panelArt.onload=()=>{panelArtReady=true;};
   panelArt.onerror=()=>{panelArtReady=false;};
-  panelArt.src="art/panel-01.webp";
+  panelArt.src="art/team1_panel-01.webp";
   function drawIllustratedPanel(){
     if(panel!==1||!panelArtReady)return false;
     ctx.save();
