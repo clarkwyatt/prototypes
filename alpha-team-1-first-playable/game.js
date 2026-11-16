@@ -803,7 +803,12 @@
     if(!frames)return;
     // New sprite package supplies four complete directional walking frames.
     // Keep their shared source-canvas registration stable across frames.
-    const frame=walking ? Math.floor(walkTime*9)%4 : 0;
+    // Gentle idle breathing and an occasional small pose change.
+    // Reuse the approved frames without disturbing the grounded feet.
+    const idleSeconds=performance.now()/1000;
+    const idleCycle=idleSeconds%5.5;
+    const frame=walking ? Math.floor(walkTime*9)%4
+      : (idleCycle>4.75&&idleCycle<5.05 ? 1 : 0);
     const img=frames[frame];
     const bounds=catBounds[selectedCat];
     const h=59;
@@ -814,6 +819,14 @@
     const bottom=(bounds?.y||0)+(bounds?.h||img.naturalHeight);
     ctx.save();ctx.imageSmoothingEnabled=false;
     ellipse(0,22,18,5,"rgba(35,55,36,.24)");
+    if(!walking){
+      // About one screen pixel of slow breathing; feet stay planted.
+      const breathe=1+Math.sin(idleSeconds*2.2)*.012;
+      const groundedY=22;
+      ctx.translate(0,groundedY);
+      ctx.scale(breathe,breathe);
+      ctx.translate(0,-groundedY);
+    }
     ctx.drawImage(img,-w/2,22-bottom*scale,w,img.naturalHeight*scale);
     ctx.restore();
   }
