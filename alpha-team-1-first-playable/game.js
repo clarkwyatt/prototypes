@@ -315,14 +315,33 @@
       }
     }
   }
+  // Stylized little steak: red cut of meat, pale fat rim and a highlight.
+  function drawMeat(x,y,scale=1){
+    ctx.save();ctx.translate(x,y);ctx.scale(scale,scale);
+    ctx.fillStyle="#f6d6b3";ctx.beginPath();
+    ctx.moveTo(-13,-4);ctx.bezierCurveTo(-16,-13,-3,-16,5,-11);
+    ctx.bezierCurveTo(18,-14,21,-2,13,7);ctx.bezierCurveTo(4,15,-12,10,-13,-4);ctx.fill();
+    ctx.fillStyle="#b94e42";ctx.beginPath();
+    ctx.moveTo(-10,-4);ctx.bezierCurveTo(-11,-10,-1,-12,5,-8);
+    ctx.bezierCurveTo(15,-11,17,-1,10,5);ctx.bezierCurveTo(3,11,-10,7,-10,-4);ctx.fill();
+    ellipse(2,-2,4,2.5,"#e58b7c");
+    ctx.restore();
+  }
+  // The mouth is in a different place in each of the four cat views.
+  // Coordinates are local to the cat sprite, before its 0.72 draw scale.
+  function mouthPosition(){
+    const offsets={
+      right:[24,-17],left:[-24,-17],down:[0,-13],up:[0,-29]
+    };
+    const [mx,my]=offsets[facing];
+    return {x:hero.x*width+mx*.72,y:hero.y*height+my*.72};
+  }
   function drawMazeActors(){
     if(panel!==18)return;
     const u=Math.min(width,height);
     for(const m of meat)if(!m.used){
       const x=m.x*width,y=m.y*height;
-      ellipse(x,y,u*.017,u*.012,"#8b4b2b");
-      ellipse(x-u*.012,y-u*.003,u*.008,u*.008,"#f5e7ce");
-      ellipse(x+u*.012,y-u*.003,u*.008,u*.008,"#f5e7ce");
+      drawMeat(x,y,Math.max(.7,u/850));
     }
     for(const d of dogs){
       const x=d.x*width,y=d.y*height;
@@ -346,7 +365,10 @@
         ctx.restore();
       }
     }
-    if(carrying){ellipse(hero.x*width+u*.020,hero.y*height-u*.013,u*.014,u*.009,"#8b4b2b");}
+    if(carrying){
+      const mouth=mouthPosition();
+      drawMeat(mouth.x,mouth.y,.65);
+    }
   }
   function scenery() {
     // Soft grassy meadow, with tiny deterministic blades and flowers.
