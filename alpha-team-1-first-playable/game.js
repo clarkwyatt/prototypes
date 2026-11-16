@@ -212,6 +212,15 @@
     const y=(e.clientY-bounds.top)*height/bounds.height;
     if(clickedTarget(target,x,y))interact(target);
   });
+  // Normalized maze hedge segments; same geometry drives drawing and collision.
+  const mazeHedges=[
+    [[.18,.10],[.18,.32]],[[.18,.32],[.43,.32]],
+    [[.40,.10],[.40,.21]],[[.58,.10],[.58,.38]],
+    [[.35,.47],[.35,.76]],[[.35,.47],[.56,.47]],
+    [[.13,.68],[.25,.68]],[[.57,.60],[.57,.87]],
+    [[.57,.60],[.78,.60]],[[.79,.16],[.79,.45]],
+    [[.79,.76],[.79,.90]]
+  ];
   function scenery() {
     // Soft grassy meadow, with tiny deterministic blades and flowers.
     shape(0,0,width,height,"#a4c68b");
@@ -246,7 +255,7 @@
     if (panel===12) path([[0,.76],[.50,.78],[1,.82]],Math.min(width,height)*.13,"#b89e79");
     if (panel===16) path([[.50,.47],[.70,.47],[1,.50]],Math.min(width,height)*.14,"#b89e79");
     if (panel===17) path([[0,.50],[.48,.51],[1,.50]],Math.min(width,height)*.14,"#b89e79");
-    if (panel===22) path([[.36,1],[.28,.72],[.45,.57],[.78,.52]],Math.min(width,height)*.13,"#b89e79");
+
 
     // Second half of the students' level map: connected trails and landmarks.
     const newTrails={
@@ -266,16 +275,21 @@
       25:[[[0,.55],[.50,.55],[.50,0]]]
     };
     for(const points of newTrails[panel]||[])path(points,unit*.12,"#b89e79");
-    if(panel===17)path([[.5,.5],[.5,1]],unit*.12,"#b89e79");
-    if(panel===22)path([[.5,0],[.5,.55],[1,.55]],unit*.12,"#b89e79");
+
+    if(panel===22)path([[1,.55],[.84,.55],[.84,.73]],unit*.12,"#b89e79");
     if(panel===18){
-      // Maze wall layout only; dogs and meat gameplay come later.
-      for(const points of [
-        [[.20,.12],[.20,.35]],[[.20,.35],[.40,.35]],
-        [[.43,.12],[.43,.34]],[[.64,.27],[.64,.73]],
-        [[.23,.67],[.47,.67]],[[.45,.84],[.79,.84]],
-        [[.82,.12],[.82,.47]]
-      ])path(points,unit*.055,"#526d50");
+      // Leafy maze hedges: three staggered turns and protected pockets.
+      for(const [a,b] of mazeHedges){
+        const x1=a[0]*width,y1=a[1]*height,x2=b[0]*width,y2=b[1]*height;
+        ctx.strokeStyle="#275e3c";ctx.lineWidth=unit*.075;ctx.lineCap="round";
+        ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();
+        const len=Math.hypot(x2-x1,y2-y1);
+        for(let d=0;d<=len;d+=unit*.034){
+          const t=len?d/len:0,x=x1+(x2-x1)*t,y=y1+(y2-y1)*t;
+          ellipse(x-unit*.012,y-unit*.012,unit*.034,unit*.030,"#3b8050");
+          ellipse(x+unit*.013,y+unit*.009,unit*.029,unit*.026,"#4c945a");
+        }
+      }
     }
     if(panel===22){
       // Doghouse and pens; rescue gameplay is not yet implemented.
@@ -429,6 +443,15 @@
         const r=type==="T"?.08:type==="B"?.065:type==="HOME"?.13:.12;
         if(Math.abs((x-nx)*width)<r*Math.min(width,height)+radius &&
            Math.abs((y-ny)*height)<r*Math.min(width,height)+radius) return true;
+      }
+    }
+    if(panel===18){
+      const px=x*width,py=y*height,thickness=Math.min(width,height)*.061;
+      for(const [a,b] of mazeHedges){
+        const ax=a[0]*width,ay=a[1]*height,bx=b[0]*width,by=b[1]*height;
+        const vx=bx-ax,vy=by-ay;
+        const t=Math.max(0,Math.min(1,((px-ax)*vx+(py-ay)*vy)/(vx*vx+vy*vy)));
+        if(Math.hypot(px-(ax+t*vx),py-(ay+t*vy))<thickness)return true;
       }
     }
     if(panel===11 && !forceFieldRemoved && x>.935 && y>.64 && y<.88) return true;
@@ -627,10 +650,7 @@
       18,
       0.5
     ],
-    "bottom": [
-      22,
-      0.5
-    ]
+    
   },
   "18": {
     "left": [
@@ -673,10 +693,6 @@
     ]
   },
   "22": {
-    "top": [
-      17,
-      0.5
-    ],
     "right": [
       23,
       0.55
@@ -731,7 +747,7 @@
       const tolerance=direction==="left"||direction==="right"
         ? Math.max(.045,Math.min(.085,48/height))
         : Math.max(.045,Math.min(.085,48/width));
-      // The force field in Panel 16 cannot be crossed.
+      // Story gates cannot be bypassed through screen transitions.
       if(exit && !(panel===11&&direction==="right"&&!forceFieldRemoved) && !(panel===16&&direction==="right"&&!doorOpen) &&
           Math.abs(coordinate-exit[1])<=tolerance &&
           panels.has(exit[0])){
