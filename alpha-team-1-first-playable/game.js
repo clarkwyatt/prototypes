@@ -264,7 +264,7 @@
   function resetMaze(){
     dogs=dogSeeds.map((d,i)=>({...d,id:i,mode:"watch",timer:0,target:null,x:d.x,y:d.y}));
     // Each bait sits beyond a guarded sightline, requiring a timed crossing to collect it, then a return to bait the dog.
-    meat=[{x:.345,y:.80,used:false},{x:.50,y:.19,used:false},{x:.705,y:.80,used:false},{x:.885,y:.20,used:false}];
+    meat=[{x:.155,y:.78,used:false},{x:.345,y:.23,used:false},{x:.515,y:.79,used:false},{x:.695,y:.20,used:false}];
     carrying=false;caught=false;chaseTime=0;mazeClock=0;
     hero.x=.065;hero.y=.50;facing="right";
     catchModal.classList.remove("open");keys.clear();
