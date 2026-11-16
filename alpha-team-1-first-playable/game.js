@@ -72,6 +72,23 @@
     b.className="interaction-btn"+(label==="EXAMINE"||label==="CLOSE"||label==="OK"?" secondary":"");
     b.addEventListener("click",action);return b;
   }
+  function playForceFieldSfx(){
+    try{
+      const AC=window.AudioContext||window.webkitAudioContext;
+      if(!AC)return;
+      const audio=new AC(),now=audio.currentTime;
+      const oscillator=audio.createOscillator(),gain=audio.createGain(),filter=audio.createBiquadFilter();
+      oscillator.type="sine";filter.type="lowpass";filter.frequency.value=1800;
+      oscillator.frequency.setValueAtTime(780,now);
+      oscillator.frequency.exponentialRampToValueAtTime(145,now+.8);
+      gain.gain.setValueAtTime(.0001,now);
+      gain.gain.exponentialRampToValueAtTime(.13,now+.035);
+      gain.gain.exponentialRampToValueAtTime(.0001,now+.9);
+      oscillator.connect(filter);filter.connect(gain);gain.connect(audio.destination);
+      oscillator.start(now);oscillator.stop(now+.92);
+      oscillator.onended=()=>audio.close();
+    }catch(e){console.warn("Magic sound unavailable",e);}
+  }
   function interact(target){
     const type=target.type;
     if(type!=="VILLAGE_ART"&&!descriptions[type])return;
@@ -98,6 +115,7 @@
     }));
     if(type==="FORCE"&&hasPotion&&!forceFieldRemoved)options.push(button("USE POTION",()=>{
       hasPotion=false;forceFieldRemoved=true;
+      forceVfxStart=performance.now();playForceFieldSfx();
       p.textContent="The Magic Potion dissolves the force field. The path is clear!";
       p.hidden=false;updateHud();actions.replaceChildren(button("OK",closeInteraction));
     }));
@@ -170,13 +188,31 @@
       ["Flower Patch","A cheerful patch of flowers adds color to the village lawn.",.48,.69,.13,.12]
     ]
   };
+    // Panel 11 uses the illustrated scenery rather than the old vector map.
+    // Hotspots use center x/y and bounding width/height, normalized 0–1.
+    // The force field has its own precise right-edge interaction bounds.
+  const panel11Hotspots=[
+    ["Forest Tree","A towering tree shades the western forest path.",.165,.29,.28,.45],
+    ["Ancient Tree","An enormous tree rises above the eastern clearing.",.724,.205,.20,.32],
+    ["Forest Stump","An old tree stump sits among stones and wildflowers.",.231,.744,.09,.11],
+    ["Rock Cluster","Large stones rest beside the western tree.",.103,.474,.075,.105],
+    ["Wildflowers","Bright pink flowers bloom beside the forest tree.",.274,.458,.10,.105],
+    ["Forest Shrub","A leafy shrub grows beside the eastern path.",.727,.73,.17,.19],
+    ["Forest Boulders","A rocky outcrop lies beneath the eastern shrub.",.628,.79,.065,.11],
+    ["Magic Pillar","An ancient stone pillar glows with mysterious blue light.",.935,.258,.058,.165]
+  ];
   function villageTargets(){
-    return (villageHotspots[panel]||[]).map(([title,description,x,y,w,h],i)=>({
+    const art=panel===11?panel11Hotspots:(villageHotspots[panel]||[]);
+    return art.map(([title,description,x,y,w,h],i)=>({
       type:"VILLAGE_ART",title,description,x,y,w,h,id:i
     }));
   }
   function targets(){
-    if(illustratedPanels.has(panel))return villageTargets();
+    if(illustratedPanels.has(panel)){
+      const list=villageTargets();
+      if(panel===11&&!forceFieldRemoved)list.push({type:"FORCE",x:.925,y:.475,id:101});
+      return list;
+    }
     const list=(objects[panel]||[]).map(([type,x,y],i)=>({type,x,y,id:i}));
     if(panel===12){list.push({type:"DOCK",x:.81,y:.29,id:100});}
     if(panel===11&&!forceFieldRemoved)list.push({type:"FORCE",x:.975,y:.76,id:101});
@@ -227,7 +263,7 @@
       ctx.moveTo(x-unit*.027+unit*.048,y-unit*.023);
       ctx.ellipse(x-unit*.027,y-unit*.023,unit*.048,unit*.045,0,0,Math.PI*2);
     }else if(t.type==="FORCE"||t.type==="DOOR"){
-      if(t.type==="FORCE")ctx.rect(width*.953,height*.66,width*.042,height*.20);
+      if(t.type==="FORCE")ctx.rect(width*.865,height*.285,width*.13,height*.405);
       else ctx.rect(width*.947,height*.39,width*.049,height*.22);
     }else if(t.type==="DOCK"){
       ctx.rect(width*.77,height*.23,width*.09,height*.12);
@@ -253,7 +289,7 @@
       case "LAKE": return (dx/(width*.38))**2+(dy/(height*.27))**2<=1;
       case "DOCK": return x>=width*.77 && x<=width*.86 && y>=height*.23 && y<=height*.35;
       case "NPC": return Math.abs(dx)<=unit*.038 && dy>=-unit*.12 && dy<=unit*.03;
-      case "FORCE": return x>=width*.953 && x<=width*.995 && y>=height*.66 && y<=height*.86;
+      case "FORCE": return x>=width*.865 && x<=width*.995 && y>=height*.285 && y<=height*.69;
       case "DOOR": return x>=width*.947 && x<=width*.996 && y>=height*.39 && y<=height*.61;
       default: return false;
     }
@@ -580,19 +616,44 @@
 
   // Illustrated village screens. Load each independently, retaining vector
   // fallback if an image is unavailable.
-  const illustratedPanels = new Set([1,2,6,7]);
+  const illustratedPanels = new Set([1,2,6,7,11]);
   const panelArt = new Map();
   for(const id of illustratedPanels){
     const img=new Image();
-    img.src="art/team1_panel_"+String(id).padStart(2,"0")+".webp";
+    img.src="art/team1_panel_"+String(id).padStart(2,"0")+(id===11?"_locked":"")+".webp";
     panelArt.set(id,img);
   }
+  const panel11Unlocked=new Image();
+  panel11Unlocked.src="art/team1_panel_11_unlocked.webp";
+  let forceVfxStart=0;
   function drawIllustratedPanel(){
-    const img=panelArt.get(panel);
+    const fallback=panelArt.get(panel);
+    const img=panel===11&&forceFieldRemoved&&panel11Unlocked.complete&&panel11Unlocked.naturalWidth?panel11Unlocked:fallback;
     if(!img||!img.complete||!img.naturalWidth)return false;
     ctx.save();
     ctx.imageSmoothingEnabled=true;
     ctx.drawImage(img,0,0,width,height);
+    if(panel===11&&forceVfxStart){
+      const elapsed=(performance.now()-forceVfxStart)/1000;
+      if(elapsed<1.15){
+        const power=1-elapsed/1.15;
+        const cx=width*.925,cy=height*.47;
+        ctx.save();ctx.globalCompositeOperation="screen";
+        const glow=ctx.createRadialGradient(cx,cy,5,cx,cy,width*.23);
+        glow.addColorStop(0,"rgba(240,255,255,"+(.7*power)+")");
+        glow.addColorStop(.4,"rgba(143,90,255,"+(.35*power)+")");
+        glow.addColorStop(1,"rgba(120,80,255,0)");
+        ctx.fillStyle=glow;ctx.fillRect(cx-width*.24,cy-width*.24,width*.48,width*.48);
+        for(let i=0;i<24;i++){
+          const angle=i*2.39996+elapsed*2;
+          const distance=(.015+elapsed*.15+(i%5)*.008)*Math.min(width,height);
+          const x=cx+Math.cos(angle)*distance,y=cy+Math.sin(angle)*distance;
+          ctx.fillStyle=i%2?"#a8f8ff":"#e4b4ff";
+          ctx.globalAlpha=power;ctx.fillRect(x,y,3+(i%3)*2,3+(i%3)*2);
+        }
+        ctx.restore();
+      }else forceVfxStart=0;
+    }
     ctx.restore();
     return true;
   }
@@ -979,6 +1040,20 @@
     // Art-matched solid footprints, inset from the interaction outlines.
     // Trees collide at their trunks, cottages at their walls, and smaller
     // objects at their bases so the player can still navigate the lawn.
+    if(panel===11){
+      const radius=Math.min(width,height)*.014;
+      const solid=[
+        [.13,.30,.19,.30], [.29,.15,.12,.16], [.73,.19,.105,.20],
+        [.805,.135,.085,.14], [.24,.75,.055,.07], [.10,.48,.055,.065],
+        [.37,.20,.06,.07], [.64,.78,.07,.08], [.72,.75,.10,.10],
+        [.94,.26,.055,.17], [.972,.61,.035,.14]
+      ];
+      for(const [cx,cy,w,h] of solid){
+        if(Math.abs(x-cx)*width<(w*width/2+radius)&&Math.abs(y-cy)*height<(h*height/2+radius))return true;
+      }
+      if(!forceFieldRemoved && x>.865&&y>.30&&y<.69)return true;
+      return false;
+    }
     if(illustratedPanels.has(panel)){
       const radius=Math.min(width,height)*.016;
       for(const t of villageTargets()){
@@ -1022,7 +1097,7 @@
         if(Math.hypot(px-(ax+t*vx),py-(ay+t*vy))<thickness)return true;
       }
     }
-    if(panel===11 && !forceFieldRemoved && x>.935 && y>.64 && y<.88) return true;
+    if(panel===11 && !forceFieldRemoved && x>.865 && y>.30 && y<.69) return true;
     if(panel===16 && !doorOpen && x>.935 && y>.37 && y<.63) return true;
     return false;
   }
