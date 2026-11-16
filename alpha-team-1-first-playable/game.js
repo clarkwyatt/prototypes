@@ -407,7 +407,121 @@
       drawMeat(mouth.x,mouth.y,.65);
     }
   }
+
+  // Team 1 pixel-art village: original low-resolution raster artwork.
+  // Art-only layer: uses the existing normalized object positions and path layout.
+  // Collisions, quests, click targets, transitions and controls remain unchanged.
+  const pixelCanvas=document.createElement("canvas");
+  const px=pixelCanvas.getContext("2d",{alpha:false});
+  let pixelCacheKey="";
+  function pixelVillage(){
+    const scale=3, pw=Math.max(1,Math.ceil(width/scale)),ph=Math.max(1,Math.ceil(height/scale));
+    const key=pw+"x"+ph;
+    if(pixelCacheKey!==key){
+      pixelCacheKey=key;pixelCanvas.width=pw;pixelCanvas.height=ph;
+      let seed=41371;
+      const rand=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296;};
+      const rect=(x,y,w,h,c)=>{px.fillStyle=c;px.fillRect(Math.round(x),Math.round(y),Math.ceil(w),Math.ceil(h));};
+      const dot=(x,y,c,s=1)=>rect(x,y,s,s,c);
+      const ox=x=>x*pw,oy=y=>y*ph,u=Math.min(pw,ph);
+      // Dense hand-pixeled meadow: multiple ground shades, grass clusters and flowers.
+      rect(0,0,pw,ph,"#7db647");
+      for(let i=0;i<pw*ph/3;i++){
+        const x=Math.floor(rand()*pw),y=Math.floor(rand()*ph);
+        dot(x,y,["#6aa73c","#91c657","#9acc59","#5e9b37","#abd264"][Math.floor(rand()*5)],1+Math.floor(rand()*2));
+      }
+      for(let i=0;i<Math.round(pw*ph/850);i++){
+        const x=rand()*pw,y=rand()*ph;
+        rect(x,y,2,4,"#3f8a38");rect(x-2,y+2,2,2,"#4e9b39");rect(x+2,y+1,2,3,"#b1d66b");
+      }
+      // Crossroads retain the original 50% / 52% path alignments.
+      const vLeft=ox(.5)-u*.06,vRight=ox(.5)+u*.06;
+      const hTop=oy(.52)-u*.05,hBottom=oy(.52)+u*.05;
+      rect(vLeft,0,vRight-vLeft,ph,"#ae713e");
+      rect(0,hTop,pw,hBottom-hTop,"#ae713e");
+      rect(vLeft+2,0,vRight-vLeft-4,ph,"#d99b59");
+      rect(0,hTop+2,pw,hBottom-hTop-4,"#d99b59");
+      for(let i=0;i<pw*ph/30;i++){
+        const x=Math.floor(rand()*pw),y=Math.floor(rand()*ph);
+        if((x>=vLeft&&x<=vRight)||(y>=hTop&&y<=hBottom)){
+          dot(x,y,["#e9ad68","#bf8045","#f2bb77","#c88d52"][Math.floor(rand()*4)],1+Math.floor(rand()*2));
+        }
+      }
+      // Short tufts and bright wildflowers, kept out of the main road.
+      for(let i=0;i<65;i++){
+        const x=Math.floor(rand()*pw),y=Math.floor(rand()*ph);
+        if((x>vLeft-6&&x<vRight+6)||(y>hTop-6&&y<hBottom+6))continue;
+        const c=["#fff4d0","#f8c9df","#f9dd77"][Math.floor(rand()*3)];
+        dot(x-2,y,c,2);dot(x+2,y,c,2);dot(x,y-2,c,2);dot(x,y+2,c,2);dot(x,y,"#e99c37",2);
+      }
+      function cottage(nx,ny,type){
+        const x=ox(nx),y=oy(ny),w=u*(type==="HOME"?.29:.255),h=u*(type==="HOME"?.23:.205);
+        const left=Math.round(x-w*.50),top=Math.round(y-h*.48),ww=Math.round(w),hh=Math.round(h);
+        const roof=type==="HOME"?"#c85632":nx>.5?"#326b9e":"#8651a0";
+        const roofLight=type==="HOME"?"#ef8a43":nx>.5?"#529bc3":"#ae70bb";
+        rect(left+3,top+hh*.32,ww-6,hh*.7,"#634936");
+        rect(left+5,top+hh*.34,ww-10,hh*.66,"#e6bf83");
+        for(let yy=top+hh*.35;yy<top+hh;yy+=6)rect(left+5,yy,ww-10,1,"#cb9e6c");
+        rect(left-4,top+hh*.08,ww+8,hh*.3,"#533c36");
+        rect(left-3,top+hh*.03,ww+6,hh*.27,roof);
+        for(let yy=top+hh*.06;yy<top+hh*.29;yy+=5){
+          for(let xx=left;xx<left+ww;xx+=10){
+            rect(xx+(Math.floor(yy/5)%2)*4,yy,8,2,roofLight);
+          }
+        }
+        rect(left+ww*.16,top+hh*.47,ww*.17,hh*.23,"#4b463b");
+        rect(left+ww*.18,top+hh*.49,ww*.13,hh*.18,"#82c7d3");
+        rect(left+ww*.67,top+hh*.47,ww*.17,hh*.23,"#4b463b");
+        rect(left+ww*.69,top+hh*.49,ww*.13,hh*.18,"#82c7d3");
+        rect(left+ww*.49,top+hh*.47,2,hh*.23,"#f3df9a");
+        rect(left+ww*.16,top+hh*.58,ww*.17,2,"#f3df9a");
+        rect(left+ww*.67,top+hh*.58,ww*.17,2,"#f3df9a");
+        rect(left+ww*.40,top+hh*.64,ww*.20,hh*.36,"#5e4939");
+        rect(left+ww*.42,top+hh*.66,ww*.16,hh*.34,"#347b9b");
+        dot(left+ww*.55,top+hh*.83,"#f7cf67",2);
+        rect(left+ww*.12,top+hh*.70,ww*.22,3,"#6a5239");
+        rect(left+ww*.66,top+hh*.70,ww*.22,3,"#6a5239");
+        for(let i=0;i<14;i++){
+          const bx=left+ww*(i%7<3?.12:.66)+rand()*ww*.20;
+          dot(bx,top+hh*.68-rand()*5,["#f4a7bf","#fff0b2","#d76d8e"][i%3],2);
+        }
+        if(type==="HOME"){
+          // Paw marks identify the quest-relevant home.
+          for(const q of [.24,.76]){
+            const xx=left+ww*q,yy=top+hh*.83;
+            dot(xx,yy,"#f7d88a",3);dot(xx-3,yy-4,"#f7d88a",2);dot(xx+1,yy-5,"#f7d88a",2);dot(xx+4,yy-3,"#f7d88a",2);
+          }
+        }
+      }
+      function tree(nx,ny){
+        const x=ox(nx),y=oy(ny),r=u*.092;
+        rect(x-r*.18,y+r*.20,r*.36,r*.85,"#75492e");
+        for(let i=0;i<18;i++){
+          const a=i*2.399,rr=r*(.35+.5*rand()),cx=x+Math.cos(a)*rr,cy=y-r*.30+Math.sin(a)*rr*.72;
+          const cr=r*(.30+rand()*.20);
+          rect(cx-cr,cy-cr,cr*2,cr*2,["#245b37","#347943","#47964b","#6eb64e","#a1d45a"][i%5]);
+          for(let j=0;j<6;j++)dot(cx+(rand()-.5)*cr*2,cy+(rand()-.5)*cr*2,"#b6dd62",2);
+        }
+      }
+      function bush(nx,ny){
+        const x=ox(nx),y=oy(ny),r=u*.065;
+        for(let i=0;i<14;i++){
+          const a=i*2.4,cx=x+Math.cos(a)*r*.65,cy=y+Math.sin(a)*r*.40;
+          rect(cx-r*.32,cy-r*.30,r*.64,r*.60,["#225d3c","#397c43","#4b9a4c","#83be53"][i%4]);
+        }
+        for(let i=0;i<11;i++)dot(x+(rand()-.5)*r*1.5,y+(rand()-.5)*r*.9,"#f6b14a",2);
+      }
+      // These coordinates come from the existing Panel 1 object array.
+      tree(.16,.20);bush(.82,.78);
+      cottage(.78,.19,"H");cottage(.18,.78,"H");cottage(.36,.24,"HOME");
+    }
+    ctx.save();ctx.imageSmoothingEnabled=false;
+    ctx.drawImage(pixelCanvas,0,0,width,height);
+    ctx.restore();
+  }
+
   function scenery() {
+    if(panel===1){pixelVillage();return;}
     // Soft grassy meadow, with tiny deterministic blades and flowers.
     shape(0,0,width,height,"#a4c68b");
     const unit=Math.min(width,height);
