@@ -801,19 +801,34 @@
     const sprites=catFrames[selectedCat];
     const frames=sprites && sprites[facing];
     if(!frames)return;
-    // Gentle idle: a quiet breathing motion and occasional alternate pose.
-    // The walking frames remain the only required art assets.
-    const idleTime=performance.now()/1000;
-    const idlePhase=idleTime%4.8;
-    const frame=walking ? Math.floor(walkTime*9)%3 : (idlePhase>4.12&&idlePhase<4.38 ? 1 : 0);
-    const img=frames[frame];
-    const crop=catBounds[selectedCat]||{x:0,y:0,w:img.naturalWidth,h:img.naturalHeight};
-    const h=59,w=h*crop.w/crop.h;
-    const breathe=walking?0:Math.round(Math.sin(idleTime*2.4)*.8);
+    // Source ZIP contains inconsistent silhouettes between walking frames
+    // (including disappearing tails). Use the clearest complete pose for each
+    // direction until a properly redrawn animation sheet is available.
+    const stableFrame={down:0,left:0,right:2,up:0};
+    const img=frames[stableFrame[facing]];
+    const t=performance.now()/1000;
+    // Use the original 48x66 source canvas rather than a union crop from all
+    // directions. Each pose is grounded independently on its visible feet.
+    const scan=document.createElement("canvas");
+    scan.width=img.naturalWidth;scan.height=img.naturalHeight;
+    const scanCtx=scan.getContext("2d",{willReadFrequently:true});
+    scanCtx.drawImage(img,0,0);
+    const pixels=scanCtx.getImageData(0,0,scan.width,scan.height).data;
+    let minX=scan.width,maxX=0,minY=scan.height,maxY=0;
+    for(let y=0;y<scan.height;y++)for(let x=0;x<scan.width;x++){
+      if(pixels[(y*scan.width+x)*4+3]>16){
+        minX=Math.min(minX,x);maxX=Math.max(maxX,x+1);
+        minY=Math.min(minY,y);maxY=Math.max(maxY,y+1);
+      }
+    }
+    const cropW=Math.max(1,maxX-minX),cropH=Math.max(1,maxY-minY);
+    const h=59,w=h*cropW/cropH;
+    // Small rhythmic movement while walking; very subtle breathing at rest.
+    const lift=walking ? Math.round(Math.abs(Math.sin(walkTime*11))*1.4)
+      : Math.round(Math.sin(t*2.2)*.55);
     ctx.save();ctx.imageSmoothingEnabled=false;
-    // Both sprite feet and shadow are anchored to the same ground point.
     ellipse(0,22,18,5,"rgba(35,55,36,.24)");
-    ctx.drawImage(img,crop.x,crop.y,crop.w,crop.h,-w/2,22-h+breathe,w,h);
+    ctx.drawImage(img,minX,minY,cropW,cropH,-w/2,22-h-lift,w,h);
     ctx.restore();
   }
 
