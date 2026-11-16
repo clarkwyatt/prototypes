@@ -234,15 +234,15 @@
   // Four alternating gates force a winding, continuous route through the maze.
   // Walls reach the screen edges, so the cat must go around each open end.
   const mazeHedges=[
-    [[.22,0],[.22,.69]],
+    [[.22,0],[.22,.60]],
     [[.40,.31],[.40,1]],
-    [[.58,0],[.58,.69]],
+    [[.58,0],[.58,.60]],
     [[.76,.31],[.76,1]],
     // Small cul-de-sacs off the main route (not blocking the intended route).
     [[.05,.17],[.13,.17]],[[.13,.17],[.13,.30]],
-    [[.28,.83],[.28,.83]],[[.28,.83],[.28,1]],
+    [[.22,.83],[.27,.83]],[[.22,.83],[.22,1]],
     [[.46,.15],[.52,.15]],
-    [[.64,.83],[.69,.83]],[[.64,.83],[.64,1]],
+    [[.58,.83],[.63,.83]],[[.58,.83],[.58,1]],
     [[.83,.17],[.91,.17]],[[.91,.17],[.91,.28]]
   ];
   // Each dog guards the next bend, with meat accessible on the approach.
