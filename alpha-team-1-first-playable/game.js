@@ -128,13 +128,13 @@
   // Each rectangle is normalized to the full illustrated screen.
   const villageHotspots={
     1:[
-      ["Cat's Home","A welcoming cottage with a blue door and a golden paw print. This is where your adventure begins.",.35,.40,.35,.45],
-      ["Village Cottage","A cozy cottage with a sunny yellow roof and flower-filled window box.",.83,.26,.21,.34],
-      ["Blue-Roof Cottage","A little cottage with a bright blue roof and a wooden crate outside.",.86,.72,.24,.30],
-      ["Old Oak Tree","An enormous tree spreads its branches over the village lawn.",.19,.38,.27,.52],
-      ["Berry Bush","A leafy bush covered in ripe red berries.",.22,.83,.18,.19],
-      ["Paw Sign","A wooden sign marked with a paw print stands beside your home.",.65,.65,.08,.13],
-      ["Flower Garden","Colorful flowers brighten the grass beside the cottages.",.67,.89,.10,.10]
+      ["Cat's Home","A welcoming cottage with a blue door and a golden paw print. This is where your adventure begins.",.475,.367,.345,.47],
+      ["Village Cottage","A cozy cottage with a sunny yellow roof and flower-filled window box.",.835,.225,.205,.31],
+      ["Blue-Roof Cottage","A little cottage with a bright blue roof and a wooden crate outside.",.865,.715,.245,.315],
+      ["Old Oak Tree","An enormous tree spreads its branches over the village lawn.",.177,.33,.30,.50],
+      ["Berry Bush","A leafy bush covered in ripe red berries.",.218,.845,.17,.20],
+      ["Paw Sign","A wooden sign marked with a paw print stands beside your home.",.64,.675,.06,.13],
+      ["Flower Garden","Colorful flowers brighten the grass beside the cottages.",.665,.895,.095,.11]
     ],
     2:[
       ["Blue-Roof Cottage","A cheerful blue-roofed home with a barrel and a neat stack of logs.",.28,.43,.28,.43],
@@ -148,7 +148,7 @@
       ["Purple-Roof Cottage","A lovely home with a purple tiled roof and warm glowing windows.",.29,.39,.32,.43],
       ["Blue-Roof Cottage","A small blue-roofed cottage sits beside the path.",.85,.42,.25,.35],
       ["Old Oak Tree","A broad green tree shades the village crossroads.",.59,.26,.28,.46],
-      ["Village Gate","A sturdy locked wooden gate. The village continues beyond it, but the gate is shut.",.61,.80,.28,.18],
+      ["Village Gate","A sturdy locked wooden gate. The village continues beyond it, but the gate is shut.",.605,.805,.22,.18],
       ["Gate Lantern","A lantern glows warmly beside the village gate.",.50,.67,.08,.14],
       ["Flower Bed","Pink flowers grow beside the fence.",.92,.69,.10,.12]
     ],
@@ -964,8 +964,32 @@
     highlight();
   }
   function blocked(x,y) {
-    // The four village screens are free-roam: decorative art is nonblocking.
-    if(illustratedPanels.has(panel))return false;
+    // Art-matched solid footprints, inset from the interaction outlines.
+    // Trees collide at their trunks, cottages at their walls, and smaller
+    // objects at their bases so the player can still navigate the lawn.
+    if(illustratedPanels.has(panel)){
+      const radius=Math.min(width,height)*.016;
+      for(const t of villageTargets()){
+        const name=t.title.toLowerCase();
+        let cx=t.x,cy=t.y,w=t.w,h=t.h;
+        if(name.includes("cottage")||name==="cat's home"){
+          cy+=h*.12;w*=.78;h*=.64;
+        }else if(name.includes("tree")){
+          cy+=h*.30;w*=.26;h*=.28;
+        }else if(name.includes("gate")){
+          cy+=h*.16;w*=.82;h*=.72;
+        }else if(name.includes("sign")||name.includes("lantern")){
+          cy+=h*.23;w*=.50;h*=.40;
+        }else if(name.includes("flower")){
+          w*=.72;h*=.55;
+        }else{
+          cy+=h*.10;w*=.70;h*=.70;
+        }
+        if(Math.abs((x-cx)*width)<w*width/2+radius &&
+           Math.abs((y-cy)*height)<h*height/2+radius)return true;
+      }
+      return false;
+    }
     const radius=Math.min(width,height)*.025;
     for(const [type,nx,ny] of objects[panel]||[]) {
       if(type==="LAKE") {
