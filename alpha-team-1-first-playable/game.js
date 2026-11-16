@@ -271,7 +271,7 @@
   }
   resetMaze();
   function dogFacing(d){
-    const alternate=Math.floor((mazeClock+d.phase)/5)%2===0;
+    const alternate=Math.floor((mazeClock+d.phase)/3)%2===0;
     return d.axis==="horizontal"?(alternate?0:Math.PI):(alternate?Math.PI/2:-Math.PI/2);
   }
   function sight(d,px,py){
@@ -384,10 +384,9 @@
       ctx.save();ctx.translate(x,y);
       ctx.rotate(d.mode==="watch"?dogFacing(d):(d.heading ?? 0));
       if(d.mode==="eating"){
-        // Three seconds of rhythmic head dips while chewing at the steak.
-        const chew=Math.sin(d.timer*15);
-        ctx.translate(u*.007*chew,0);
-        ctx.rotate(chew*.11);
+        // Gentle chewing with a tiny head tilt and no body thrust.
+        const chew=Math.sin(d.timer*9);
+        ctx.rotate(chew*.018);
       }
       ellipse(0,0,u*.029,u*.023,"#9d7047");
       ellipse(u*.019,0,u*.022,u*.020,"#c59159");
