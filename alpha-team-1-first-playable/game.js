@@ -7,20 +7,6 @@
   const hero = { x: .5, y: .68, speed: 220 };
   const panels = new Set(Array.from({length:25},(_,i)=>i+1));
   let panel = 1, width = 0, height = 0, lastTime = performance.now();
-  // Developer-only panel teleporter. It does not grant or require inventory items.
-  const debugBox=document.createElement("div");
-  debugBox.style.cssText="position:absolute;right:12px;bottom:12px;z-index:50;font:700 13px Nunito,system-ui,sans-serif;color:#263d36";
-  debugBox.innerHTML='<button id="debug-toggle" type="button" style="border:2px solid #e7d7ad;border-radius:12px;background:#fff9e8;padding:10px;cursor:pointer;font-weight:800">DEBUG</button><div id="debug-panel" style="display:none;margin-top:6px;background:#fff9e8;border:2px solid #e7d7ad;border-radius:12px;padding:10px;box-shadow:0 5px 18px #0003"><label for="debug-destination">Teleport to panel</label><select id="debug-destination" style="display:block;margin:8px 0;padding:7px;width:100%"></select><button id="debug-go" type="button" style="background:#3d9b68;color:white;border:0;border-radius:8px;padding:8px 16px;cursor:pointer">GO</button></div>';
-  document.querySelector("#game").appendChild(debugBox);
-  const debugSelect=debugBox.querySelector("#debug-destination");
-  for(let i=1;i<=25;i++){const option=document.createElement("option");option.value=i;option.textContent="Panel "+i;debugSelect.appendChild(option);}
-  debugBox.querySelector("#debug-toggle").onclick=()=>{const menu=debugBox.querySelector("#debug-panel");menu.style.display=menu.style.display==="none"?"block":"none";debugSelect.value=panel;};
-  debugBox.querySelector("#debug-go").onclick=()=>{
-    panel=Number(debugSelect.value);hero.x=panel===18?.065:.5;hero.y=panel===18?.5:.65;
-    if(panel===18)resetMaze();
-    if(typeof closeInteraction==="function")closeInteraction();
-    keys.clear();debugBox.querySelector("#debug-panel").style.display="none";
-  };
   const objects = {
     1: [["T",.16,.20],["H",.78,.19],["H",.18,.78],["B",.82,.78],["HOME",.36,.24]],
     2: [["T",.17,.24],["H",.70,.20],["B",.35,.46],["H",.18,.77],["H",.68,.69]],
@@ -913,4 +899,21 @@
   addEventListener("keyup",e=>keys.delete(e.key.length===1?e.key.toLowerCase():e.key));
   addEventListener("blur",()=>keys.clear());
   updateHud();resize();requestAnimationFrame(update);
+  // Debug controls are initialized after the game loop starts, so UI issues cannot prevent rendering.
+  try {
+  // Developer-only panel teleporter. It does not grant or require inventory items.
+  const debugBox=document.createElement("div");
+  debugBox.style.cssText="position:absolute;right:12px;bottom:12px;z-index:50;font:700 13px Nunito,system-ui,sans-serif;color:#263d36";
+  debugBox.innerHTML='<button id="debug-toggle" type="button" style="border:2px solid #e7d7ad;border-radius:12px;background:#fff9e8;padding:10px;cursor:pointer;font-weight:800">DEBUG</button><div id="debug-panel" style="display:none;margin-top:6px;background:#fff9e8;border:2px solid #e7d7ad;border-radius:12px;padding:10px;box-shadow:0 5px 18px #0003"><label for="debug-destination">Teleport to panel</label><select id="debug-destination" style="display:block;margin:8px 0;padding:7px;width:100%"></select><button id="debug-go" type="button" style="background:#3d9b68;color:white;border:0;border-radius:8px;padding:8px 16px;cursor:pointer">GO</button></div>';
+  document.querySelector("#game").appendChild(debugBox);
+  const debugSelect=debugBox.querySelector("#debug-destination");
+  for(let i=1;i<=25;i++){const option=document.createElement("option");option.value=i;option.textContent="Panel "+i;debugSelect.appendChild(option);}
+  debugBox.querySelector("#debug-toggle").onclick=()=>{const menu=debugBox.querySelector("#debug-panel");menu.style.display=menu.style.display==="none"?"block":"none";debugSelect.value=panel;};
+  debugBox.querySelector("#debug-go").onclick=()=>{
+    panel=Number(debugSelect.value);hero.x=panel===18?.065:.5;hero.y=panel===18?.5:.65;
+    if(panel===18)resetMaze();
+    if(typeof closeInteraction==="function")closeInteraction();
+    keys.clear();debugBox.querySelector("#debug-panel").style.display="none";
+  };
+  } catch (error) { console.error('Debug menu unavailable:',error); }
 })();
