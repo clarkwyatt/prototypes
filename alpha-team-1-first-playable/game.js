@@ -678,6 +678,7 @@
     ["calico","Calico"],["black","Black"]
   ];
   const catFrames = {};
+  const catBounds = {};
   let selectedCat = null, catAssetsReady = false;
   const catScreen = document.createElement("section");
   catScreen.id = "choose-cat";
@@ -759,6 +760,25 @@
       for(const direction of ["up","down","left","right"]){
         catFrames[id][direction]=await Promise.all([0,1,2].map(i=>unpack(id+"_"+direction+"_"+i+".png")));
       }
+      // Find one consistent visible bounding box for every frame of this cat.
+      // Cropping transparent padding prevents the cat from hovering above its shadow.
+      let minX=Infinity,minY=Infinity,maxX=0,maxY=0;
+      for(const direction of ["up","down","left","right"]){
+        for(const img of catFrames[id][direction]){
+          const scan=document.createElement("canvas");
+          scan.width=img.naturalWidth;scan.height=img.naturalHeight;
+          const scanCtx=scan.getContext("2d",{willReadFrequently:true});
+          scanCtx.drawImage(img,0,0);
+          const pixels=scanCtx.getImageData(0,0,scan.width,scan.height).data;
+          for(let y=0;y<scan.height;y++)for(let x=0;x<scan.width;x++){
+            if(pixels[(y*scan.width+x)*4+3]>16){
+              minX=Math.min(minX,x);minY=Math.min(minY,y);
+              maxX=Math.max(maxX,x+1);maxY=Math.max(maxY,y+1);
+            }
+          }
+        }
+      }
+      catBounds[id]=Number.isFinite(minX)?{x:minX,y:minY,w:maxX-minX,h:maxY-minY}:null;
       const portrait=catCards.get(id).querySelector("img");
       const img=catFrames[id].down[0];
       const portraitCanvas=document.createElement("canvas");
@@ -781,12 +801,19 @@
     const sprites=catFrames[selectedCat];
     const frames=sprites && sprites[facing];
     if(!frames)return;
-    const img=frames[walking ? Math.floor(walkTime*9)%3 : 0];
-    // Match the original cat's small footprint, without changing collision dimensions.
-    const h=64, w=h*img.naturalWidth/img.naturalHeight;
+    // Gentle idle: a quiet breathing motion and occasional alternate pose.
+    // The walking frames remain the only required art assets.
+    const idleTime=performance.now()/1000;
+    const idlePhase=idleTime%4.8;
+    const frame=walking ? Math.floor(walkTime*9)%3 : (idlePhase>4.12&&idlePhase<4.38 ? 1 : 0);
+    const img=frames[frame];
+    const crop=catBounds[selectedCat]||{x:0,y:0,w:img.naturalWidth,h:img.naturalHeight};
+    const h=59,w=h*crop.w/crop.h;
+    const breathe=walking?0:Math.round(Math.sin(idleTime*2.4)*.8);
     ctx.save();ctx.imageSmoothingEnabled=false;
-    ellipse(0,19,18,5,"rgba(35,55,36,.24)");
-    ctx.drawImage(img,-w/2,-h+23,w,h);
+    // Both sprite feet and shadow are anchored to the same ground point.
+    ellipse(0,22,18,5,"rgba(35,55,36,.24)");
+    ctx.drawImage(img,crop.x,crop.y,crop.w,crop.h,-w/2,22-h+breathe,w,h);
     ctx.restore();
   }
 
