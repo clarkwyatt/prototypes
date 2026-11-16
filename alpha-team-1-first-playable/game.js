@@ -5,7 +5,7 @@
   const ctx = canvas.getContext("2d");
   const keys = new Set();
   const hero = { x: .5, y: .68, speed: 220 };
-  const panels = new Set([1, 2, 6, 7, 11, 12, 16, 17, 21, 22]);
+  const panels = new Set(Array.from({length:25},(_,i)=>i+1));
   let panel = 1, width = 0, height = 0, lastTime = performance.now();
   const objects = {
     1: [["T",.16,.20],["H",.78,.19],["H",.18,.78],["B",.82,.78],["HOME",.36,.24]],
@@ -17,7 +17,10 @@
     16: [["B",.73,.83]],
     17: [["T",.72,.20],["T",.29,.79],["B",.73,.81]],
     21: [["B",.16,.19],["B",.81,.49],["H",.77,.81]],
-    22: [["H",.76,.40]]
+    22: [["H",.76,.40]],
+    5: [["B",.70,.23]], 10: [["B",.23,.72]], 15: [["T",.27,.32],["T",.70,.68]],
+    19: [["B",.76,.76]], 20: [["B",.28,.70],["B",.78,.26]],
+    24: [["T",.77,.27],["H",.79,.73]]
   };
   function resize() {
     const dpr = Math.min(devicePixelRatio || 1, 2);
@@ -244,6 +247,43 @@
     if (panel===16) path([[.50,.47],[.70,.47],[1,.50]],Math.min(width,height)*.14,"#b89e79");
     if (panel===17) path([[0,.50],[.48,.51],[1,.50]],Math.min(width,height)*.14,"#b89e79");
     if (panel===22) path([[.36,1],[.28,.72],[.45,.57],[.78,.52]],Math.min(width,height)*.13,"#b89e79");
+
+    // Second half of the students' level map: connected trails and landmarks.
+    const newTrails={
+      3:[[[0,.52],[.48,.52],[.48,1]]],
+      4:[[[0,.52],[.50,.52],[.50,.12],[1,.52]]],
+      5:[[[0,.52],[.65,.52],[.65,1]]],
+      8:[[[.48,0],[.48,.52],[1,.52]]],
+      9:[[[0,.52],[1,.52]]],
+      10:[[[.65,0],[.65,1]],[[0,.52],[.65,.52]]],
+      13:[[[0,.52],[1,.52]]],14:[[[0,.52],[1,.52]]],
+      15:[[[.65,0],[.65,1]],[[0,.52],[.65,.52]]],
+      18:[[[0,.50],[1,.50]]],
+      19:[[[0,.50],[1,.50]],[[.52,.50],[.52,1]]],
+      20:[[[0,.50],[1,.50]],[[.50,.50],[.50,1]]],
+      23:[[[0,.55],[1,.55]]],
+      24:[[[.52,0],[.52,.55],[0,.55],[1,.55]]],
+      25:[[[0,.55],[.50,.55],[.50,0]]]
+    };
+    for(const points of newTrails[panel]||[])path(points,unit*.12,"#b89e79");
+    if(panel===17)path([[.5,.5],[.5,1]],unit*.12,"#b89e79");
+    if(panel===22)path([[.5,0],[.5,.55],[1,.55]],unit*.12,"#b89e79");
+    if(panel===18){
+      // Maze wall layout only; dogs and meat gameplay come later.
+      for(const points of [
+        [[.20,.12],[.20,.35]],[[.20,.35],[.40,.35]],
+        [[.43,.12],[.43,.34]],[[.64,.27],[.64,.73]],
+        [[.23,.67],[.47,.67]],[[.45,.84],[.79,.84]],
+        [[.82,.12],[.82,.47]]
+      ])path(points,unit*.055,"#526d50");
+    }
+    if(panel===22){
+      // Doghouse and pens; rescue gameplay is not yet implemented.
+      shape(width*.58,height*.18,width*.27,height*.27,"#76573e");
+      shape(width*.61,height*.24,width*.21,height*.20,"#b48b65");
+      shape(width*.68,height*.31,width*.07,height*.13,"#493b32");
+      for(let i=0;i<3;i++)shape(width*(.19+i*.14),height*.70,width*.10,height*.13,"#977954");
+    }
     for (const [type,nx,ny] of objects[panel] || []) {
       const x=nx*width,y=ny*height,unit=Math.min(width,height);
       if(type==="T") {
@@ -398,17 +438,285 @@
   // Every screen connection must meet a visible path at BOTH edges.
   // Positions are normalized (0..1) so the entrances match on all screen sizes.
   const exits = {
-    1: {right:[2,.52],bottom:[6,.50]},
-    2: {left:[1,.52],bottom:[7,.50]},
-    6: {top:[1,.50],right:[7,.52],bottom:[11,.50]},
-    7: {top:[2,.50],left:[6,.52]},
-    11:{top:[6,.50],right:[12,.76],bottom:[16,.50]},
-    12:{left:[11,.76]},
-    16:{top:[11,.50],right:[17,.50],bottom:[21,.50]},
-    17:{left:[16,.50]},
-    21:{top:[16,.50]},
-    22:{}
-  };
+  "1": {
+    "right": [
+      2,
+      0.52
+    ],
+    "bottom": [
+      6,
+      0.5
+    ]
+  },
+  "2": {
+    "left": [
+      1,
+      0.52
+    ],
+    "right": [
+      3,
+      0.52
+    ],
+    "bottom": [
+      7,
+      0.5
+    ]
+  },
+  "3": {
+    "left": [
+      2,
+      0.52
+    ],
+    "right": [
+      4,
+      0.52
+    ],
+    "bottom": [
+      8,
+      0.48
+    ]
+  },
+  "4": {
+    "left": [
+      3,
+      0.52
+    ],
+    "right": [
+      5,
+      0.52
+    ]
+  },
+  "5": {
+    "left": [
+      4,
+      0.52
+    ],
+    "bottom": [
+      10,
+      0.65
+    ]
+  },
+  "6": {
+    "top": [
+      1,
+      0.5
+    ],
+    "right": [
+      7,
+      0.52
+    ],
+    "bottom": [
+      11,
+      0.5
+    ]
+  },
+  "7": {
+    "top": [
+      2,
+      0.5
+    ],
+    "left": [
+      6,
+      0.52
+    ]
+  },
+  "8": {
+    "top": [
+      3,
+      0.48
+    ],
+    "right": [
+      9,
+      0.52
+    ]
+  },
+  "9": {
+    "left": [
+      8,
+      0.52
+    ],
+    "right": [
+      10,
+      0.52
+    ]
+  },
+  "10": {
+    "top": [
+      5,
+      0.65
+    ],
+    "left": [
+      9,
+      0.52
+    ],
+    "bottom": [
+      15,
+      0.65
+    ]
+  },
+  "11": {
+    "top": [
+      6,
+      0.5
+    ],
+    "right": [
+      12,
+      0.76
+    ],
+    "bottom": [
+      16,
+      0.5
+    ]
+  },
+  "12": {
+    "left": [
+      11,
+      0.76
+    ]
+  },
+  "13": {
+    "right": [
+      14,
+      0.52
+    ]
+  },
+  "14": {
+    "left": [
+      13,
+      0.52
+    ],
+    "right": [
+      15,
+      0.52
+    ]
+  },
+  "15": {
+    "top": [
+      10,
+      0.65
+    ],
+    "left": [
+      14,
+      0.52
+    ],
+    "bottom": [
+      20,
+      0.65
+    ]
+  },
+  "16": {
+    "top": [
+      11,
+      0.5
+    ],
+    "right": [
+      17,
+      0.5
+    ],
+    "bottom": [
+      21,
+      0.5
+    ]
+  },
+  "17": {
+    "left": [
+      16,
+      0.5
+    ],
+    "right": [
+      18,
+      0.5
+    ],
+    "bottom": [
+      22,
+      0.5
+    ]
+  },
+  "18": {
+    "left": [
+      17,
+      0.5
+    ],
+    "right": [
+      19,
+      0.5
+    ]
+  },
+  "19": {
+    "left": [
+      18,
+      0.5
+    ],
+    "right": [
+      20,
+      0.5
+    ],
+    "bottom": [
+      24,
+      0.52
+    ]
+  },
+  "20": {
+    "left": [
+      19,
+      0.5
+    ],
+    "bottom": [
+      25,
+      0.5
+    ]
+  },
+  "21": {
+    "top": [
+      16,
+      0.5
+    ]
+  },
+  "22": {
+    "top": [
+      17,
+      0.5
+    ],
+    "right": [
+      23,
+      0.55
+    ]
+  },
+  "23": {
+    "left": [
+      22,
+      0.55
+    ],
+    "right": [
+      24,
+      0.55
+    ]
+  },
+  "24": {
+    "top": [
+      19,
+      0.52
+    ],
+    "left": [
+      23,
+      0.55
+    ],
+    "right": [
+      25,
+      0.55
+    ]
+  },
+  "25": {
+    "top": [
+      20,
+      0.5
+    ],
+    "left": [
+      24,
+      0.55
+    ]
+  }
+};
   function move(dx,dy) {
     const nx=hero.x+dx/width, ny=hero.y+dy/height;
     const margin=22; // keep the cat's body on-screen at closed edges
