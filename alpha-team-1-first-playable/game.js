@@ -275,20 +275,19 @@
   ];
   // Panel 17: the forest crossroads, dog warning and trail marker.
   const panel17Hotspots=[
-    ["Dog Warning Sign","A wooden sign warns travelers that dogs patrol the trail ahead.",.260,.335,.125,.272],
-    ["Trail Map","A hanging map marked with a paw print shows the winding route ahead.",.737,.315,.154,.233],
-    ["Forest Lantern","A warm lantern hangs beside the dog warning sign.",.335,.297,.045,.09],
-    ["Forest Tree","A broad tree stands behind the warning sign.",.105,.222,.17,.30],
-    ["Old Oak","An old oak shades the trail near the map.",.559,.177,.12,.24],
-    ["Rocky Outcrop","Large stones sit beneath the forest canopy.",.425,.246,.091,.12],
-    ["Wooden Fence","A short fence borders the southern side of the trail.",.246,.731,.276,.175],
-    ["Supply Crates","Two wooden crates sit beside a barrel and coiled rope.",.903,.685,.132,.197],
-    ["Barrel","A sturdy wooden barrel rests near the supply crates.",.733,.737,.052,.106],
-    ["Stump Lantern","A lantern glows on a tree stump beside the trail.",.811,.721,.068,.172],
-    ["Forest Shrub","A leafy shrub grows south of the crossroads.",.478,.689,.092,.143],
-    ["Wildflowers","Colorful flowers bloom beside the forest path.",.666,.799,.096,.09]
-  ];
-  function villageTargets(){
+    ["Dog Warning Sign","A wooden sign warns travelers that dogs patrol the trail ahead.",.290,.365,.145,.300],
+    ["Trail Map","A hanging map marked with a paw print shows the winding route ahead.",.742,.347,.218,.260],
+    ["Forest Lantern","A warm lantern hangs beside the dog warning sign.",.366,.316,.041,.094],
+    ["Forest Tree","A broad tree stands behind the warning sign.",.127,.198,.135,.220],
+    ["Old Oak","An old oak shades the trail near the map.",.558,.172,.145,.270],
+    ["Rocky Outcrop","Large stones sit beneath the forest canopy.",.423,.252,.098,.126],
+    ["Wooden Fence","A short fence borders the southern side of the trail.",.249,.819,.285,.150],
+    ["Supply Crates","Two wooden crates sit beside a barrel and coiled rope.",.907,.768,.140,.194],
+    ["Barrel","A sturdy wooden barrel rests near the supply crates.",.736,.822,.060,.108],
+    ["Stump Lantern","A lantern glows on a tree stump beside the trail.",.812,.796,.070,.177],
+    ["Forest Shrub","A leafy shrub grows south of the crossroads.",.481,.766,.094,.146],
+    ["Wildflowers","Colorful flowers bloom beside the forest path.",.667,.853,.096,.090]
+  ];  function villageTargets(){
     const art=panel===11?panel11Hotspots:panel===16?panel16Hotspots:panel===21?panel21Hotspots:panel===12?panel12Hotspots:panel===17?panel17Hotspots:(villageHotspots[panel]||[]);
     if(panel===16&&doorOpen)return art.filter(entry=>entry[0]!=="Wooden Gate").map(([title,description,x,y,w,h],i)=>({type:"VILLAGE_ART",title,description,x,y,w,h,id:i}));
     if(panel===6&&villageGateOpen)return art.filter(entry=>entry[0]!=="Village Gate").map(([title,description,x,y,w,h],i)=>({type:"VILLAGE_ART",title,description,x,y,w,h,id:i}));
@@ -1356,18 +1355,20 @@
       return false;
     }
     if(panel===17){
-      if(houseCollision(x,y))return true;
-      // Keep the winding east-west trail clear; solid scenery only.
-      const radius=Math.min(width,height)*.012;
+      // Revised artwork: keep the high western entry and curved trail open.
+      // Collide with solid scenery at its actual location, not the former layout.
+      const radius=Math.min(width,height)*.010;
       const solid=[
-        [.09,.22,.11,.23], [.29,.29,.09,.19], // tree, dog sign
-        [.445,.14,.075,.16], [.56,.16,.085,.16], // tree trunks
-        [.43,.25,.075,.07], [.73,.29,.13,.15], // rocks, trail map
-        [.82,.12,.09,.14], [.94,.24,.07,.16], // eastern trees
-        [.24,.735,.265,.09], // wooden fence
-        [.48,.71,.065,.08], // shrub
-        [.737,.74,.045,.085], [.815,.75,.055,.09], // barrel, stump
-        [.905,.69,.12,.15] // crates
+        [.13,.20,.075,.13], // western tree trunk, clear of elevated entrance
+        [.29,.37,.095,.19], // dog warning sign and posts
+        [.56,.17,.085,.17], // central oak trunk
+        [.43,.25,.080,.085], // rocks
+        [.742,.35,.160,.20], // maze map and posts
+        [.81,.15,.075,.13], [.95,.24,.060,.15], // eastern tree trunks
+        [.25,.82,.270,.085], // fence
+        [.48,.77,.050,.065], // shrub base
+        [.736,.82,.050,.080], [.812,.80,.055,.105], // barrel and stump
+        [.907,.77,.125,.135] // crates
       ];
       for(const [cx,cy,w,h] of solid){
         if(Math.abs(x-cx)*width<w*width/2+radius&&
