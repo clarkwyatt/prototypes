@@ -102,12 +102,35 @@ function drawUnicorn(ctx,x,y){
 panels[2].objects.push({
  id:'unicorn',name:'Unicorn',kind:'npc',x:775,y:490,outline:unicornOutline,reach:100,
  description:'A beautiful unicorn stands beside the path.',
- dialogue:'Be careful, young traveler. Monsters roam beyond the village. You should not explore without a weapon. I have heard of a sword hidden in Panel 15. Follow the paths south, then east, and keep exploring.',
+ dialogue:'Be careful, young traveler. Monsters roam beyond the village. You should not explore without a weapon. I have heard of a sword hidden deep in the forest.',
  draw(ctx){drawUnicorn(ctx,this.x,this.y)},
  actions:[{label:'TALK',primary:true,run:()=>{
   flags.add('unicornWarning');
   setQuest('Find the Sword');
-  copyEl.textContent='Be careful, young traveler. Monsters roam beyond the village. You should not explore without a weapon. I have heard of a sword hidden farther along the forest paths. Head south and follow the trail toward Panel 15.';
+  copyEl.textContent='Be careful, young traveler. Monsters roam beyond the village. You should not explore without a weapon. I have heard of a sword hidden deep in the forest.';
+ }}]
+});
+// Step 4 foundation: find and equip the sword; combat will be added later.
+const swordOutline=new Path2D('M -7 -51 L 0 -69 L 7 -51 L 7 5 L 22 5 L 22 14 L 5 14 L 5 31 L -5 31 L -5 14 L -22 14 L -22 5 L -7 5 Z');
+function drawSword(ctx,x,y){
+ ctx.save();ctx.translate(x,y);
+ ctx.fillStyle='#cbd9e0';ctx.fill(swordOutline);
+ ctx.fillStyle='#89b7d0';ctx.fillRect(-3,-48,6,52);
+ ctx.fillStyle='#8c663a';ctx.fillRect(-19,6,38,7);ctx.fillRect(-4,13,8,17);
+ ctx.fillStyle='#e4c565';ctx.beginPath();ctx.arc(0,30,6,0,Math.PI*2);ctx.fill();
+ ctx.restore();
+}
+panels[14].objects.push({
+ id:'forestSword',name:'Sword',x:790,y:450,outline:swordOutline,reach:95,
+ description:'A sturdy sword rests on the ground. It looks ready for an adventurer.',
+ isVisible:()=>!flags.has('swordEquipped'),
+ draw(ctx){drawSword(ctx,this.x,this.y)},
+ actions:[{label:'EQUIP',primary:true,run:()=>{
+  if(flags.has('swordEquipped'))return;
+  flags.add('swordEquipped');
+  addItem('Sword (Equipped)');
+  setQuest('Explore the Forest');
+  closePopup();
  }}]
 });
 function drawTreehouse(){
