@@ -1473,6 +1473,8 @@
       for(const [cx,cy,w,h] of solid){
         if(Math.abs(x-cx)*width<(w*width/2+radius)&&Math.abs(y-cy)*height<(h*height/2+radius))return true;
       }
+      // Only the active force field blocks the east-west passage.
+      // The cleared passage stays walkable after returning from Panel 12.
       if(!forceFieldRemoved && x>.865&&y>.30&&y<.69)return true;
       return false;
     }
@@ -1817,7 +1819,7 @@
         : Math.max(.045,Math.min(.085,48/width));
       // Story gates cannot be bypassed through screen transitions.
       if(exit && !(panel===6&&direction==="bottom"&&!villageGateOpen) && !(panel===11&&direction==="right"&&!forceFieldRemoved) && !(panel===16&&direction==="right"&&!doorOpen) &&
-          (villageLink || Math.abs(coordinate-exit[1])<=tolerance) &&
+          ((panel===11&&direction==="right"||panel===12&&direction==="left") ? Math.abs(coordinate-exit[1])<=tolerance : (villageLink || Math.abs(coordinate-exit[1])<=tolerance)) &&
           panels.has(exit[0])){
         const previousPanel=panel;
         panel=exit[0];
@@ -1827,7 +1829,7 @@
         if(direction==="bottom") hero.y=edgeY+.012;
         if(direction==="top") hero.y=1-edgeY-.012;
         // Align with the center of the connecting path on entry.
-        if(!villageLink){
+        if(!villageLink || (previousPanel===11&&direction==="right") || (previousPanel===12&&direction==="left")){
           if(direction==="right"||direction==="left") hero.y=exit[1];
           else hero.x=exit[1];
         }
