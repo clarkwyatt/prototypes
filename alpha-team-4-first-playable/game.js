@@ -11,6 +11,19 @@ let last=performance.now(),panel=1,elapsed=0;
 let facing='south',swingUntil=0,lastSwing=-1,heroHP=100,lastHeroHit=-1,knockedOut=false;
 let activeHouse=0,houseExitPosition=null;
 let treehouseIntro=true;const roomHero={x:50,y:57};
+// Interior art coordinates use percentages of the full room image.
+const treehouseDoorShape='polygon(8% 100%,8% 30%,12% 20%,19% 10%,29% 3%,50% 0%,71% 3%,81% 10%,88% 20%,92% 30%,92% 100%)';
+const treehouseDoorBounds={left:39, right:61, top:65, bottom:100};
+function treehouseDoorNearby(){return Math.abs(roomHero.x-50)<17&&roomHero.y>=52&&roomHero.y<=67;}
+function treehouseFloorBlocked(x,y){
+ if(x<29||x>79||y<31||y>76)return true;
+ // Bottom-center door occupies the foreground: feet cannot overlap its painted face.
+ if(x>treehouseDoorBounds.left&&x<treehouseDoorBounds.right&&y>65)return true;
+ // Furniture silhouettes: table/stools left, bed and chest right.
+ if(x<45&&y>35&&y<67)return true;
+ if(x>69&&y>31&&y<69)return true;
+ return false;
+}
 const inventory=new Set(),flags=new Set();
 const panels=Array.from({length:GRID_SIZE*GRID_SIZE},(_,i)=>({
  id:i+1,row:Math.floor(i/GRID_SIZE),col:i%GRID_SIZE,exits:{},objects:[]
@@ -525,7 +538,9 @@ function drawHouseInterior(){
 }
 function houseBlocked(x,y){
  // Keep the character in the room and out of the painted door at the bottom.
- if(x<65||x>W-65||y<105||y>H-105)return true;
+ if(x<65||x>W-65||y<105||y>H-150)return true;
+ // Keep the player in front of the exit, never on top of its painted door.
+ if(x>interiorExit.x-65&&x<interiorExit.x+65&&y>interiorExit.y-95)return true;
  return false;
 }
 const panelOneArt=new Image();
@@ -606,10 +621,9 @@ function tick(now){
  if(treehouseIntro){
  const rx=Number(keys.has('ArrowRight')||keys.has('d'))-Number(keys.has('ArrowLeft')||keys.has('a'));
  const ry=Number(keys.has('ArrowDown')||keys.has('s'))-Number(keys.has('ArrowUp')||keys.has('w'));
- roomHero.x=clamp(roomHero.x+rx*dt*25,33,76);roomHero.y=clamp(roomHero.y+ry*dt*30,32,78);
- // The character stays within the walkable floor, away from solid furnishings.
- if(roomHero.x<30&&roomHero.y<64)roomHero.x=30;
- if(roomHero.x>75&&roomHero.y<60)roomHero.x=75;
+ const nx=roomHero.x+rx*dt*25,ny=roomHero.y+ry*dt*30;
+ if(!treehouseFloorBlocked(nx,roomHero.y))roomHero.x=nx;
+ if(!treehouseFloorBlocked(roomHero.x,ny))roomHero.y=ny;
  window.updateTeam4RoomDoor?.();
  const el=document.querySelector('#room-hero');el.style.left=roomHero.x+'%';el.style.top=roomHero.y+'%';
  }else if(!activeObject){
@@ -691,9 +705,21 @@ function showTreehouse(){
  }
  const door=room.querySelector('#treehouse-door');
  Object.assign(door.style,{background:'transparent',border:'0',boxShadow:'none',color:'transparent',zIndex:'3'});
+ // The transparent hotspot follows the painted arched door, not a rectangular box.
+ Object.assign(door.style,{left:'39%',top:'65%',bottom:'auto',width:'22%',height:'35%',transform:'none',borderRadius:'0',clipPath:treehouseDoorShape});
+ function updateRoomDoor(){
+  const close=treehouseDoorNearby();
+  door.style.pointerEvents=close?'auto':'none';
+  door.style.outline='none';
+  door.style.boxShadow='none';
+  door.style.background=close?'rgba(57,215,113,.16)':'transparent';
+  door.style.filter=close?'drop-shadow(0 0 8px #40e477)':'none';
+ }
+ window.updateTeam4RoomDoor=updateRoomDoor;updateRoomDoor();
  const heroCanvas=room.querySelector('#room-hero');heroCanvas.style.zIndex='2';
  const hc=document.querySelector('#room-hero'),hctx=hc.getContext('2d');hctx.clearRect(0,0,100,130);hctx.setTransform(1.6,0,0,1.6,50,83);drawHero(hctx,0,0);
  document.querySelector('#treehouse-door').onclick=()=>{
+  if(!treehouseDoorNearby())return;
   treehouseIntro=false;scene.hidden=true;placeHeroSafely(340,390);keys.clear();canvas.focus({preventScroll:true});
  };
 }
