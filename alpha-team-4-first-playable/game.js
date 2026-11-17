@@ -36,8 +36,7 @@ const mapLinks=[
  [17,'west'],[16,'south'],
  // Other unblocked map corridors, with no gameplay content added.
  [4,'east'],[5,'south'],[6,'south'],[7,'south'],
- [9,'north'],[10,'south'],[11,'east'],[12,'south'],
- [15,'south'],[17,'south'],[18,'south'],[20,'south'],
+ [11,'east'],
  [21,'east'],[22,'east'],[23,'east'],[24,'east']
 ];
 for(const [id,side] of mapLinks)connect(id,side,side==='north'||side==='south'?W/2:H/2,35);
