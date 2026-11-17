@@ -54,13 +54,15 @@ for(const [id,side] of mapLinks)connect(id,side,side==='north'||side==='south'?W
 const treehouseDoorOutline=new Path2D('M -47 49 L -47 -15 Q -47 -71 0 -71 Q 47 -71 47 -15 L 47 49 Z');
 panels[0].objects.push({
  id:'treehouseDoor',name:'Treehouse Door',x:268,y:187,
- outline:treehouseDoorOutline,reach:180,solid:false,
+ outline:treehouseDoorOutline,reach:DOOR_REACH,solid:false,
  description:'The doorway back into the treehouse.',
  draw(){},
  actions:[{label:'ENTER',primary:true,run:()=>{closePopup();showTreehouse()}}]
 });
 const housePositions=[[210,230],[410,230],[610,230],[310,520],[570,520]];
-const houseDoorPositions=[[210,250],[410,250],[665,249],[310,545],[570,545]];
+// Measured from approved Panel 2 art, converted from 1632x960 to 1120x720 canvas.
+const houseDoorPositions=[[190,221],[438,221],[665,221],[229,547],[600,547]];
+const DOOR_REACH=48;
 // These local outlines are shared by the art, green glow, clicks, and collision.
 const houseOutline=new Path2D('M -53 -24 L 0 -65 L 53 -24 H 43 V 44 H -43 V -24 Z');
 const villagerOutline=new Path2D('M -12 -29 H 12 V -21 C 17 -11 8 -4 6 -4 H 13 V 25 H 10 V 37 H 3 V 25 H -2 V 37 H -9 V 25 H -13 V -4 H -6 C -8 -4 -17 -11 -12 -21 Z');
@@ -70,7 +72,7 @@ for(let y=-42;y<50;y+=21){
 }
 const house=(x,y,index)=>({
  id:'house'+index,name:'Village House',x:houseDoorPositions[index-1][0],y:houseDoorPositions[index-1][1],
- outline:new Path2D('M -18 -36 H 18 V 32 H -18 Z'),solid:false,reach:120,
+ outline:new Path2D('M -19 29 L -19 -17 Q -19 -38 0 -38 Q 19 -38 19 -17 L 19 29 Z'),solid:false,reach:DOOR_REACH,
  description:'A little village house with a wooden door.',
  draw(ctx){if(!panelTwoArtReady())drawHouse(ctx,x,y)},
  actions:[{label:'OPEN',primary:true,run:()=>enterHouse(index)}],
@@ -427,7 +429,8 @@ function hitsOutline(o,x,y,margin=0){
  ctx.restore();
  return hit;
 }
-const nearby=o=>hitsOutline(o,hero.x,hero.y,o.reach??85);
+// Global proximity rule: highlights and clicks require standing near the object.
+const nearby=o=>hitsOutline(o,hero.x,hero.y,Math.min(o.reach??48,55));
 const grass=document.createElement('canvas'),ground=grass.getContext('2d');
 grass.width=W;grass.height=H;
 let grassPanel=0;
@@ -492,14 +495,14 @@ function drawHouseInterior(){
  if(image.complete&&image.naturalWidth)ctx.drawImage(image,0,0,W,H);
  else{ctx.fillStyle='#d2ae7d';ctx.fillRect(0,0,W,H)}
  // Door highlight is attached to the interaction zone, not painted onto the art.
- if(Math.hypot(hero.x-interiorExit.x,hero.y-interiorExit.y)<160){
+ if(Math.hypot(hero.x-interiorExit.x,hero.y-interiorExit.y)<95){
   ctx.save();ctx.strokeStyle='rgba(48,196,94,'+(0.65+0.3*Math.sin(elapsed*5))+')';
   ctx.lineWidth=4;ctx.shadowColor='#6af08c';ctx.shadowBlur=14;
   ctx.strokeRect(interiorExit.x-interiorExit.width/2,interiorExit.y-interiorExit.height/2,interiorExit.width,interiorExit.height);
   ctx.restore();
  }
  // Temporary center-room search zone until individual interior objects are mapped.
- if(quest.started&&!flags.has('emerald'+activeHouse)&&Math.hypot(hero.x-W/2,hero.y-H/2)<170){
+ if(quest.started&&!flags.has('emerald'+activeHouse)&&Math.hypot(hero.x-W/2,hero.y-H/2)<95){
   ctx.save();ctx.strokeStyle='#40d777';ctx.lineWidth=4;ctx.strokeRect(W/2-50,H/2-45,100,90);ctx.restore();
  }
  drawHero();
@@ -594,12 +597,12 @@ canvas.addEventListener('click',e=>{
  if(activeObject||treehouseIntro)return;
  const r=canvas.getBoundingClientRect(),x=(e.clientX-r.left)*W/r.width,y=(e.clientY-r.top)*H/r.height;
  // Click must hit the actual object shape AND the player must be nearby.
- const object=visibleObjects().reverse().find(o=>hitsOutline(o,x,y));
  if(activeHouse){
-  if(Math.abs(x-W/2)<110&&Math.abs(y-H/2)<90&&Math.hypot(hero.x-x,hero.y-y)<160)collectHouseEmerald();
-  if(Math.abs(x-interiorExit.x)<interiorExit.width/2&&Math.abs(y-interiorExit.y)<interiorExit.height/2&&Math.hypot(hero.x-x,hero.y-y)<165)exitHouse();
+  if(Math.abs(x-W/2)<110&&Math.abs(y-H/2)<90&&Math.hypot(hero.x-x,hero.y-y)<95)collectHouseEmerald();
+  if(Math.abs(x-interiorExit.x)<interiorExit.width/2&&Math.abs(y-interiorExit.y)<interiorExit.height/2&&Math.hypot(hero.x-x,hero.y-y)<95)exitHouse();
   return;
  }
+ const object=visibleObjects().reverse().find(o=>hitsOutline(o,x,y));
  if(object?.id?.startsWith('house')&&nearby(object)){
   enterHouse(Number(object.id.slice(5)));return;
  }
