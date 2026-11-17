@@ -580,7 +580,7 @@
         const name=decoder.decode(bytes.subarray(p+30,p+30+nameLength));
         const start=p+30+nameLength+extraLength;
         if(start+size>bytes.length)throw Error("Incomplete dog ZIP");
-        const match=/^guard_dog_(up|down|left|right)_([012])\\.png$/.exec(name);
+        const match=/^guard_dog_(up|down|left|right)_([012])\.png$/.exec(name);
         if(match){
           const compressed=bytes.slice(start,start+size);
           const stream=new Blob([compressed]).stream();
