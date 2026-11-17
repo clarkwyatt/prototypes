@@ -311,23 +311,38 @@
   }
   function nearestTarget(){
     let found=null,dist=Infinity;
+    const unit=Math.min(width,height);
     for(const target of targets()){
-      // Interactions use an approachable point, not the center of tall artwork.
-      // At the doorstep the home must win; the sign requires a close approach.
-      const dock=panel===12&&target.title==="Fishing Dock";
-      const cottage=panel===12&&target.title==="Fishing Cottage";
+      // Measure distance to the closest reachable part of the object,
+      // rather than its center. Require a close approach throughout the demo.
       const home=panel===1&&target.title==="Cat's Home";
+      const cottage=panel===12&&target.title==="Fishing Cottage";
+      const dock=panel===12&&target.title==="Fishing Dock";
       const sign=panel===1&&target.title==="Paw Sign";
-      const tx=home?.50:dock?.46:cottage?.815:target.x,ty=home?.615:dock?.385:cottage?.665:target.y;
-      const d=Math.hypot((hero.x-tx)*width,(hero.y-ty)*height);
-      const reach=dock?Math.min(width,height)*.15:
-        cottage?Math.min(width,height)*.15:
-        home?Math.min(width,height)*.135:
-        sign?Math.min(width,height)*.075:
-        target.type==="VILLAGE_ART"?Math.min(width,height)*.27:
-        target.type==="LAKE"?Math.min(width,height)*.32:
-        ["FORCE","DOOR","NPC","DOCK"].includes(target.type)?Math.min(width,height)*.23:
-        Math.min(width,height)*.19;
+      let d;
+      if(home||cottage||dock){
+        // Doorstep / dock access points stay reliable despite tall artwork.
+        const tx=home?.50:cottage?.815:.46;
+        const ty=home?.615:cottage?.665:.385;
+        d=Math.hypot((hero.x-tx)*width,(hero.y-ty)*height);
+      }else if(target.type==="VILLAGE_ART"){
+        // Nearest point on the artwork's visible footprint, with a small
+        // inset so merely passing a large bounding box doesn't trigger it.
+        const inset=.08;
+        const halfW=target.w*(.5-inset),halfH=target.h*(.5-inset);
+        const dx=Math.max(0,Math.abs(hero.x-target.x)-halfW)*width;
+        const dy=Math.max(0,Math.abs(hero.y-target.y)-halfH)*height;
+        d=Math.hypot(dx,dy);
+      }else{
+        d=Math.hypot((hero.x-target.x)*width,(hero.y-target.y)*height);
+      }
+      const reach=home||cottage?unit*.085:
+        dock?unit*.075:
+        sign?unit*.045:
+        target.type==="VILLAGE_ART"?unit*.048:
+        target.type==="LAKE"?unit*.065:
+        ["FORCE","DOOR","NPC","DOCK"].includes(target.type)?unit*.075:
+        unit*.065;
       if(d<reach&&d<dist){found=target;dist=d;}
     }
     return found;
