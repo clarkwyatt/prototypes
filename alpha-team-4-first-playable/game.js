@@ -455,9 +455,15 @@ function drawHero(c=ctx,x=hero.x,y=hero.y){
  c.fillStyle='#27342f';for(const x of [-4,4]){c.beginPath();c.arc(x,-27,1.1,0,Math.PI*2);c.fill()}
  c.strokeStyle='#9b5947';c.lineWidth=1.4;c.beginPath();c.arc(0,-24,3.5,.2,Math.PI-.2);c.stroke();c.restore();
 }
+const panelOneArt=new Image();
+panelOneArt.src='./art/team4_panel_01.webp';
 function draw(){
- drawGrass();drawPath();
- if(panel===1)drawTreehouse();
+ if(panel===1&&panelOneArt.complete&&panelOneArt.naturalWidth){
+  ctx.drawImage(panelOneArt,0,0,W,H);
+ }else{
+  drawGrass();drawPath();
+  if(panel===1)drawTreehouse();
+ }
  for(const o of visibleObjects()){
   o.draw(ctx);
   if(!canInteract(o)||!nearby(o))continue;
