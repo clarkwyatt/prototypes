@@ -17,7 +17,17 @@ const treehouseDoorBounds={left:39, right:61, top:65, bottom:100};
 function treehouseDoorNearby(){return Math.abs(roomHero.x-50)<17&&roomHero.y>=49&&roomHero.y<=67;}
 function treehouseFloorBlocked(x,y){
  if(x<29||x>79||y<31||y>76)return true;
- if(interiorHouse)return x>39&&x<61&&y>64;
+ if(interiorHouse){
+  if(x>39&&x<61&&y>64)return true; // Solid painted door
+  // Keep the center rug and route to the exit completely clear.
+  if(interiorHouse===1){
+   if(x>12&&x<29&&y>24&&y<60)return true; // Locker
+   if(x>27&&x<47&&y>43&&y<59)return true; // Table and stools
+   if(x>50&&x<64&&y>39&&y<54)return true; // Chest
+   if(x>75&&y>38&&y<72)return true; // Bed and basket
+  }
+  return false;
+ }
  // Bottom-center door occupies the foreground: feet cannot overlap its painted face.
  if(x>treehouseDoorBounds.left&&x<treehouseDoorBounds.right&&y>65)return true;
  // Furniture silhouettes: table/stools left, bed and chest right.
@@ -698,16 +708,32 @@ const treehouseFeatures=[
  {name:'Travel Chest',x:8,y:65,w:14,h:18,shape:'polygon(8% 0%,92% 0%,100% 16%,100% 100%,0 100%,0 16%)',text:'An old wooden chest, its brass corners dulled by time. It once carried treasures from distant places; now it guards memories worth even more.'},
  {name:'Woven Rug',x:42,y:43,w:20,h:20,shape:'ellipse(49% 48% at 50% 50%)',text:'A handwoven rug patterned like a tiny woodland kingdom. As a child, you imagined its winding vines were roads to places no map could name.'}
 ];
+// Per-house inspectable scenery. Positions are percentages of each interior image.
+const houseFeatures={
+ 1:[
+  {name:'Captain’s Locker',x:13,y:24,w:15,h:38,shape:'inset(0 round 5%)',text:'The blue locker smells faintly of salt and adventure. A faded mark inside reads: Every great voyage begins with a brave first step.'},
+  {name:'Sailor’s Table',x:27,y:48,w:20,h:14,shape:'polygon(5% 10%,95% 10%,100% 80%,90% 100%,10% 100%,0 80%)',text:'A sturdy table laden with a lantern and a bowl of bright red fruit. Someone has been planning a voyage here—or perhaps just a very hearty breakfast.'},
+  {name:'Treasure Chest',x:50,y:39,w:13,h:14,shape:'inset(0 round 13%)',text:'Iron bands hold this chest shut. Its worn lock has weathered more storms than most sailors, and it seems unwilling to surrender its secrets.'},
+  {name:'Sea View Window',x:43,y:11,w:17,h:23,shape:'inset(0 round 7%)',text:'Beyond the glass, white sails and distant cliffs shimmer beneath a clear sky. The horizon seems to whisper that the world is much bigger than this room.'},
+  {name:'Captain’s Bed',x:76,y:42,w:22,h:28,shape:'polygon(15% 0,100% 0,100% 100%,0 100%,0 30%)',text:'A neatly made bunk, its blue blanket embroidered with curling waves. A sailor could dream of faraway shores here without ever leaving the harbor.'},
+  {name:'Anchor Rug',x:33,y:54,w:35,h:19,shape:'inset(0 round 12%)',text:'A proud golden anchor decorates this well-traveled rug. Even adventurers need something to keep their feet on the ground.'}
+ ],
+ 2:[{name:'Village Keepsakes',x:12,y:24,w:19,h:25,shape:'inset(0 round 12%)',text:'Small treasures collected over many seasons. Each one carries a story that its owner has promised never to forget.'},{name:'Family Table',x:30,y:44,w:22,h:20,shape:'ellipse(48% 45% at 50% 50%)',text:'The polished tabletop bears the gentle marks of shared meals, laughter, and a few spectacularly spilled soups.'},{name:'Restful Bed',x:73,y:39,w:22,h:29,shape:'inset(0 round 15%)',text:'A welcoming bed tucked into the quiet corner. Its soft covers make even the bravest explorer consider an afternoon nap.'}],
+ 3:[{name:'Village Keepsakes',x:12,y:24,w:19,h:25,shape:'inset(0 round 12%)',text:'A curious assortment of little heirlooms, each waiting patiently for someone to ask where it came from.'},{name:'Family Table',x:30,y:44,w:22,h:20,shape:'ellipse(48% 45% at 50% 50%)',text:'There is something magical about a table where friends gather. The wood seems to remember every tale told across it.'},{name:'Restful Bed',x:73,y:39,w:22,h:29,shape:'inset(0 round 15%)',text:'A cozy place to rest after a long day. Perhaps tomorrow will bring the adventure its owner has been dreaming of.'}],
+ 4:[{name:'Village Keepsakes',x:12,y:24,w:19,h:25,shape:'inset(0 round 12%)',text:'Carefully arranged mementos from journeys near and far. One almost seems to hum with a forgotten melody.'},{name:'Family Table',x:30,y:44,w:22,h:20,shape:'ellipse(48% 45% at 50% 50%)',text:'An inviting place for supper and stories. The best tales always seem to grow a little grander by candlelight.'},{name:'Restful Bed',x:73,y:39,w:22,h:29,shape:'inset(0 round 15%)',text:'A peaceful corner, ready for dreams of secret passages and enchanted forests.'}],
+ 5:[{name:'Village Keepsakes',x:12,y:24,w:19,h:25,shape:'inset(0 round 12%)',text:'These well-loved possessions have traveled through generations, carrying more memories than any map could hold.'},{name:'Family Table',x:30,y:44,w:22,h:20,shape:'ellipse(48% 45% at 50% 50%)',text:'The table has seen birthdays, celebrations, and a hundred ordinary days made wonderful by good company.'},{name:'Restful Bed',x:73,y:39,w:22,h:29,shape:'inset(0 round 15%)',text:'A soft quilt promises a good night’s sleep—and perhaps a dream about tomorrow’s great adventure.'}]
+};
+function currentInteriorFeatures(){return interiorHouse?(houseFeatures[interiorHouse]||[]):treehouseFeatures;}
 function showInteriorDescription(feature){
  if(activeObject)return;
  activeObject={name:feature.name};titleEl.textContent=feature.name;
  showDialogueCard(feature.text);
 }
 function updateTreehouseFeatures(room){
- for(const feature of treehouseFeatures){
+ for(const feature of currentInteriorFeatures()){
   const el=room.querySelector('[data-room-feature="'+feature.name+'"]');if(!el)continue;
   const cx=feature.x+feature.w/2,cy=feature.y+feature.h/2;
-  const close=!interiorHouse&&Math.hypot((roomHero.x-cx)*1.25,roomHero.y-cy)<18;
+  const close=Math.hypot((roomHero.x-cx)*1.25,roomHero.y-cy)<17;
   el.style.pointerEvents=close?'auto':'none';
   el.style.opacity=close?String(.78+.22*Math.sin(elapsed*5)):'0';
  }
@@ -719,7 +745,7 @@ function showTreehouse(){
  // Build the art layer from fresh game.js so even a stale Google Sites HTML
  // embed cannot keep showing the old CSS-drawn room.
  const room=scene.querySelector('.treehouse-room');
- roomHero.x=50;roomHero.y=interiorHouse?46:48;
+ roomHero.x=50;roomHero.y=interiorHouse?56:48;
  room.style.background='#9d794f';
  room.style.setProperty('--unused-room-art','none');
  let art=room.querySelector('.treehouse-art');
@@ -729,16 +755,16 @@ function showTreehouse(){
  for(const selector of ['.room-window','.room-bed','.room-table','.room-rug']){
   const old=room.querySelector(selector);if(old)old.style.display='none';
  }
- for(const feature of treehouseFeatures){
+ for(const feature of [...treehouseFeatures,...Object.values(houseFeatures).flat()]){
   let el=room.querySelector('[data-room-feature="'+feature.name+'"]');
   if(!el){
    el=document.createElement('button');el.type='button';el.dataset.roomFeature=feature.name;
    el.setAttribute('aria-label','Examine '+feature.name);
    Object.assign(el.style,{position:'absolute',zIndex:'9',padding:'0',background:'transparent',border:'3px solid #40e477',boxShadow:'0 0 8px #40e477',cursor:'pointer',transition:'opacity .12s'});
-   el.onclick=()=>{if(!interiorHouse)showInteriorDescription(feature)};
+   el.onclick=()=>{if(currentInteriorFeatures().includes(feature))showInteriorDescription(feature)};
    room.appendChild(el);
   }
-  Object.assign(el.style,{left:feature.x+'%',top:feature.y+'%',width:feature.w+'%',height:feature.h+'%',clipPath:feature.shape,display:interiorHouse?'none':'block'});
+  Object.assign(el.style,{left:feature.x+'%',top:feature.y+'%',width:feature.w+'%',height:feature.h+'%',clipPath:feature.shape,display:currentInteriorFeatures().includes(feature)?'block':'none'});
  }
  updateTreehouseFeatures(room);
  const door=room.querySelector('#treehouse-door');
