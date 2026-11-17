@@ -75,17 +75,12 @@ panels[0].objects.push({
 });
 // Collision polygons trace the permanent treehouse, roots, rocks and forest edges.
 // Doorway remains a clickable hotspot; solid scenery never draws over the artwork.
-const panelOneSolids=[
- new Path2D('M 0 0 H 480 L 435 110 L 350 110 L 340 255 L 405 395 L 350 445 L 245 370 L 160 460 L 0 535 Z'),
- new Path2D('M 370 0 H 1120 V 284 L 1020 300 L 990 340 L 835 330 L 770 285 L 650 315 L 565 285 L 490 350 L 430 325 L 405 220 Z'),
- new Path2D('M 930 405 L 1010 390 L 1070 445 L 1050 540 L 970 570 L 900 515 Z'),
- new Path2D('M 0 630 L 130 600 L 260 655 L 410 650 L 505 705 L 0 720 Z'),
- new Path2D('M 770 675 L 900 645 L 1030 670 L 1120 610 V 720 H 770 Z')
-];
+// Panel 1: only the elevated treehouse structure is solid. The complete
+// winding dirt path and every stepping stone remain walkable.
 function panelOneBlocked(x,y){
- // Keep the entire door-to-path approach open, including the exterior spawn.
- if(x>205&&x<440&&y>195&&y<470)return false;
- return panelOneSolids.some(shape=>ctx.isPointInPath(shape,x,y));
+ // Treehouse wall and trunk only, never the stairs, roots beside the path,
+ // stones, or scenery across the forest trail.
+ return x<215&&y<335;
 }
 const housePositions=[[210,230],[410,230],[610,230],[310,520],[570,520]];
 // Measured from approved Panel 2 art, converted from 1632x960 to 1120x720 canvas.
@@ -712,8 +707,11 @@ function showTreehouse(){
   door.style.pointerEvents=close?'auto':'none';
   door.style.outline='none';
   door.style.boxShadow='none';
-  door.style.background=close?'rgba(57,215,113,.16)':'transparent';
-  door.style.filter=close?'drop-shadow(0 0 8px #40e477)':'none';
+  door.style.background='transparent';
+  door.style.border=close?'3px solid #40d777':'3px solid transparent';
+  door.style.borderRadius='48% 48% 4% 4%';
+  door.style.filter=close?'drop-shadow(0 0 7px #40e477)':'none';
+  door.style.opacity=close?String(.75+.2*Math.sin(elapsed*5)):'1';
  }
  window.updateTeam4RoomDoor=updateRoomDoor;updateRoomDoor();
  const heroCanvas=room.querySelector('#room-hero');heroCanvas.style.zIndex='2';
