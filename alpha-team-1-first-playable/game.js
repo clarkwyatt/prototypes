@@ -714,7 +714,7 @@
     const dir=dogDirection(angle);
     const moving=d.mode==="chase"||d.mode==="investigate";
     const frame=moving?Math.floor(mazeClock*8)%3:
-      d.mode==="eating"?Math.floor(d.timer*5)%3:Math.floor(mazeClock*1.5)%3;
+      d.mode==="asleep"?0:d.mode==="eating"?Math.floor(d.timer*5)%3:Math.floor(mazeClock*1.5)%3;
     const img=dogFrames[dir][frame]||dogFrames[dir][0];
     if(!img)return false;
     const size=u*.078;
