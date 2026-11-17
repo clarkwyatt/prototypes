@@ -58,7 +58,7 @@
   const questEl=document.querySelector("#quest"),itemsEl=document.querySelector("#items");
   function updateHud(){
     questEl.textContent=hasKey&&!doorOpen?"• Unlock the old wooden door":doorOpen?"• Explore beyond the door":"• Explore the Village";
-    itemsEl.textContent=[hasRod?"Fishing Rod":"",fish?"Fish":"",hasKey?"Golden Key":"",hasPotion?"Magic Potion":"",hasGateKey?"Gate Key":""].filter(Boolean).join(" · ")||"Empty";
+    itemsEl.textContent=[hasRod?"Fishing Rod":"",fish?"Fish":"",hasKey?"Silver Key":"",hasPotion?"Magic Potion":"",hasGateKey?"Gate Key":""].filter(Boolean).join(" · ")||"Empty";
   }
   const modal=document.createElement("section");
   modal.id="interaction-modal";
@@ -135,10 +135,10 @@
       }));
     }
     if(panel===16&&type==="VILLAGE_ART"&&target.title==="Wooden Gate"&&!doorOpen&&hasKey){
-      options.push(button("USE GOLDEN KEY",()=>{
+      options.push(button("USE SILVER KEY",()=>{
         if(hasKey){doorOpen=true;hasKey=false;doorVfxStart=performance.now();playGateUnlockSfx();
-          p.textContent="The Golden Key unlocks the wooden gate! The way ahead is open.";updateHud();}
-        else p.textContent="The gate is locked. You need a Golden Key.";
+          p.textContent="The Silver Key unlocks the wooden gate! The way ahead is open.";updateHud();}
+        else p.textContent="The gate is locked. You need a Silver Key.";
         p.hidden=false;actions.replaceChildren(button("OK",closeInteraction));
       }));
     }
@@ -160,7 +160,7 @@
       }));
       if(fish>0&&!hasKey)options.push(button("GIVE FISH",()=>{
         fish=0;hasKey=true;
-        p.textContent="You traded your fish for a Golden Key!";
+        p.textContent="You traded your fish for a Silver Key!";
         p.hidden=false;updateHud();actions.replaceChildren(button("OK",closeInteraction));
       }));
     }
@@ -173,8 +173,8 @@
       actions.replaceChildren(button("OK",closeInteraction));
     }));
     if(type==="DOOR")options.push(button("OPEN",()=>{
-      if(hasKey){doorOpen=true;p.textContent="The Golden Key unlocks the wooden door!";updateHud();}
-      else p.textContent="The door is locked. You need a Golden Key.";
+      if(hasKey){doorOpen=true;p.textContent="The Silver Key unlocks the wooden door!";updateHud();}
+      else p.textContent="The door is locked. You need a Silver Key.";
       p.hidden=false;actions.replaceChildren(button("OK",closeInteraction));
     }));
     options.push(button("CLOSE",closeInteraction));actions.append(...options);
