@@ -134,6 +134,14 @@
         p.hidden=false;updateHud();actions.replaceChildren(button("OK",closeInteraction));
       }));
     }
+    if(panel===16&&type==="VILLAGE_ART"&&target.title==="Wooden Gate"&&!doorOpen){
+      options.push(button("USE GOLDEN KEY",()=>{
+        if(hasKey){doorOpen=true;hasKey=false;doorVfxStart=performance.now();playGateUnlockSfx();
+          p.textContent="The Golden Key unlocks the wooden gate! The way ahead is open.";updateHud();}
+        else p.textContent="The gate is locked. You need a Golden Key.";
+        p.hidden=false;actions.replaceChildren(button("OK",closeInteraction));
+      }));
+    }
     if(panel===21&&type==="H"&&target.id===2&&!hasPotion)options.push(button("GET POTION",()=>{
       hasPotion=true;
       p.textContent="You found a Magic Potion! It has been added to your inventory.";
@@ -227,8 +235,19 @@
     ["Forest Boulders","A rocky outcrop lies beneath the eastern shrub.",.628,.79,.065,.11],
     ["Magic Pillar","An ancient stone pillar glows with mysterious blue light.",.935,.258,.058,.165]
   ];
+  const panel16Hotspots=[
+    ["Forest Tree","An enormous old tree shades the western trail.",.17,.29,.28,.45],
+    ["Ancient Tree","A broad tree stands above the eastern path.",.72,.21,.19,.30],
+    ["Forest Stump","A weathered tree stump surrounded by stones.",.23,.75,.09,.12],
+    ["Rock Cluster","Rocks rest among the roots of the western tree.",.10,.47,.08,.11],
+    ["Wildflowers","Bright pink flowers bloom beside the forest tree.",.27,.46,.10,.11],
+    ["Forest Shrub","A leafy shrub grows beside the lower path.",.73,.73,.16,.18],
+    ["Forest Boulders","A cluster of stones rests below the shrub.",.63,.78,.07,.11],
+    ["Wooden Gate","A sturdy wooden gate with a heavy lock blocks the eastbound trail.",.908,.322,.17,.30]
+  ];
   function villageTargets(){
-    const art=panel===11?panel11Hotspots:(villageHotspots[panel]||[]);
+    const art=panel===11?panel11Hotspots:panel===16?panel16Hotspots:(villageHotspots[panel]||[]);
+    if(panel===16&&doorOpen)return art.filter(entry=>entry[0]!=="Wooden Gate").map(([title,description,x,y,w,h],i)=>({type:"VILLAGE_ART",title,description,x,y,w,h,id:i}));
     if(panel===6&&villageGateOpen)return art.filter(entry=>entry[0]!=="Village Gate").map(([title,description,x,y,w,h],i)=>({type:"VILLAGE_ART",title,description,x,y,w,h,id:i}));
     return art.map(([title,description,x,y,w,h],i)=>({
       type:"VILLAGE_ART",title,description,x,y,w,h,id:i
@@ -650,27 +669,44 @@
 
   // Illustrated village screens. Load each independently, retaining vector
   // fallback if an image is unavailable.
-  const illustratedPanels = new Set([1,2,6,7,11]);
+  const illustratedPanels = new Set([1,2,6,7,11,16]);
   const panelArt = new Map();
   for(const id of illustratedPanels){
     const img=new Image();
-    img.src="art/team1_panel_"+String(id).padStart(2,"0")+([6,11].includes(id)?"_locked":"")+".webp";
+    img.src="art/team1_panel_"+String(id).padStart(2,"0")+([6,11,16].includes(id)?"_locked":"")+".webp";
     panelArt.set(id,img);
   }
   const panel6Unlocked=new Image();
   panel6Unlocked.src="art/team1_panel_06_unlocked.webp";
   let gateVfxStart=0;
+  const panel16Unlocked=new Image();
+  panel16Unlocked.src="art/team1_panel_16_unlocked.webp";
+  let doorVfxStart=0;
   const panel11Unlocked=new Image();
   panel11Unlocked.src="art/team1_panel_11_unlocked.webp";
   let forceVfxStart=0;
   function drawIllustratedPanel(){
     const fallback=panelArt.get(panel);
-    const img=panel===6&&villageGateOpen&&panel6Unlocked.complete&&panel6Unlocked.naturalWidth?panel6Unlocked:
+    const img=panel===16&&doorOpen&&panel16Unlocked.complete&&panel16Unlocked.naturalWidth?panel16Unlocked:
+      panel===6&&villageGateOpen&&panel6Unlocked.complete&&panel6Unlocked.naturalWidth?panel6Unlocked:
       panel===11&&forceFieldRemoved&&panel11Unlocked.complete&&panel11Unlocked.naturalWidth?panel11Unlocked:fallback;
     if(!img||!img.complete||!img.naturalWidth)return false;
     ctx.save();
     ctx.imageSmoothingEnabled=true;
     ctx.drawImage(img,0,0,width,height);
+    if(panel===16&&doorVfxStart){
+      const elapsed=(performance.now()-doorVfxStart)/1000;
+      if(elapsed<.9){
+        ctx.save();ctx.globalAlpha=1-elapsed/.9;
+        for(let i=0;i<16;i++){
+          const angle=i*2.399+elapsed;
+          const radius=Math.min(width,height)*(.025+elapsed*.13);
+          ctx.fillStyle=i%2?"#fff6ac":"#f9d065";
+          ctx.fillRect(width*.905+Math.cos(angle)*radius,height*.34+Math.sin(angle)*radius,5,5);
+        }
+        ctx.restore();
+      }else doorVfxStart=0;
+    }
     if(panel===6&&gateVfxStart){
       const elapsed=(performance.now()-gateVfxStart)/1000;
       if(elapsed<.9){
@@ -1094,6 +1130,20 @@
     // Art-matched solid footprints, inset from the interaction outlines.
     // Trees collide at their trunks, cottages at their walls, and smaller
     // objects at their bases so the player can still navigate the lawn.
+    if(panel===16){
+      const radius=Math.min(width,height)*.014;
+      const solid=[
+        [.13,.30,.19,.30],[.29,.15,.12,.16],[.73,.19,.105,.20],
+        [.805,.135,.085,.14],[.24,.75,.055,.07],[.10,.48,.055,.065],
+        [.37,.20,.06,.07],[.64,.78,.07,.08],[.72,.75,.10,.10],
+        [.855,.285,.055,.24],[.97,.32,.055,.25]
+      ];
+      for(const [cx,cy,w,h] of solid){
+        if(Math.abs(x-cx)*width<w*width/2+radius&&Math.abs(y-cy)*height<h*height/2+radius)return true;
+      }
+      if(!doorOpen&&x>.855&&y>.20&&y<.48)return true;
+      return false;
+    }
     if(panel===11){
       const radius=Math.min(width,height)*.014;
       const solid=[
