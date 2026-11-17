@@ -303,6 +303,30 @@ canvas.addEventListener('click',e=>{
  const object=visibleObjects().reverse().find(o=>hitsOutline(o,x,y));
  if(object)openPopup(object);
 });
+
+// Development-only navigation: bypass quests without changing inventory or world progress.
+const debugPanel=document.querySelector('#debug-panel');
+for(let id=1;id<=panels.length;id++){
+ const option=document.createElement('option');
+ option.value=String(id);option.textContent='Panel '+id;
+ debugPanel.appendChild(option);
+}
+debugPanel.value=String(panel);
+document.querySelector('#debug-go').addEventListener('click',()=>{
+ const target=Number(debugPanel.value);
+ if(!Number.isInteger(target)||target<1||target>panels.length)return;
+ if(activeObject)closePopup();
+ treehouseIntro=false;
+ document.querySelector('#treehouse-scene').hidden=true;
+ panel=target;
+ // Start at a walkable location rather than inside scenery.
+ const positions=[[W/2,H/2],[W/2,460],[W/2,300],[W/2,580],[W/2,180]];
+ const safe=positions.find(([x,y])=>!blocked(x,y));
+ if(safe){hero.x=safe[0];hero.y=safe[1]}else{hero.x=W/2;hero.y=H/2}
+ keys.clear();
+ canvas.focus({preventScroll:true});
+});
+
 setQuest('Explore Village');updateInventory();requestAnimationFrame(tick);
 function showTreehouse(){
  treehouseIntro=true;
