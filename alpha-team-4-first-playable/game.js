@@ -701,17 +701,31 @@ function showTreehouse(){
  const door=room.querySelector('#treehouse-door');
  Object.assign(door.style,{background:'transparent',border:'0',boxShadow:'none',color:'transparent',zIndex:'3'});
  // The transparent hotspot follows the painted arched door, not a rectangular box.
- Object.assign(door.style,{left:'39%',top:'65%',bottom:'auto',width:'22%',height:'35%',transform:'none',borderRadius:'0',clipPath:treehouseDoorShape});
+ Object.assign(door.style,{left:'39%',top:'65%',bottom:'auto',width:'22%',height:'35%',transform:'none',borderRadius:'0',clipPath:'none',zIndex:'8',overflow:'visible'});
  function updateRoomDoor(){
   const close=treehouseDoorNearby();
   door.style.pointerEvents=close?'auto':'none';
   door.style.outline='none';
   door.style.boxShadow='none';
   door.style.background='transparent';
-  door.style.border=close?'3px solid #40d777':'3px solid transparent';
-  door.style.borderRadius='48% 48% 4% 4%';
-  door.style.filter=close?'drop-shadow(0 0 7px #40e477)':'none';
-  door.style.opacity=close?String(.75+.2*Math.sin(elapsed*5)):'1';
+  door.style.border='0';
+  door.style.filter='none';
+  door.style.opacity='1';
+  let outline=room.querySelector('.treehouse-door-outline');
+  if(!outline){
+   outline=document.createElementNS('http://www.w3.org/2000/svg','svg');
+   outline.classList.add('treehouse-door-outline');
+   Object.assign(outline.style,{position:'absolute',left:'39%',top:'65%',width:'22%',height:'35%',zIndex:'9',overflow:'visible',pointerEvents:'none'});
+   outline.setAttribute('viewBox','0 0 100 100');
+   const path=document.createElementNS('http://www.w3.org/2000/svg','path');
+   path.setAttribute('d','M 5 100 L 5 33 C 5 -10 95 -10 95 33 L 95 100 Z');
+   path.setAttribute('fill','none');path.setAttribute('stroke','#40e477');path.setAttribute('stroke-width','3');
+   path.setAttribute('vector-effect','non-scaling-stroke');
+   outline.appendChild(path);room.appendChild(outline);
+  }
+  outline.style.display=close?'block':'none';
+  outline.style.opacity=String(.78+.22*Math.sin(elapsed*5));
+  outline.style.filter='drop-shadow(0 0 5px #40e477)';
  }
  window.updateTeam4RoomDoor=updateRoomDoor;updateRoomDoor();
  const heroCanvas=room.querySelector('#room-hero');heroCanvas.style.zIndex='2';
