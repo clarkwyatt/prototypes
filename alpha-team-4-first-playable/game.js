@@ -14,7 +14,7 @@ let treehouseIntro=true;const roomHero={x:50,y:48};
 // Interior art coordinates use percentages of the full room image.
 const treehouseDoorShape='polygon(8% 100%,8% 30%,12% 20%,19% 10%,29% 3%,50% 0%,71% 3%,81% 10%,88% 20%,92% 30%,92% 100%)';
 const treehouseDoorBounds={left:39, right:61, top:65, bottom:100};
-function treehouseDoorNearby(){return Math.abs(roomHero.x-50)<17&&roomHero.y>=52&&roomHero.y<=67;}
+function treehouseDoorNearby(){return Math.abs(roomHero.x-50)<17&&roomHero.y>=49&&roomHero.y<=67;}
 function treehouseFloorBlocked(x,y){
  if(x<29||x>79||y<31||y>76)return true;
  if(interiorHouse)return x>39&&x<61&&y>64;
@@ -508,14 +508,17 @@ function enterHouse(index){
  showTreehouse();
 }
 function collectHouseEmerald(){
- if(!quest.started||flags.has('emerald'+activeHouse))return;
- flags.add('emerald'+activeHouse);quest.emeralds++;
+ if(!quest.started||!interiorHouse||flags.has('emerald'+interiorHouse))return;
+ flags.add('emerald'+interiorHouse);quest.emeralds++;
  for(const name of [...inventory])if(name.endsWith(' / 5 Emeralds'))removeItem(name);
  addItem(quest.emeralds+' / 5 Emeralds');
  setQuest(quest.emeralds<5?'Find 5 Emeralds ('+quest.emeralds+'/5)':'Bring 5 Emeralds to the Villager');
 }
 function exitHouse(){
- activeHouse=0;placeHeroSafely(houseExitPosition.x,houseExitPosition.y);keys.clear();
+ const destination=houseExitPosition;
+ interiorHouse=0;activeHouse=0;treehouseIntro=false;
+ document.querySelector('#treehouse-scene').hidden=true;
+ placeHeroSafely(destination.x,destination.y);keys.clear();canvas.focus({preventScroll:true});
 }
 function drawHouseInterior(){
  const image=houseInteriorArt[activeHouse-1];
