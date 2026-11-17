@@ -475,7 +475,9 @@ function drawHero(c=ctx,x=hero.x,y=hero.y){
 const houseInteriorArt=Array.from({length:5},(_,i)=>{
  const image=new Image();image.src='./art/team4_house_0'+(i+1)+'_interior.webp';return image;
 });
-const interiorExit={x:W/2,y:H-108,width:100,height:95};
+const interiorExit={x:W/2,y:H-108,width:70,height:75};
+const interiorExitOutline=new Path2D('M -35 35 V -15 Q -35 -40 0 -40 Q 35 -40 35 -15 V 35 Z');
+const interiorNear=(x,y)=>Math.hypot(hero.x-x,hero.y-y)<=85;
 function enterHouse(index){
  activeHouse=index;houseExitPosition={x:houseDoorPositions[index-1][0],y:houseDoorPositions[index-1][1]+70};
  hero.x=W/2;hero.y=H-180;keys.clear();
@@ -498,7 +500,7 @@ function drawHouseInterior(){
  if(Math.hypot(hero.x-interiorExit.x,hero.y-interiorExit.y)<95){
   ctx.save();ctx.strokeStyle='rgba(48,196,94,'+(0.65+0.3*Math.sin(elapsed*5))+')';
   ctx.lineWidth=4;ctx.shadowColor='#6af08c';ctx.shadowBlur=14;
-  ctx.strokeRect(interiorExit.x-interiorExit.width/2,interiorExit.y-interiorExit.height/2,interiorExit.width,interiorExit.height);
+  ctx.save();ctx.translate(interiorExit.x,interiorExit.y);ctx.stroke(interiorExitOutline);ctx.restore();
   ctx.restore();
  }
  // Temporary center-room search zone until individual interior objects are mapped.
