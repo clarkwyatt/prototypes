@@ -402,7 +402,8 @@ function closePopup(){
  layer.querySelector('.popup').classList.remove('quest-celebration');
  actionsEl.replaceChildren();
  canvas.focus({preventScroll:true});
- showNextQuestEvent();
+ // Allow the current interaction to open follow-up dialogue before showing queued quests.
+ queueMicrotask(showNextQuestEvent);
 }
 closeButton.addEventListener('click',closePopup);
 layer.addEventListener('click',e=>{if(e.target===layer)closePopup()});
