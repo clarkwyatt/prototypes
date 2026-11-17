@@ -261,16 +261,17 @@
     ["Wildflowers","Colorful flowers bloom all around the enchanted forest.",.299,.828,.098,.11]
   ];
   const panel12Hotspots=[
-    ["Fishing Cottage","A cozy fisher's cottage with fishing supplies by the door.",.859,.598,.266,.365],
-    ["Fishing Dock","A wooden dock reaches out over the sparkling lake.",.689,.319,.245,.176],
-    ["Crystal Lake","Fish swim beneath the sparkling water and lily pads.",.396,.270,.53,.34],
-    ["Waterfall","A little waterfall splashes into the lake.",.413,.063,.093,.126],
-    ["Fishing Gear","Fishing rods and nets lean beside the cottage.",.664,.697,.099,.161],
-    ["Fish Sign","A wooden sign with a blue fish hangs outside the cottage.",.692,.602,.077,.092],
-    ["Lantern Stump","A glowing lantern rests on a stump by the lake.",.170,.511,.071,.128],
-    ["Forest Tree","A broad leafy tree grows along the lakeshore.",.053,.321,.101,.43],
-    ["Lily Pads","Pink flowers bloom among the lily pads.",.233,.200,.089,.079],
-    ["Lakeside Flowers","Bright flowers grow among the stones by the water.",.287,.475,.082,.085]
+    ["Fishing Cottage","A cozy fisher's cottage with fishing supplies by the door.",.816,.403,.302,.458],
+    ["Fishing Dock","A wooden dock reaches out over the sparkling lake.",.460,.306,.220,.165],
+    ["Crystal Lake","Fish swim beneath the sparkling water and lily pads.",.488,.143,.695,.266],
+    ["Fishing Gear","Fishing rods and nets lean beside the cottage.",.675,.511,.091,.220],
+    ["Fish Sign","A wooden fish sign hangs above the cottage door.",.812,.340,.087,.066],
+    ["Lantern Stump","A glowing lantern rests on a stump by the lake.",.124,.729,.116,.226],
+    ["Forest Tree","A broad leafy tree grows along the lakeshore.",.068,.221,.133,.431],
+    ["Lily Pads","Pink flowers bloom among the lily pads.",.239,.161,.088,.087],
+    ["Lakeside Flowers","Bright flowers grow among the stones by the water.",.360,.405,.107,.080],
+    ["Fishing Barrel","A wooden barrel stands beside the fishing rods.",.704,.553,.063,.132],
+    ["Tackle Crate","A crate of fishing supplies rests beside the cottage.",.908,.603,.074,.126]
   ];
   // Panel 17: the forest crossroads, dog warning and trail marker.
   const panel17Hotspots=[
@@ -316,7 +317,7 @@
       const cottage=panel===12&&target.title==="Fishing Cottage";
       const home=panel===1&&target.title==="Cat's Home";
       const sign=panel===1&&target.title==="Paw Sign";
-      const tx=home?.50:dock?.715:cottage?.81:target.x,ty=home?.615:dock?.405:cottage?.785:target.y;
+      const tx=home?.50:dock?.46:cottage?.815:target.x,ty=home?.615:dock?.385:cottage?.665:target.y;
       const d=Math.hypot((hero.x-tx)*width,(hero.y-ty)*height);
       const reach=dock?Math.min(width,height)*.15:
         cottage?Math.min(width,height)*.15:
@@ -354,6 +355,30 @@
   }
   // Per-object silhouettes for the other illustrated panels. Coordinates are
   // relative to each object's measured art bounds, not a shared screen polygon.
+  // Hand-fitted outlines for the illustrated Panel 12 assets.
+  const panel12OutlinePaths={
+    "Fishing Cottage":[[.672,.390],[.686,.360],[.730,.305],[.772,.235],[.816,.181],
+      [.858,.218],[.901,.283],[.949,.351],[.959,.399],[.944,.419],
+      [.943,.600],[.877,.614],[.869,.626],[.756,.626],[.750,.605],[.674,.606]],
+    "Fishing Dock":[[.355,.261],[.376,.244],[.404,.251],[.435,.241],[.475,.242],
+      [.506,.252],[.550,.250],[.559,.272],[.560,.365],[.535,.381],
+      [.500,.378],[.465,.385],[.415,.380],[.370,.373]],
+    "Fishing Gear":[[.640,.610],[.657,.467],[.667,.453],[.681,.470],
+      [.691,.454],[.702,.467],[.713,.617],[.694,.637],[.653,.632]],
+    "Lantern Stump":[[.078,.754],[.085,.716],[.097,.700],[.097,.661],
+      [.113,.644],[.127,.662],[.128,.701],[.150,.725],[.161,.778],
+      [.153,.854],[.085,.854]],
+    "Fishing Barrel":[[.672,.502],[.689,.485],[.715,.485],[.735,.505],
+      [.735,.608],[.717,.630],[.685,.629],[.671,.609]],
+    "Tackle Crate":[[.869,.555],[.940,.555],[.946,.650],[.867,.650]],
+    "Fish Sign":[[.766,.314],[.854,.312],[.863,.350],[.766,.355]]
+  };
+  function tracePanel12Outline(t){
+    const pts=panel12OutlinePaths[t.title];
+    if(!pts)return false;
+    pts.forEach(([x,y],i)=>i?ctx.lineTo(x*width,y*height):ctx.moveTo(x*width,y*height));
+    ctx.closePath();return true;
+  }
   function traceSceneryOutline(t){
     const name=t.title.toLowerCase(),l=t.x-t.w/2,r=t.x+t.w/2,top=t.y-t.h/2,bottom=t.y+t.h/2;
     const pts=[];
@@ -420,7 +445,7 @@
       const left=(t.x-t.w/2)*width-pad;
       const top=(t.y-t.h/2)*height-pad;
       const w=t.w*width+pad*2,h=t.h*height+pad*2;
-      if(!(panel===1&&tracePanel1Outline(t)))traceSceneryOutline(t);
+      if(!(panel===1&&tracePanel1Outline(t))&&!(panel===12&&tracePanel12Outline(t)))traceSceneryOutline(t);
     }else if(t.type==="H"||t.type==="HOME"){
       const w=unit*(t.type==="HOME"?.29:.255),h=unit*(t.type==="HOME"?.23:.205);
       // Trace the cottage's actual roof and walls, not a circle.
@@ -1351,21 +1376,22 @@
       return false;
     }
     if(panel===12){
-      if(houseCollision(x,y))return true;
-      // Lake is impassable except for the accessible wooden dock.
-      const radius=Math.min(width,height)*.012;
-      const inDock=x>.572&&x<.806&&y>.265&&y<.405;
-      const lake=((x-.424)/.445)**2+((y-.238)/.285)**2<1;
-      if(lake&&!inDock)return true;
-      const solid=[
-        [.858,.585,.225,.27], [.055,.32,.075,.29],
-        [.170,.53,.06,.09], [.275,.88,.085,.085],
-        [.59,.71,.055,.07], [.977,.80,.05,.22]
-      ];
-      for(const [cx,cy,w,h] of solid){
-        if(Math.abs(x-cx)*width<w*width/2+radius&&
-           Math.abs(y-cy)*height<h*height/2+radius)return true;
-      }
+      // Collision footprints traced from the illustrated lakeside scene.
+      const margin=Math.min(width,height)*.010;
+      const rect=(l,t,r,b)=>x>=l-margin/width&&x<=r+margin/width&&
+        y>=t-margin/height&&y<=b+margin/height;
+      // The waterline is approximately y=.35 at the west, and y=.36
+      // behind the dock; the dock itself is traversable.
+      const onDock=x>.356&&x<.565&&y>.247&&y<.408;
+      const lake=y<(.365-(x>.38&&x<.65?.025:0))&&x>.105&&x<.95;
+      if(lake&&!onDock)return true;
+      // Cottage: pitched roof, upper walls and side extensions; door
+      // approach stays clear below y=.625.
+      if(rect(.673,.181,.959,.608))return true;
+      // Trees, stump, fishing equipment and decorative rocks.
+      if(rect(.012,.030,.136,.444)||rect(.076,.685,.166,.863)||
+         rect(.640,.462,.739,.628)||rect(.871,.535,.947,.666)||
+         rect(.809,.759,.905,.875))return true;
       return false;
     }
     if(panel===21){
