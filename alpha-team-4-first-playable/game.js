@@ -558,6 +558,21 @@ function showTreehouse(){
  treehouseIntro=true;
  const scene=document.querySelector('#treehouse-scene');
  scene.hidden=false;
+ // Build the art layer from fresh game.js so even a stale Google Sites HTML
+ // embed cannot keep showing the old CSS-drawn room.
+ const room=scene.querySelector('.treehouse-room');
+ room.style.background='#9d794f';
+ room.style.setProperty('--unused-room-art','none');
+ let art=room.querySelector('.treehouse-art');
+ if(!art){art=document.createElement('img');art.className='treehouse-art';art.alt='';room.prepend(art)}
+ Object.assign(art.style,{position:'absolute',inset:'0',width:'100%',height:'100%',objectFit:'fill',display:'block',pointerEvents:'none',zIndex:'1'});
+ art.src='./art/team4_treehouse_interior.webp?v='+Date.now();
+ for(const selector of ['.room-window','.room-bed','.room-table','.room-rug']){
+  const old=room.querySelector(selector);if(old)old.style.display='none';
+ }
+ const door=room.querySelector('#treehouse-door');
+ Object.assign(door.style,{background:'transparent',border:'0',boxShadow:'none',color:'transparent',zIndex:'3'});
+ const heroCanvas=room.querySelector('#room-hero');heroCanvas.style.zIndex='2';
  const hc=document.querySelector('#room-hero'),hctx=hc.getContext('2d');hctx.clearRect(0,0,100,130);hctx.setTransform(1.6,0,0,1.6,50,83);drawHero(hctx,0,0);
  document.querySelector('#treehouse-door').addEventListener('click',()=>{
   treehouseIntro=false;scene.hidden=true;hero.x=340;hero.y=390;keys.clear();canvas.focus({preventScroll:true});
