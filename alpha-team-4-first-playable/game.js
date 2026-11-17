@@ -114,9 +114,8 @@ function drawVillager(ctx,x,y){
 function drawGate(ctx,x,y){ctx.save();ctx.translate(x,y);ctx.fillStyle='#6c4931';ctx.fill(gateOutline);for(let j=-55;j<55;j+=21){ctx.fillStyle='#a8774a';ctx.fillRect(-17,j,34,13)}ctx.restore()}
 function drawPath(){
  const exits=panels[panel-1].exits;
- const open=Object.entries(exits).filter(([,e])=>e.canExit());
- // Show the locked gate approach even before its passage unlocks.
- if(panel===2&&exits.east&&!open.some(([side])=>side==='east'))open.push(['east',exits.east]);
+ // Paths are terrain and must be drawn even when a gate temporarily locks travel.
+ const open=Object.entries(exits);
  if(!open.length)return;
  ctx.save();ctx.fillStyle='#668657';ctx.strokeStyle='#7e9c66';ctx.lineWidth=2;
  const centerX=W/2,centerY=H/2,half=35;
