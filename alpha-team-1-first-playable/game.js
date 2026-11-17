@@ -1859,17 +1859,28 @@
           ((panel===11&&direction==="right"||panel===12&&direction==="left") ? Math.abs(coordinate-exit[1])<=tolerance : (villageLink || Math.abs(coordinate-exit[1])<=tolerance)) &&
           panels.has(exit[0])){
         const previousPanel=panel;
+        const oldX=hero.x,oldY=hero.y;
         panel=exit[0];
-        // Preserve dog sleep states and consumed meat when revisiting the maze.
-        // Only TRY AGAIN explicitly resets the maze.
-        if(direction==="right") hero.x=edgeX+.012;
-        if(direction==="left") hero.x=1-edgeX-.012;
-        if(direction==="bottom") hero.y=edgeY+.012;
-        if(direction==="top") hero.y=1-edgeY-.012;
-        // Align with the center of the connecting path on entry.
-        if(!villageLink || (previousPanel===11&&direction==="right") || (previousPanel===12&&direction==="left")){
-          if(direction==="right"||direction==="left") hero.y=exit[1];
-          else hero.x=exit[1];
+        // Place arrivals on clear ground, not inside the new panel's
+        // houses, trees, perimeter fence, or other solid scenery.
+        const preferred=(villageLink ? coordinate : exit[1]);
+        const offsets=[0,.035,-.035,.07,-.07,.11,-.11,.16,-.16,.22,-.22,.30,-.30];
+        const depths=[.065,.09,.12,.16,.21,.28,.36];
+        let landing=null;
+        for(const offset of offsets){
+          const along=Math.max(.08,Math.min(.92,preferred+offset));
+          for(const depth of depths){
+            const tx=direction==="right"?depth:direction==="left"?1-depth:along;
+            const ty=direction==="bottom"?depth:direction==="top"?1-depth:along;
+            if(!blocked(tx,ty)){landing={x:tx,y:ty};break;}
+          }
+          if(landing)break;
+        }
+        if(landing){
+          hero.x=landing.x;hero.y=landing.y;
+        }else{
+          // Never strand the cat inside collision if no safe entry exists.
+          panel=previousPanel;hero.x=oldX;hero.y=oldY;
         }
       } else {
         hero.x=Math.max(edgeX,Math.min(1-edgeX,hero.x));
