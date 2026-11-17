@@ -88,6 +88,28 @@ panels[1].objects.push({
  quest.gateOpen=true;quest.gateKey=false;removeItem('Gate Key');setQuest('Explore Beyond the Village');closePopup();
  }}]
 });
+// Step 3: simple interactive unicorn in Panel 3. Art polish comes later.
+const unicornOutline=new Path2D('M -39 -13 L -30 -32 L -12 -38 L 4 -34 L 16 -46 L 26 -44 L 32 -32 L 43 -25 L 43 -10 L 25 -5 L 22 24 L 14 24 L 9 0 L -14 0 L -18 24 L -27 24 L -30 -2 Z');
+function drawUnicorn(ctx,x,y){
+ ctx.save();ctx.translate(x,y);
+ ctx.fillStyle='#fff8f4';ctx.fill(unicornOutline);
+ ctx.fillStyle='#e4b5ed';ctx.beginPath();ctx.moveTo(15,-43);ctx.lineTo(25,-68);ctx.lineTo(28,-41);ctx.fill();
+ ctx.fillStyle='#e6c04b';ctx.beginPath();ctx.moveTo(25,-45);ctx.lineTo(32,-69);ctx.lineTo(35,-43);ctx.fill();
+ ctx.fillStyle='#c68bdb';ctx.beginPath();ctx.ellipse(-31,-16,16,9,-.5,0,Math.PI*2);ctx.fill();
+ ctx.fillStyle='#394454';ctx.beginPath();ctx.arc(31,-29,2.5,0,Math.PI*2);ctx.fill();
+ ctx.restore();
+}
+panels[2].objects.push({
+ id:'unicorn',name:'Unicorn',kind:'npc',x:775,y:490,outline:unicornOutline,reach:100,
+ description:'A beautiful unicorn stands beside the path.',
+ dialogue:'Be careful, young traveler. Monsters roam beyond the village. You should not explore without a weapon. I have heard of a sword hidden in Panel 15. Follow the paths south, then east, and keep exploring.',
+ draw(ctx){drawUnicorn(ctx,this.x,this.y)},
+ actions:[{label:'TALK',primary:true,run:()=>{
+  flags.add('unicornWarning');
+  setQuest('Find the Sword');
+  copyEl.textContent='Be careful, young traveler. Monsters roam beyond the village. You should not explore without a weapon. I have heard of a sword hidden farther along the forest paths. Head south and follow the trail toward Panel 15.';
+ }}]
+});
 function drawTreehouse(){
  const x=340,y=230;
  ctx.save();ctx.translate(x,y);
