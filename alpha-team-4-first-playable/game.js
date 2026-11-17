@@ -120,6 +120,19 @@ function drawSword(ctx,x,y){
  ctx.fillStyle='#e4c565';ctx.beginPath();ctx.arc(0,30,6,0,Math.PI*2);ctx.fill();
  ctx.restore();
 }
+// The unicorn reappears at the sword once it has been equipped.
+panels[14].objects.push({
+ id:'returningUnicorn',name:'Unicorn',kind:'npc',x:390,y:480,
+ outline:unicornOutline,reach:110,
+ description:'The unicorn has appeared beside you.',
+ isVisible:()=>flags.has('swordEquipped'),
+ draw(ctx){drawUnicorn(ctx,this.x,this.y)},
+ actions:[{label:'TALK',primary:true,run:()=>{
+  flags.add('armorWarning');
+  setQuest('Find Leather Armor');
+  copyEl.textContent='Well done finding the sword! But beware: there is a goblin camp nearby. You had better look for some armor along the way before facing those goblins.';
+ }}]
+});
 panels[14].objects.push({
  id:'forestSword',name:'Sword',x:790,y:450,outline:swordOutline,reach:95,
  description:'A sturdy sword rests on the ground. It looks ready for an adventurer.',
@@ -129,8 +142,19 @@ panels[14].objects.push({
   if(flags.has('swordEquipped'))return;
   flags.add('swordEquipped');
   addItem('Sword (Equipped)');
-  setQuest('Explore the Forest');
+  setQuest('Find Leather Armor');
   closePopup();
+  // Show the returning unicorn immediately, without waiting for a panel transition.
+  const visitor=panels[14].objects.find(o=>o.id==='returningUnicorn');
+  if(visitor){
+   activeObject=visitor;
+   titleEl.textContent='Unicorn';
+   copyEl.textContent='Well done finding the sword! But beware: there is a goblin camp nearby. You had better look for some armor along the way before facing those goblins.';
+   actionsEl.replaceChildren();
+   layer.hidden=false;
+   closeButton.focus();
+   flags.add('armorWarning');
+  }
  }}]
 });
 function drawTreehouse(){
