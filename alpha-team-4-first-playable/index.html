@@ -28,8 +28,8 @@ canvas{display:block;width:100%;height:100%;touch-action:none}
 
 #treehouse-scene{position:absolute;inset:0;z-index:8;display:grid;place-items:center;background:#0b211bc9}
 #treehouse-scene[hidden]{display:none}
-.treehouse-room{position:relative;width:min(760px,88vw);height:min(540px,78vh);overflow:hidden;border:12px solid #755037;border-radius:26px;background:#9d794f url('./art/team4_treehouse_interior.webp') center/100% 100% no-repeat;box-shadow:0 0 0 5px #d7b37c,0 30px 80px #08130bd9,inset 0 0 45px #553b2580}
- .treehouse-room:before{display:none;content:"";position:absolute;inset:22% 5% 12%;background:repeating-linear-gradient(0deg,#cfa879 0 48px,#ad8358 49px 53px);border:8px solid #8b603d;border-radius:12px;box-shadow:inset 0 0 38px #6c482b55}
+.treehouse-room{position:relative;width:min(760px,88vw);height:min(540px,78vh);overflow:hidden;border:12px solid #755037;border-radius:26px;background:#9d794f;box-shadow:0 0 0 5px #d7b37c,0 30px 80px #08130bd9,inset 0 0 45px #553b2580}
+ .treehouse-art{position:absolute;inset:0;width:100%;height:100%;object-fit:fill;display:block;pointer-events:none}.treehouse-room:before{display:none;content:"";position:absolute;inset:22% 5% 12%;background:repeating-linear-gradient(0deg,#cfa879 0 48px,#ad8358 49px 53px);border:8px solid #8b603d;border-radius:12px;box-shadow:inset 0 0 38px #6c482b55}
 .room-window,.room-bed,.room-table,.room-rug{display:none}.room-window{position:absolute;top:10%;left:43%;width:112px;height:92px;background:linear-gradient(#a8d5e6 60%,#8dbd81 61%);border:11px solid #775038;border-radius:14px;box-shadow:inset 0 0 0 3px #d9bc89}
 .room-window:after{content:"";position:absolute;left:42%;top:0;bottom:0;border-left:7px solid #775038}
 .room-bed{position:absolute;left:10%;top:33%;width:29%;height:37%;background:#8b5c3d;border:9px solid #67452d;border-radius:24px;box-shadow:0 12px 0 #533924}
@@ -57,9 +57,10 @@ canvas{display:block;width:100%;height:100%;touch-action:none}
 </svg></div></div>
 <div class="controls"><strong>Controls</strong>Move: WASD / Arrow Keys · Sword: Right Mouse Button</div>
 <div id="popup-layer" class="popup-layer" hidden><div class="popup" role="dialog" aria-modal="true" aria-labelledby="popup-title"><button id="popup-close" type="button" class="close" aria-label="Close">×</button><h2 id="popup-title"></h2><div id="popup-copy" aria-live="polite"></div><div class="actions" id="popup-actions"></div></div></div>
-<div id="debug-nav"><label for="debug-panel">Debug</label><select id="debug-panel" aria-label="Jump to panel"></select><button id="debug-go" type="button">GO</button></div><div id="treehouse-scene"><div class="treehouse-room" role="group" aria-label="Treehouse interior"><div class="room-window"></div><div class="room-bed"></div><div class="room-table"></div><div class="room-rug"></div><canvas id="room-hero" class="room-hero" width="100" height="130" aria-label="Boy"></canvas><button id="treehouse-door" class="room-door" aria-label="Exit treehouse"></button></div></div></main><script>
+<div id="debug-nav"><label for="debug-panel">Debug</label><select id="debug-panel" aria-label="Jump to panel"></select><button id="debug-go" type="button">GO</button></div><div id="treehouse-scene"><div class="treehouse-room" role="group" aria-label="Treehouse interior"><img class="treehouse-art" src="./art/team4_treehouse_interior.webp" alt="" decoding="async"><div class="room-window"></div><div class="room-bed"></div><div class="room-table"></div><div class="room-rug"></div><canvas id="room-hero" class="room-hero" width="100" height="130" aria-label="Boy"></canvas><button id="treehouse-door" class="room-door" aria-label="Exit treehouse"></button></div></div></main><script>
 // Load fresh game logic inside the Google Sites iframe without changing its embed URL.
 const gameScript=document.createElement('script');
+document.querySelector('.treehouse-art').src='./art/team4_treehouse_interior.webp?v='+Date.now();
 gameScript.src='./game.js?v='+Date.now();
 document.body.appendChild(gameScript);
 </script></body></html>
