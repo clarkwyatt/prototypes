@@ -9,6 +9,7 @@ const sides={west:[-1,0,'east'],east:[1,0,'west'],north:[0,-1,'south'],south:[0,
 const bounds={left:22,right:W-22,top:42,bottom:H-22};
 let last=performance.now(),panel=1,elapsed=0;
 let facing='south',swingUntil=0,lastSwing=-1,heroHP=100,lastHeroHit=-1,knockedOut=false;
+let activeHouse=0,houseExitPosition=null;
 let treehouseIntro=true;const roomHero={x:50,y:57};
 const inventory=new Set(),flags=new Set();
 const panels=Array.from({length:GRID_SIZE*GRID_SIZE},(_,i)=>({
@@ -59,6 +60,7 @@ panels[0].objects.push({
  actions:[{label:'ENTER',primary:true,run:()=>{closePopup();showTreehouse()}}]
 });
 const housePositions=[[210,230],[410,230],[610,230],[310,520],[570,520]];
+const houseDoorPositions=[[210,250],[410,250],[665,249],[310,545],[570,545]];
 // These local outlines are shared by the art, green glow, clicks, and collision.
 const houseOutline=new Path2D('M -53 -24 L 0 -65 L 53 -24 H 43 V 44 H -43 V -24 Z');
 const villagerOutline=new Path2D('M -12 -29 H 12 V -21 C 17 -11 8 -4 6 -4 H 13 V 25 H 10 V 37 H 3 V 25 H -2 V 37 H -9 V 25 H -13 V -4 H -6 C -8 -4 -17 -11 -12 -21 Z');
@@ -67,10 +69,12 @@ for(let y=-42;y<50;y+=21){
  gateOutline.moveTo(-9,y);gateOutline.lineTo(-9,y+8);gateOutline.lineTo(9,y+8);gateOutline.lineTo(9,y);gateOutline.closePath();
 }
 const house=(x,y,index)=>({
- id:'house'+index,name:'Village House',x,y,outline:houseOutline,solid:true,reach:125,
+ id:'house'+index,name:'Village House',x:houseDoorPositions[index-1][0],y:houseDoorPositions[index-1][1],
+ outline:new Path2D('M -18 -36 H 18 V 32 H -18 Z'),solid:false,reach:120,
  description:'A little village house with a wooden door.',
  draw(ctx){if(!panelTwoArtReady())drawHouse(ctx,x,y)},
- actions:[{label:'OPEN',primary:true,available:()=>!flags.has('emerald'+index),run:()=>{
+ actions:[{label:'OPEN',primary:true,run:()=>enterHouse(index)}],
+ emeraldAction:[{label:'SEARCH',primary:true,available:()=>!flags.has('emerald'+index),run:()=>{
   if(!quest.started){copyEl.textContent='A cozy room with shelves and a small chest.';actionsEl.replaceChildren();return}
   flags.add('emerald'+index);quest.emeralds++;for(const name of [...inventory])if(name.endsWith(' / 5 Emeralds'))removeItem(name);addItem(quest.emeralds+' / 5 Emeralds');
   copyEl.textContent='You search the house and find an emerald!';actionsEl.replaceChildren();
@@ -465,6 +469,35 @@ function drawHero(c=ctx,x=hero.x,y=hero.y){
  c.fillStyle='#27342f';for(const x of [-4,4]){c.beginPath();c.arc(x,-27,1.1,0,Math.PI*2);c.fill()}
  c.strokeStyle='#9b5947';c.lineWidth=1.4;c.beginPath();c.arc(0,-24,3.5,.2,Math.PI-.2);c.stroke();c.restore();
 }
+const houseInteriorArt=Array.from({length:5},(_,i)=>{
+ const image=new Image();image.src='./art/team4_house_0'+(i+1)+'_interior.webp';return image;
+});
+const interiorExit={x:W/2,y:H-108,width:100,height:95};
+function enterHouse(index){
+ activeHouse=index;houseExitPosition={x:houseDoorPositions[index-1][0],y:houseDoorPositions[index-1][1]+70};
+ hero.x=W/2;hero.y=H-180;keys.clear();
+}
+function exitHouse(){
+ activeHouse=0;hero.x=houseExitPosition.x;hero.y=houseExitPosition.y;keys.clear();
+}
+function drawHouseInterior(){
+ const image=houseInteriorArt[activeHouse-1];
+ if(image.complete&&image.naturalWidth)ctx.drawImage(image,0,0,W,H);
+ else{ctx.fillStyle='#d2ae7d';ctx.fillRect(0,0,W,H)}
+ // Door highlight is attached to the interaction zone, not painted onto the art.
+ if(Math.hypot(hero.x-interiorExit.x,hero.y-interiorExit.y)<160){
+  ctx.save();ctx.strokeStyle='rgba(48,196,94,'+(0.65+0.3*Math.sin(elapsed*5))+')';
+  ctx.lineWidth=4;ctx.shadowColor='#6af08c';ctx.shadowBlur=14;
+  ctx.strokeRect(interiorExit.x-interiorExit.width/2,interiorExit.y-interiorExit.height/2,interiorExit.width,interiorExit.height);
+  ctx.restore();
+ }
+ drawHero();
+}
+function houseBlocked(x,y){
+ // Keep the character in the room and out of the painted door at the bottom.
+ if(x<65||x>W-65||y<105||y>H-105)return true;
+ return false;
+}
 const panelOneArt=new Image();
 panelOneArt.src='./art/team4_panel_01.webp';
 const panelTwoLockedArt=new Image(),panelTwoUnlockedArt=new Image();
@@ -475,6 +508,7 @@ const panelTwoArtReady=()=>{
  return art.complete&&art.naturalWidth>0;
 };
 function draw(){
+ if(activeHouse){drawHouseInterior();return}
  if(panel===1&&panelOneArt.complete&&panelOneArt.naturalWidth){
   ctx.drawImage(panelOneArt,0,0,W,H);
  }else if(panel===2&&panelTwoArtReady()){
@@ -509,6 +543,11 @@ function tryExit(side,axis){
  return true;
 }
 function moveHero(dx,dy){
+ if(activeHouse){
+  if(!houseBlocked(hero.x+dx,hero.y))hero.x+=dx;
+  if(!houseBlocked(hero.x,hero.y+dy))hero.y+=dy;
+  return;
+ }
  const x=hero.x+dx,y=hero.y+dy;
  if(dx&&(x<bounds.left?tryExit('west',hero.y):x>bounds.right&&tryExit('east',hero.y)))return;
  const nextX=clamp(x,bounds.left,bounds.right);
@@ -545,6 +584,13 @@ canvas.addEventListener('click',e=>{
  const r=canvas.getBoundingClientRect(),x=(e.clientX-r.left)*W/r.width,y=(e.clientY-r.top)*H/r.height;
  // Click must hit the actual object shape AND the player must be nearby.
  const object=visibleObjects().reverse().find(o=>hitsOutline(o,x,y));
+ if(activeHouse){
+  if(Math.abs(x-interiorExit.x)<interiorExit.width/2&&Math.abs(y-interiorExit.y)<interiorExit.height/2&&Math.hypot(hero.x-x,hero.y-y)<165)exitHouse();
+  return;
+ }
+ if(object?.id?.startsWith('house')&&nearby(object)){
+  enterHouse(Number(object.id.slice(5)));return;
+ }
  if(object?.id==='treehouseDoor'&&nearby(object)){
   showTreehouse();return;
  }
@@ -561,6 +607,7 @@ for(let id=1;id<=panels.length;id++){
 debugPanel.value=String(panel);
 document.querySelector('#debug-go').addEventListener('click',()=>{
  const target=Number(debugPanel.value);
+ activeHouse=0;
  if(!Number.isInteger(target)||target<1||target>panels.length)return;
  if(activeObject)closePopup();
  treehouseIntro=false;
