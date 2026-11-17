@@ -40,7 +40,7 @@ canvas{display:block;width:100%;height:100%;touch-action:none}
 </style></head><body><main id="game">
 <canvas id="world" tabindex="-1" aria-label="Team 4 top-down game"></canvas>
 <div class="hud"><div class="quest"><strong>Quest</strong><span id="quest-text" aria-live="polite"></span></div><div class="inventory"><span>Inventory</span><b id="items" aria-live="polite">Empty</b></div><div class="compass" role="img" aria-label="Compass"><b class="n">N</b><b class="e">E</b><b class="s">S</b><b class="w">W</b><i></i></div></div>
-<div class="controls"><strong>Controls</strong>Move: WASD / Arrow Keys</div>
+<div class="controls"><strong>Controls</strong>Move: WASD / Arrow Keys · Sword: Right Mouse Button</div>
 <div id="popup-layer" class="popup-layer" hidden><div class="popup" role="dialog" aria-modal="true" aria-labelledby="popup-title"><button id="popup-close" type="button" class="close" aria-label="Close">×</button><h2 id="popup-title"></h2><div id="popup-copy" aria-live="polite"></div><div class="actions" id="popup-actions"></div></div></div>
 <div id="debug-nav"><label for="debug-panel">Debug</label><select id="debug-panel" aria-label="Jump to panel"></select><button id="debug-go" type="button">GO</button></div><div id="treehouse-scene"><div class="treehouse-room" role="group" aria-label="Treehouse interior"><div class="room-window"></div><div class="room-bed"></div><div class="room-table"></div><div class="room-rug"></div><canvas id="room-hero" class="room-hero" width="100" height="130" aria-label="Boy"></canvas><button id="treehouse-door" class="room-door" aria-label="Exit treehouse"></button></div></div></main><script>
 // Load fresh game logic inside the Google Sites iframe without changing its embed URL.
