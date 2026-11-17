@@ -1845,7 +1845,8 @@
           panels.has(exit[0])){
         const previousPanel=panel;
         panel=exit[0];
-        if(panel===18&&previousPanel!==18)resetMaze();
+        // Preserve dog sleep states and consumed meat when revisiting the maze.
+        // Only TRY AGAIN explicitly resets the maze.
         if(direction==="right") hero.x=edgeX+.012;
         if(direction==="left") hero.x=1-edgeX-.012;
         if(direction==="bottom") hero.y=edgeY+.012;
@@ -1902,7 +1903,7 @@
   debugBox.querySelector("#debug-toggle").onclick=()=>{const menu=debugBox.querySelector("#debug-panel");menu.style.display=menu.style.display==="none"?"block":"none";debugSelect.value=panel;};
   debugBox.querySelector("#debug-go").onclick=()=>{
     panel=Number(debugSelect.value);hero.x=panel===18?.065:.5;hero.y=panel===18?.5:.65;
-    if(panel===18)resetMaze();
+    // Debug navigation must not reset completed dog encounters.
     if(typeof closeInteraction==="function")closeInteraction();
     keys.clear();debugBox.querySelector("#debug-panel").style.display="none";
   };
