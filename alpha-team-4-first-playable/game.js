@@ -26,18 +26,24 @@ function connect(id,side,at,halfWidth,canExit=()=>true){
 }
 connect(1,'east',H/2,35);
 connect(2,'east',H/2,35,()=>quest.gateOpen);
-// Navigation from the students' 5x5 map. Every link is bidirectional.
-// Thick strokes at panel boundaries are dead ends, never exits.
-// The story route is 3→8→9→14→15→14→13→18→17→16→21.
-// Keep the established Panel 1 and Panel 2 exits unchanged.
+// Exact student-approved routes. Register each seam once; connect() makes it reciprocal.
+// Unlisted panels have no paths.
 const mapLinks=[
- [3,'south'],[8,'east'],[9,'south'],[9,'east'],
- [14,'east'],[13,'east'],[13,'south'],[18,'west'],
- [17,'west'],[16,'south'],
- // Other unblocked map corridors, with no gameplay content added.
- [4,'east'],[5,'south'],[6,'south'],[7,'south'],
- [11,'east'],
- [21,'east'],[22,'east'],[23,'east'],[24,'east']
+ [3,'south'],  // 3 ↔ 8
+ [8,'east'],   // 8 ↔ 9
+ [8,'south'],  // 8 ↔ 13
+ [9,'south'],  // 9 ↔ 14
+ [13,'east'],  // 13 ↔ 14
+ [13,'south'], // 13 ↔ 18
+ [14,'east'],  // 14 ↔ 15
+ [15,'south'], // 15 ↔ 20
+ [16,'east'],  // 16 ↔ 17
+ [16,'south'], // 16 ↔ 21
+ [17,'east'],  // 17 ↔ 18
+ [21,'east'],  // 21 ↔ 22
+ [22,'east'],  // 22 ↔ 23
+ [23,'east'],  // 23 ↔ 24
+ [24,'east']   // 24 ↔ 25
 ];
 for(const [id,side] of mapLinks)connect(id,side,side==='north'||side==='south'?W/2:H/2,35);
 
