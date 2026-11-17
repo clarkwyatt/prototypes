@@ -8,6 +8,7 @@ const GRID_SIZE=5;
 const sides={west:[-1,0,'east'],east:[1,0,'west'],north:[0,-1,'south'],south:[0,1,'north']};
 const bounds={left:22,right:W-22,top:42,bottom:H-22};
 let last=performance.now(),panel=1,elapsed=0;
+let facing='south',swingUntil=0,lastSwing=-1,heroHP=100,lastHeroHit=-1,knockedOut=false;
 let treehouseIntro=true;const roomHero={x:50,y:57};
 const inventory=new Set(),flags=new Set();
 const panels=Array.from({length:GRID_SIZE*GRID_SIZE},(_,i)=>({
@@ -157,6 +158,82 @@ panels[14].objects.push({
   }
  }}]
 });
+// Step 5: lightweight combat prototype; goblins only live in the camp.
+const goblins=[
+ {x:300,y:235,hp:50,lastAttack:-1},{x:820,y:235,hp:50,lastAttack:-1},
+ {x:790,y:560,hp:50,lastAttack:-1}
+];
+function drawGoblins(){
+ if(panel!==21)return;
+ for(const g of goblins){
+  ctx.save();ctx.translate(g.x,g.y);
+  if(g.hp<=0){ctx.fillStyle='#526744';ctx.beginPath();ctx.ellipse(0,8,24,10,0,0,Math.PI*2);ctx.fill();ctx.restore();continue}
+  ctx.fillStyle='#658b42';ctx.beginPath();ctx.ellipse(0,0,18,24,0,0,Math.PI*2);ctx.fill();
+  ctx.beginPath();ctx.moveTo(-12,-16);ctx.lineTo(-24,-30);ctx.lineTo(-5,-22);ctx.moveTo(12,-16);ctx.lineTo(24,-30);ctx.lineTo(5,-22);ctx.fill();
+  ctx.fillStyle='#222';ctx.fillRect(-9,-8,4,4);ctx.fillRect(5,-8,4,4);
+  ctx.fillStyle='#4a322c';ctx.fillRect(-22,-40,44,5);
+  ctx.fillStyle='#b94e45';ctx.fillRect(-22,-40,44*(g.hp/50),5);
+  ctx.restore();
+ }
+}
+function drawCombatHUD(){
+ if(panel!==21)return;
+ ctx.save();ctx.fillStyle='#fff8e9';ctx.fillRect(18,100,155,33);
+ ctx.fillStyle='#294a38';ctx.font='bold 14px sans-serif';ctx.fillText('HP '+heroHP+'/100',27,121);ctx.restore();
+}
+function drawSwing(){
+ if(!flags.has('swordEquipped')||elapsed>swingUntil)return;
+ const v={north:[0,-1],south:[0,1],west:[-1,0],east:[1,0]}[facing];
+ ctx.save();ctx.strokeStyle='#e9f6ff';ctx.lineWidth=8;ctx.lineCap='round';
+ ctx.beginPath();ctx.moveTo(hero.x+v[0]*17,hero.y+v[1]*17);
+ ctx.lineTo(hero.x+v[0]*65,hero.y+v[1]*65);ctx.stroke();ctx.restore();
+}
+function swingSword(){
+ if(treehouseIntro||activeObject||knockedOut||!flags.has('swordEquipped')||elapsed-lastSwing<.35)return;
+ lastSwing=elapsed;swingUntil=elapsed+.2;
+ if(panel!==21)return;
+ const v={north:[0,-1],south:[0,1],west:[-1,0],east:[1,0]}[facing];
+ for(const g of goblins){
+  if(g.hp<=0)continue;
+  const dx=g.x-hero.x,dy=g.y-hero.y;
+  const forward=dx*v[0]+dy*v[1],sideways=Math.abs(dx*v[1]-dy*v[0]);
+  if(forward<0||forward>95||sideways>36)continue;
+  g.hp=Math.max(0,g.hp-10);
+  g.x=clamp(g.x+v[0]*25,35,W-35);
+  g.y=clamp(g.y+v[1]*25,65,H-35);
+ }
+}
+function knockout(){
+ knockedOut=true;keys.clear();
+ activeObject={id:'knockout'};
+ titleEl.textContent='You Got Knocked Out!';
+ copyEl.textContent='';
+ actionsEl.replaceChildren();
+ const retry=document.createElement('button');retry.type='button';retry.className='primary';retry.textContent='TRY AGAIN';
+ retry.addEventListener('click',()=>{
+  knockedOut=false;heroHP=100;panel=16;hero.x=W/2;hero.y=H/2;
+  for(const g of goblins)g.lastAttack=-1;
+  closePopup();
+ });
+ actionsEl.appendChild(retry);layer.hidden=false;retry.focus();
+}
+function updateGoblins(dt){
+ if(panel!==21||knockedOut||activeObject)return;
+ for(const g of goblins){
+  if(g.hp<=0)continue;
+  const dx=hero.x-g.x,dy=hero.y-g.y,d=Math.hypot(dx,dy);
+  if(d>190)returnGoblinIdle(g);
+  else if(d>43){
+   const step=Math.min(75*dt,d-43);
+   g.x=clamp(g.x+dx/d*step,25,W-25);
+   g.y=clamp(g.y+dy/d*step,60,H-25);
+  }else if(elapsed-g.lastAttack>=1.05&&elapsed-lastHeroHit>=.55){
+   g.lastAttack=elapsed;lastHeroHit=elapsed;heroHP=Math.max(0,heroHP-10);
+   if(heroHP===0){knockout();return}
+  }
+ }
+}
+function returnGoblinIdle(g){} // Goblins wait until the boy approaches.
 function drawTreehouse(){
  const x=340,y=230;
  ctx.save();ctx.translate(x,y);
@@ -330,7 +407,7 @@ function draw(){
   ctx.stroke(o.outline);
   ctx.restore();
  }
- drawHero();
+ drawGoblins();drawHero();drawSwing();drawCombatHUD();
 }
 function blocked(x,y){return visibleObjects().some(o=>o.solid&&hitsOutline(o,x,y,12))}
 function tryExit(side,axis){
@@ -363,13 +440,18 @@ function tick(now){
  let dx=Number(keys.has('ArrowRight')||keys.has('d'))-Number(keys.has('ArrowLeft')||keys.has('a'));
  let dy=Number(keys.has('ArrowDown')||keys.has('s'))-Number(keys.has('ArrowUp')||keys.has('w'));
  if(dx&&dy){dx*=Math.SQRT1_2;dy*=Math.SQRT1_2}
+ if(Math.abs(dx)>Math.abs(dy))facing=dx>0?'east':'west';
+ else if(dy)facing=dy>0?'south':'north';
  moveHero(dx*hero.speed*dt,dy*hero.speed*dt);
+ updateGoblins(dt);
  }
  draw();requestAnimationFrame(tick);
 }
 window.addEventListener('keydown',e=>{const key=e.key.length===1?e.key.toLowerCase():e.key;if(key.startsWith('Arrow'))e.preventDefault();if(key==='Escape'&&activeObject){e.preventDefault();closePopup()}else keys.add(key)});
 window.addEventListener('keyup',e=>keys.delete(e.key.length===1?e.key.toLowerCase():e.key));
 window.addEventListener('blur',()=>keys.clear());
+canvas.addEventListener('contextmenu',e=>e.preventDefault());
+canvas.addEventListener('pointerdown',e=>{if(e.button===2){e.preventDefault();swingSword()}});
 canvas.addEventListener('click',e=>{
  if(activeObject||treehouseIntro)return;
  const r=canvas.getBoundingClientRect(),x=(e.clientX-r.left)*W/r.width,y=(e.clientY-r.top)*H/r.height;
