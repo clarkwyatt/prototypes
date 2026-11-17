@@ -51,18 +51,32 @@ for(const [id,side] of mapLinks)connect(id,side,side==='north'||side==='south'?W
 
 // Panel 1 art: the treehouse doorway is part of the painted background.
 // Keep its interactive outline separate from the image and never repaint it.
-const treehouseDoorOutline=new Path2D('M -47 49 L -47 -15 Q -47 -71 0 -71 Q 47 -71 47 -15 L 47 49 Z');
+const DOOR_REACH=48;
+const treehouseDoorOutline=new Path2D('M -54 70 L -54 -15 Q -54 -64 0 -64 Q 54 -64 54 -15 L 54 70 Z');
 panels[0].objects.push({
- id:'treehouseDoor',name:'Treehouse Door',x:268,y:187,
+ id:'treehouseDoor',name:'Treehouse Door',x:270,y:181,
  outline:treehouseDoorOutline,reach:DOOR_REACH,solid:false,
  description:'The doorway back into the treehouse.',
  draw(){},
  actions:[{label:'ENTER',primary:true,run:()=>{closePopup();showTreehouse()}}]
 });
+// Collision polygons trace the permanent treehouse, roots, rocks and forest edges.
+// Doorway remains a clickable hotspot; solid scenery never draws over the artwork.
+const panelOneSolids=[
+ new Path2D('M 0 0 H 480 L 435 110 L 350 110 L 340 255 L 405 395 L 350 445 L 245 370 L 160 460 L 0 535 Z'),
+ new Path2D('M 370 0 H 1120 V 284 L 1020 300 L 990 340 L 835 330 L 770 285 L 650 315 L 565 285 L 490 350 L 430 325 L 405 220 Z'),
+ new Path2D('M 930 405 L 1010 390 L 1070 445 L 1050 540 L 970 570 L 900 515 Z'),
+ new Path2D('M 0 630 L 130 600 L 260 655 L 410 650 L 505 705 L 0 720 Z'),
+ new Path2D('M 770 675 L 900 645 L 1030 670 L 1120 610 V 720 H 770 Z')
+];
+function panelOneBlocked(x,y){
+ // Keep the steps and winding path open; doorway is reached from the steps.
+ if(x>210&&x<325&&y>210&&y<420)return false;
+ return panelOneSolids.some(shape=>ctx.isPointInPath(shape,x,y));
+}
 const housePositions=[[210,230],[410,230],[610,230],[310,520],[570,520]];
 // Measured from approved Panel 2 art, converted from 1632x960 to 1120x720 canvas.
 const houseDoorPositions=[[190,221],[438,221],[665,221],[229,547],[600,547]];
-const DOOR_REACH=48;
 // These local outlines are shared by the art, green glow, clicks, and collision.
 const houseOutline=new Path2D('M -53 -24 L 0 -65 L 53 -24 H 43 V 44 H -43 V -24 Z');
 const villagerOutline=new Path2D('M -12 -29 H 12 V -21 C 17 -11 8 -4 6 -4 H 13 V 25 H 10 V 37 H 3 V 25 H -2 V 37 H -9 V 25 H -13 V -4 H -6 C -8 -4 -17 -11 -12 -21 Z');
@@ -547,7 +561,7 @@ function draw(){
  }
  drawGoblins();drawHero();drawSwing();drawCombatHUD();
 }
-function blocked(x,y){return visibleObjects().some(o=>o.solid&&hitsOutline(o,x,y,12))}
+function blocked(x,y){return (panel===1&&panelOneBlocked(x,y))||visibleObjects().some(o=>o.solid&&hitsOutline(o,x,y,12))}
 function tryExit(side,axis){
  const exit=panels[panel-1].exits[side];
  if(!exit||Math.abs(axis-exit.at)>exit.halfWidth||!exit.canExit())return false;
@@ -577,7 +591,11 @@ function tick(now){
  if(treehouseIntro){
  const rx=Number(keys.has('ArrowRight')||keys.has('d'))-Number(keys.has('ArrowLeft')||keys.has('a'));
  const ry=Number(keys.has('ArrowDown')||keys.has('s'))-Number(keys.has('ArrowUp')||keys.has('w'));
- roomHero.x=clamp(roomHero.x+rx*dt*25,33,76);roomHero.y=clamp(roomHero.y+ry*dt*30,32,76);
+ roomHero.x=clamp(roomHero.x+rx*dt*25,33,76);roomHero.y=clamp(roomHero.y+ry*dt*30,32,78);
+ // The character stays within the walkable floor, away from solid furnishings.
+ if(roomHero.x<30&&roomHero.y<64)roomHero.x=30;
+ if(roomHero.x>75&&roomHero.y<60)roomHero.x=75;
+ window.updateTeam4RoomDoor?.();
  const el=document.querySelector('#room-hero');el.style.left=roomHero.x+'%';el.style.top=roomHero.y+'%';
  }else if(!activeObject){
  let dx=Number(keys.has('ArrowRight')||keys.has('d'))-Number(keys.has('ArrowLeft')||keys.has('a'));
