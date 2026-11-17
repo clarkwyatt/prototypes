@@ -725,11 +725,29 @@ const houseFeatures={
  4:[{name:'Village Keepsakes',x:12,y:24,w:19,h:25,shape:'inset(0 round 12%)',text:'Carefully arranged mementos from journeys near and far. One almost seems to hum with a forgotten melody.'},{name:'Family Table',x:30,y:44,w:22,h:20,shape:'ellipse(48% 45% at 50% 50%)',text:'An inviting place for supper and stories. The best tales always seem to grow a little grander by candlelight.'},{name:'Restful Bed',x:73,y:39,w:22,h:29,shape:'inset(0 round 15%)',text:'A peaceful corner, ready for dreams of secret passages and enchanted forests.'}],
  5:[{name:'Village Keepsakes',x:12,y:24,w:19,h:25,shape:'inset(0 round 12%)',text:'These well-loved possessions have traveled through generations, carrying more memories than any map could hold.'},{name:'Family Table',x:30,y:44,w:22,h:20,shape:'ellipse(48% 45% at 50% 50%)',text:'The table has seen birthdays, celebrations, and a hundred ordinary days made wonderful by good company.'},{name:'Restful Bed',x:73,y:39,w:22,h:29,shape:'inset(0 round 15%)',text:'A soft quilt promises a good night’s sleep—and perhaps a dream about tomorrow’s great adventure.'}]
 };
-function currentInteriorFeatures(){return interiorHouse?(houseFeatures[interiorHouse]||[]):treehouseFeatures;}
+function currentInteriorFeatures(){
+ // Selective highlights: doors handled separately, quest storage first.
+ const features=interiorHouse?(houseFeatures[interiorHouse]||[]):treehouseFeatures;
+ if(!interiorHouse)return features.filter(f=>['Travel Chest','Books and Potions'].includes(f.name));
+ if(interiorHouse===1)return features.filter(f=>['Treasure Chest','Captain’s Locker'].includes(f.name));
+ return features.filter(f=>f.name==='Village Keepsakes');
+}
+function isEmeraldStorage(feature){
+ return interiorHouse>0&&['Treasure Chest','Village Keepsakes'].includes(feature.name);
+}
 function showInteriorDescription(feature){
  if(activeObject)return;
+ let description=feature.text;
+ if(isEmeraldStorage(feature)&&quest.started){
+  if(!flags.has('emerald'+interiorHouse)){
+   collectHouseEmerald();
+   description+=' Tucked safely inside, a brilliant emerald catches the light. You carefully add it to your collection.';
+  }else{
+   description+=' You have already recovered the emerald hidden here.';
+  }
+ }
  activeObject={name:feature.name};titleEl.textContent=feature.name;
- showDialogueCard(feature.text);
+ showDialogueCard(description);
 }
 function updateTreehouseFeatures(room){
  for(const feature of currentInteriorFeatures()){
