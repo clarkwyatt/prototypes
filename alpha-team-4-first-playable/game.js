@@ -26,7 +26,22 @@ function connect(id,side,at,halfWidth,canExit=()=>true){
 }
 connect(1,'east',H/2,35);
 connect(2,'east',H/2,35,()=>quest.gateOpen);
-// Only the first village route is enabled until the remaining map is built.
+// Navigation from the students' 5x5 map. Every link is bidirectional.
+// Thick strokes at panel boundaries are dead ends, never exits.
+// The story route is 3→8→9→14→15→14→13→18→17→16→21.
+// Keep the established Panel 1 and Panel 2 exits unchanged.
+const mapLinks=[
+ [3,'south'],[8,'east'],[9,'south'],[9,'east'],
+ [14,'east'],[13,'east'],[13,'south'],[18,'west'],
+ [17,'west'],[16,'south'],
+ // Other unblocked map corridors, with no gameplay content added.
+ [4,'east'],[5,'south'],[6,'south'],[7,'south'],
+ [9,'north'],[10,'south'],[11,'east'],[12,'south'],
+ [15,'south'],[17,'south'],[18,'south'],[20,'south'],
+ [21,'east'],[22,'east'],[23,'east'],[24,'east']
+];
+for(const [id,side] of mapLinks)connect(id,side,side==='north'||side==='south'?W/2:H/2,35);
+
 const housePositions=[[210,230],[410,230],[610,230],[310,520],[570,520]];
 // These local outlines are shared by the art, green glow, clicks, and collision.
 const houseOutline=new Path2D('M -53 -24 L 0 -65 L 53 -24 H 43 V 44 H -43 V -24 Z');
@@ -93,14 +108,25 @@ function drawVillager(ctx,x,y){
 }
 function drawGate(ctx,x,y){ctx.save();ctx.translate(x,y);ctx.fillStyle='#6c4931';ctx.fill(gateOutline);for(let j=-55;j<55;j+=21){ctx.fillStyle='#a8774a';ctx.fillRect(-17,j,34,13)}ctx.restore()}
 function drawPath(){
- // Render only the existing village route. Its ends stop inside panels 1 and 3.
- if(panel>3)return;
- const {west,east}=panels[panel-1].exits,exit=west||east;
- const left=west?0:W/2,right=east?W:W/2;
- ctx.fillStyle='#668657';
- ctx.fillRect(left,exit.at-exit.halfWidth,right-left,2*exit.halfWidth);
- ctx.strokeStyle='#7e9c66';ctx.lineWidth=2;
- for(let x=left+12;x<right-14;x+=53){ctx.beginPath();ctx.moveTo(x,exit.at-17);ctx.lineTo(x+12,exit.at-13);ctx.stroke()}
+ const exits=panels[panel-1].exits;
+ const open=Object.entries(exits).filter(([,e])=>e.canExit());
+ // Show the locked gate approach even before its passage unlocks.
+ if(panel===2&&exits.east&&!open.some(([side])=>side==='east'))open.push(['east',exits.east]);
+ if(!open.length)return;
+ ctx.save();ctx.fillStyle='#668657';ctx.strokeStyle='#7e9c66';ctx.lineWidth=2;
+ const centerX=W/2,centerY=H/2,half=35;
+ // The center junction connects only the directions actually open on this panel.
+ for(const [side,e] of open){
+  if(side==='west'||side==='east'){
+   const left=side==='west'?0:centerX,right=side==='west'?centerX:W;
+   ctx.fillRect(left,centerY-half,right-left,half*2);
+  }else{
+   const top=side==='north'?0:centerY,bottom=side==='north'?centerY:H;
+   ctx.fillRect(centerX-half,top,half*2,bottom-top);
+  }
+ }
+ // Panel 3 intentionally has only a west entrance and a south exit.
+ ctx.restore();
 }
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 function resize(){
