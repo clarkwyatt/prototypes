@@ -9,7 +9,7 @@ const sides={west:[-1,0,'east'],east:[1,0,'west'],north:[0,-1,'south'],south:[0,
 const bounds={left:22,right:W-22,top:42,bottom:H-22};
 let last=performance.now(),panel=1,elapsed=0;
 let facing='south',swingUntil=0,lastSwing=-1,heroHP=100,lastHeroHit=-1,knockedOut=false;
-let activeHouse=0,houseExitPosition=null;
+let activeHouse=0,houseExitPosition=null,interiorHouse=0;
 let treehouseIntro=true;const roomHero={x:50,y:48};
 // Interior art coordinates use percentages of the full room image.
 const treehouseDoorShape='polygon(8% 100%,8% 30%,12% 20%,19% 10%,29% 3%,50% 0%,71% 3%,81% 10%,88% 20%,92% 30%,92% 100%)';
@@ -17,6 +17,7 @@ const treehouseDoorBounds={left:39, right:61, top:65, bottom:100};
 function treehouseDoorNearby(){return Math.abs(roomHero.x-50)<17&&roomHero.y>=52&&roomHero.y<=67;}
 function treehouseFloorBlocked(x,y){
  if(x<29||x>79||y<31||y>76)return true;
+ if(interiorHouse)return x>39&&x<61&&y>64;
  // Bottom-center door occupies the foreground: feet cannot overlap its painted face.
  if(x>treehouseDoorBounds.left&&x<treehouseDoorBounds.right&&y>65)return true;
  // Furniture silhouettes: table/stools left, bed and chest right.
@@ -501,8 +502,9 @@ const interiorExit={x:W/2,y:H-108,width:70,height:75};
 const interiorExitOutline=new Path2D('M -35 35 V -15 Q -35 -40 0 -40 Q 35 -40 35 -15 V 35 Z');
 const interiorNear=(x,y)=>Math.hypot(hero.x-x,hero.y-y)<=85;
 function enterHouse(index){
- activeHouse=index;houseExitPosition={x:houseDoorPositions[index-1][0],y:houseDoorPositions[index-1][1]+70};
- hero.x=W/2;hero.y=H-180;keys.clear();
+ houseExitPosition={x:houseDoorPositions[index-1][0],y:houseDoorPositions[index-1][1]+70};
+ interiorHouse=index;roomHero.x=50;roomHero.y=46;keys.clear();
+ showTreehouse();
 }
 function collectHouseEmerald(){
  if(!quest.started||flags.has('emerald'+activeHouse))return;
@@ -666,7 +668,7 @@ for(let id=1;id<=panels.length;id++){
 debugPanel.value=String(panel);
 document.querySelector('#debug-go').addEventListener('click',()=>{
  const target=Number(debugPanel.value);
- activeHouse=0;
+ activeHouse=0;interiorHouse=0;
  if(!Number.isInteger(target)||target<1||target>panels.length)return;
  if(activeObject)closePopup();
  treehouseIntro=false;
@@ -689,12 +691,13 @@ function showTreehouse(){
  // Build the art layer from fresh game.js so even a stale Google Sites HTML
  // embed cannot keep showing the old CSS-drawn room.
  const room=scene.querySelector('.treehouse-room');
+ roomHero.x=50;roomHero.y=interiorHouse?46:48;
  room.style.background='#9d794f';
  room.style.setProperty('--unused-room-art','none');
  let art=room.querySelector('.treehouse-art');
  if(!art){art=document.createElement('img');art.className='treehouse-art';art.alt='';room.prepend(art)}
  Object.assign(art.style,{position:'absolute',inset:'0',width:'100%',height:'100%',objectFit:'fill',display:'block',pointerEvents:'none',zIndex:'1'});
- art.src='./art/team4_treehouse_interior.webp?v='+Date.now();
+ art.src=interiorHouse?'./art/team4_house_0'+interiorHouse+'_interior.webp':'./art/team4_treehouse_interior.webp?v='+Date.now();
  for(const selector of ['.room-window','.room-bed','.room-table','.room-rug']){
   const old=room.querySelector(selector);if(old)old.style.display='none';
  }
@@ -732,6 +735,7 @@ function showTreehouse(){
  const hc=document.querySelector('#room-hero'),hctx=hc.getContext('2d');hctx.clearRect(0,0,100,130);hctx.setTransform(1.6,0,0,1.6,50,83);drawHero(hctx,0,0);
  document.querySelector('#treehouse-door').onclick=()=>{
   if(!treehouseDoorNearby())return;
+  if(interiorHouse){exitHouse();return;}
   treehouseIntro=false;scene.hidden=true;placeHeroSafely(340,390);keys.clear();canvas.focus({preventScroll:true});
  };
 }
