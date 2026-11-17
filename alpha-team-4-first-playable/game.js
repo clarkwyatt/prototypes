@@ -150,10 +150,7 @@ panels[14].objects.push({
   if(visitor){
    activeObject=visitor;
    titleEl.textContent='Unicorn';
-   copyEl.textContent='Well done finding the sword! But beware: there is a goblin camp nearby. You had better look for some armor along the way before facing those goblins.';
-   actionsEl.replaceChildren();
-   layer.hidden=false;
-   closeButton.focus();
+   showDialogueCard('Well done finding the sword! But beware: there is a goblin camp nearby. You had better look for some armor along the way before facing those goblins.');
    flags.add('armorWarning');
   }
  }}]
@@ -308,6 +305,17 @@ layer.addEventListener('keydown',e=>{
   (e.shiftKey?buttons.at(-1):buttons[0]).focus();
  }
 });
+// Match A Village Tale: action choices are replaced by the dialogue card's close button.
+function showDialogueCard(message){
+ copyEl.textContent=message;
+ actionsEl.replaceChildren();
+ const done=document.createElement('button');
+ done.type='button';done.className='primary';done.textContent='Got it!';
+ done.addEventListener('click',closePopup);
+ actionsEl.appendChild(done);
+ layer.hidden=false;
+ done.focus();
+}
 function openPopup(object){
  if(treehouseIntro||activeObject||!visibleObjects().includes(object)||!canInteract(object)||!nearby(object))return;
  activeObject=object;
@@ -327,9 +335,13 @@ function openPopup(object){
   button.textContent=option.label;
   button.classList.toggle('primary',Boolean(option.primary));
   button.addEventListener('click',()=>{
+   const selected=activeObject;
    option.run?.(state);
    updateInventory();
-   if(activeObject&&!actionsEl.contains(button))closeButton.focus();
+   // Once an action displays dialogue, hide EXAMINE/TALK and show only Got it!
+   if(activeObject===selected&&!layer.hidden&&copyEl.textContent.trim()){
+    showDialogueCard(copyEl.textContent);
+   }
   });
   actionsEl.appendChild(button);
  }
