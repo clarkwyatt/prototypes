@@ -249,8 +249,15 @@
   function nearestTarget(){
     let found=null,dist=Infinity;
     for(const target of targets()){
-      const d=Math.hypot((hero.x-target.x)*width,(hero.y-target.y)*height);
-      const reach=target.type==="VILLAGE_ART"?Math.min(width,height)*.27:
+      // Interactions use an approachable point, not the center of tall artwork.
+      // At the doorstep the home must win; the sign requires a close approach.
+      const home=panel===1&&target.title==="Cat's Home";
+      const sign=panel===1&&target.title==="Paw Sign";
+      const tx=home?.50:target.x,ty=home?.615:target.y;
+      const d=Math.hypot((hero.x-tx)*width,(hero.y-ty)*height);
+      const reach=home?Math.min(width,height)*.135:
+        sign?Math.min(width,height)*.075:
+        target.type==="VILLAGE_ART"?Math.min(width,height)*.27:
         target.type==="LAKE"?Math.min(width,height)*.32:
         ["FORCE","DOOR","NPC","DOCK"].includes(target.type)?Math.min(width,height)*.23:
         Math.min(width,height)*.19;
