@@ -398,7 +398,7 @@
     for(const t of villageTargets()){
       if(!/cottage|cat's home/i.test(t.title))continue;
       const left=t.x-t.w*.49,right=t.x+t.w*.49;
-      const top=t.y-t.h*.49,bottom=t.y+t.h*.49;
+      const top=t.y-t.h*.49,bottom=t.y+t.h*.37; // leave exterior doorstep walkable
       const px=radius/width,py=radius/height;
       if(x>=left-px&&x<=right+px&&y>=top-py&&y<=bottom+py)return true;
     }
