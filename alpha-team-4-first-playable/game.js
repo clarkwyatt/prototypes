@@ -10,7 +10,7 @@ const bounds={left:22,right:W-22,top:42,bottom:H-22};
 let last=performance.now(),panel=1,elapsed=0;
 let facing='south',swingUntil=0,lastSwing=-1,heroHP=100,lastHeroHit=-1,knockedOut=false;
 let activeHouse=0,houseExitPosition=null;
-let treehouseIntro=true;const roomHero={x:50,y:57};
+let treehouseIntro=true;const roomHero={x:50,y:48};
 // Interior art coordinates use percentages of the full room image.
 const treehouseDoorShape='polygon(8% 100%,8% 30%,12% 20%,19% 10%,29% 3%,50% 0%,71% 3%,81% 10%,88% 20%,92% 30%,92% 100%)';
 const treehouseDoorBounds={left:39, right:61, top:65, bottom:100};
