@@ -69,7 +69,7 @@ for(let y=-42;y<50;y+=21){
 const house=(x,y,index)=>({
  id:'house'+index,name:'Village House',x,y,outline:houseOutline,solid:true,reach:125,
  description:'A little village house with a wooden door.',
- draw(ctx){drawHouse(ctx,x,y)},
+ draw(ctx){if(!panelTwoArtReady())drawHouse(ctx,x,y)},
  actions:[{label:'OPEN',primary:true,available:()=>!flags.has('emerald'+index),run:()=>{
   if(!quest.started){copyEl.textContent='A cozy room with shelves and a small chest.';actionsEl.replaceChildren();return}
   flags.add('emerald'+index);quest.emeralds++;for(const name of [...inventory])if(name.endsWith(' / 5 Emeralds'))removeItem(name);addItem(quest.emeralds+' / 5 Emeralds');
@@ -545,6 +545,9 @@ canvas.addEventListener('click',e=>{
  const r=canvas.getBoundingClientRect(),x=(e.clientX-r.left)*W/r.width,y=(e.clientY-r.top)*H/r.height;
  // Click must hit the actual object shape AND the player must be nearby.
  const object=visibleObjects().reverse().find(o=>hitsOutline(o,x,y));
+ if(object?.id==='treehouseDoor'&&nearby(object)){
+  showTreehouse();return;
+ }
  if(object)openPopup(object);
 });
 
