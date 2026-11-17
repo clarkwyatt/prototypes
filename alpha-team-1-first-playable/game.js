@@ -73,6 +73,23 @@
     b.className="interaction-btn"+(label==="EXAMINE"||label==="CLOSE"||label==="OK"?" secondary":"");
     b.addEventListener("click",action);return b;
   }
+  function playGateUnlockSfx(){
+    try{
+      const AC=window.AudioContext||window.webkitAudioContext;
+      if(!AC)return;
+      const audio=new AC(),t=audio.currentTime;
+      for(const [offset,pitch] of [[0,320],[.12,440],[.24,660]]){
+        const osc=audio.createOscillator(),gain=audio.createGain();
+        osc.type="triangle";osc.frequency.value=pitch;
+        gain.gain.setValueAtTime(.0001,t+offset);
+        gain.gain.exponentialRampToValueAtTime(.08,t+offset+.015);
+        gain.gain.exponentialRampToValueAtTime(.0001,t+offset+.23);
+        osc.connect(gain);gain.connect(audio.destination);
+        osc.start(t+offset);osc.stop(t+offset+.24);
+      }
+      setTimeout(()=>audio.close(),850);
+    }catch(e){console.warn("Gate sound unavailable",e);}
+  }
   function playForceFieldSfx(){
     try{
       const AC=window.AudioContext||window.webkitAudioContext;
@@ -112,6 +129,7 @@
     if(panel===6&&type==="VILLAGE_ART"&&target.title==="Village Gate"&&!villageGateOpen){
       if(hasGateKey)options.push(button("USE GATE KEY",()=>{
         villageGateOpen=true;hasGateKey=false;
+        gateVfxStart=performance.now();playGateUnlockSfx();
         p.textContent="The Gate Key unlocks the village gate! The way ahead is open.";
         p.hidden=false;updateHud();actions.replaceChildren(button("OK",closeInteraction));
       }));
@@ -184,8 +202,8 @@
       ["Purple-Roof Cottage","A lovely home with a purple tiled roof and warm glowing windows.",.29,.39,.32,.43],
       ["Blue-Roof Cottage","A small blue-roofed cottage sits beside the path.",.85,.42,.25,.35],
       ["Old Oak Tree","A broad green tree shades the village crossroads.",.59,.26,.28,.46],
-      ["Village Gate","A sturdy locked wooden gate. The village continues beyond it, but the gate is shut.",.605,.805,.22,.18],
-      ["Gate Lantern","A lantern glows warmly beside the village gate.",.50,.67,.08,.14],
+      ["Village Gate","A sturdy locked wooden gate. The village continues beyond it, but the gate is shut.",.505,.742,.23,.205],
+      ["Gate Lantern","A lantern glows warmly beside the village gate.",.618,.675,.067,.14],
       ["Flower Bed","Pink flowers grow beside the fence.",.92,.69,.10,.12]
     ],
     7:[
@@ -629,19 +647,39 @@
   const panelArt = new Map();
   for(const id of illustratedPanels){
     const img=new Image();
-    img.src="art/team1_panel_"+String(id).padStart(2,"0")+(id===11?"_locked":"")+".webp";
+    img.src="art/team1_panel_"+String(id).padStart(2,"0")+([6,11].includes(id)?"_locked":"")+".webp";
     panelArt.set(id,img);
   }
+  const panel6Unlocked=new Image();
+  panel6Unlocked.src="art/team1_panel_06_unlocked.webp";
+  let gateVfxStart=0;
   const panel11Unlocked=new Image();
   panel11Unlocked.src="art/team1_panel_11_unlocked.webp";
   let forceVfxStart=0;
   function drawIllustratedPanel(){
     const fallback=panelArt.get(panel);
-    const img=panel===11&&forceFieldRemoved&&panel11Unlocked.complete&&panel11Unlocked.naturalWidth?panel11Unlocked:fallback;
+    const img=panel===6&&villageGateOpen&&panel6Unlocked.complete&&panel6Unlocked.naturalWidth?panel6Unlocked:
+      panel===11&&forceFieldRemoved&&panel11Unlocked.complete&&panel11Unlocked.naturalWidth?panel11Unlocked:fallback;
     if(!img||!img.complete||!img.naturalWidth)return false;
     ctx.save();
     ctx.imageSmoothingEnabled=true;
     ctx.drawImage(img,0,0,width,height);
+    if(panel===6&&gateVfxStart){
+      const elapsed=(performance.now()-gateVfxStart)/1000;
+      if(elapsed<.9){
+        const strength=1-elapsed/.9;
+        ctx.save();ctx.globalAlpha=strength;
+        const cx=width*.5,cy=height*.74;
+        for(let i=0;i<14;i++){
+          const angle=i*Math.PI*2/14+elapsed;
+          const radius=Math.min(width,height)*(.045+elapsed*.12);
+          const x=cx+Math.cos(angle)*radius,y=cy+Math.sin(angle)*radius;
+          ctx.fillStyle=i%2?"#fff5a3":"#ffd25a";
+          ctx.fillRect(x-3,y-3,6,6);
+        }
+        ctx.restore();
+      }else gateVfxStart=0;
+    }
     if(panel===11&&forceVfxStart){
       const elapsed=(performance.now()-forceVfxStart)/1000;
       if(elapsed<1.15){
@@ -1063,7 +1101,7 @@
       if(!forceFieldRemoved && x>.865&&y>.30&&y<.69)return true;
       return false;
     }
-    if(panel===6&&!villageGateOpen&&y>.76&&x>.49&&x<.72)return true;
+    if(panel===6&&!villageGateOpen&&y>.68&&y<.88&&x>.40&&x<.61)return true;
     if(illustratedPanels.has(panel)){
       const radius=Math.min(width,height)*.016;
       for(const t of villageTargets()){
