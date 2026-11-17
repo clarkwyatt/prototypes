@@ -142,7 +142,7 @@
         p.hidden=false;actions.replaceChildren(button("OK",closeInteraction));
       }));
     }
-    if(panel===21&&type==="H"&&target.id===2&&!hasPotion)options.push(button("GET POTION",()=>{
+    if(panel===21&&type==="VILLAGE_ART"&&target.title==="Alchemist\'s Cottage"&&!hasPotion&&!forceFieldRemoved)options.push(button("GET POTION",()=>{
       hasPotion=true;
       p.textContent="You found a Magic Potion! It has been added to your inventory.";
       p.hidden=false;updateHud();actions.replaceChildren(button("OK",closeInteraction));
@@ -245,8 +245,23 @@
     ["Forest Boulders","A cluster of stones rests below the shrub.",.63,.78,.07,.11],
     ["Wooden Gate","A sturdy wooden gate with a heavy lock blocks the eastbound trail.",.908,.322,.17,.30]
   ];
+  // Panel 21: magical forest clearing and the alchemist's cottage.
+  // Coordinates follow the approved 1632x960 artwork.
+  const panel21Hotspots=[
+    ["Alchemist's Cottage","A mysterious cottage filled with colorful potions and magical supplies.",.767,.355,.36,.465],
+    ["Enchanted Stone","Glowing runes shimmer across an ancient stone surrounded by crystals.",.235,.555,.128,.17],
+    ["Potion Shelf","Bottles of blue, pink, and green potions sparkle on the alchemist's shelf.",.679,.47,.088,.14],
+    ["Magic Mushrooms","Bright blue mushrooms grow beside the enchanted stone.",.121,.611,.055,.095],
+    ["Forest Tree","An enormous tree shades the western clearing.",.158,.32,.275,.44],
+    ["Ancient Tree","A tall tree guards the forest path near the cottage.",.691,.17,.15,.25],
+    ["Glowing Lantern","A lantern glows on an old tree stump.",.217,.764,.075,.15],
+    ["Forest Stump","An old stump supports a lantern among the flowers.",.22,.798,.09,.14],
+    ["Forest Shrub","A thick green shrub grows among the stones and flowers.",.715,.814,.13,.17],
+    ["Forest Boulders","Mossy rocks rest near the edge of the clearing.",.581,.844,.085,.10],
+    ["Wildflowers","Colorful flowers bloom all around the enchanted forest.",.299,.828,.098,.11]
+  ];
   function villageTargets(){
-    const art=panel===11?panel11Hotspots:panel===16?panel16Hotspots:(villageHotspots[panel]||[]);
+    const art=panel===11?panel11Hotspots:panel===16?panel16Hotspots:panel===21?panel21Hotspots:(villageHotspots[panel]||[]);
     if(panel===16&&doorOpen)return art.filter(entry=>entry[0]!=="Wooden Gate").map(([title,description,x,y,w,h],i)=>({type:"VILLAGE_ART",title,description,x,y,w,h,id:i}));
     if(panel===6&&villageGateOpen)return art.filter(entry=>entry[0]!=="Village Gate").map(([title,description,x,y,w,h],i)=>({type:"VILLAGE_ART",title,description,x,y,w,h,id:i}));
     return art.map(([title,description,x,y,w,h],i)=>({
@@ -669,7 +684,7 @@
 
   // Illustrated village screens. Load each independently, retaining vector
   // fallback if an image is unavailable.
-  const illustratedPanels = new Set([1,2,6,7,11,16]);
+  const illustratedPanels = new Set([1,2,6,7,11,16,21]);
   const panelArt = new Map();
   for(const id of illustratedPanels){
     const img=new Image();
@@ -1130,6 +1145,23 @@
     // Art-matched solid footprints, inset from the interaction outlines.
     // Trees collide at their trunks, cottages at their walls, and smaller
     // objects at their bases so the player can still navigate the lawn.
+    if(panel===21){
+      const radius=Math.min(width,height)*.013;
+      // Keep the winding path and cottage steps open; collide with the
+      // building walls, tree trunks, magical stone, and large scenery.
+      const solid=[
+        [.17,.355,.105,.25], [.32,.11,.065,.12],
+        [.695,.205,.09,.18], [.80,.365,.27,.30],
+        [.23,.55,.13,.15], [.217,.76,.07,.105],
+        [.36,.66,.055,.055], [.72,.82,.085,.105],
+        [.585,.855,.075,.07], [.535,.375,.09,.085]
+      ];
+      for(const [cx,cy,w,h] of solid){
+        if(Math.abs(x-cx)*width<w*width/2+radius&&
+           Math.abs(y-cy)*height<h*height/2+radius)return true;
+      }
+      return false;
+    }
     if(panel===16){
       const radius=Math.min(width,height)*.014;
       const solid=[
