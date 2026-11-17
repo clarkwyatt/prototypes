@@ -21,7 +21,8 @@ function treehouseFloorBlocked(x,y){
  // Bottom-center door occupies the foreground: feet cannot overlap its painted face.
  if(x>treehouseDoorBounds.left&&x<treehouseDoorBounds.right&&y>65)return true;
  // Furniture silhouettes: table/stools left, bed and chest right.
- if(x<45&&y>35&&y<67)return true;
+ // Table ends around x=44%; leave its right side and rug unobstructed.
+ if(x<43&&y>35&&y<64)return true;
  if(x>69&&y>31&&y<69)return true;
  return false;
 }
@@ -618,10 +619,11 @@ function tick(now){
  if(treehouseIntro){
  const rx=Number(keys.has('ArrowRight')||keys.has('d'))-Number(keys.has('ArrowLeft')||keys.has('a'));
  const ry=Number(keys.has('ArrowDown')||keys.has('s'))-Number(keys.has('ArrowUp')||keys.has('w'));
- const nx=roomHero.x+rx*dt*25,ny=roomHero.y+ry*dt*30;
+ const nx=roomHero.x+(activeObject?0:rx)*dt*25,ny=roomHero.y+(activeObject?0:ry)*dt*30;
  if(!treehouseFloorBlocked(nx,roomHero.y))roomHero.x=nx;
  if(!treehouseFloorBlocked(roomHero.x,ny))roomHero.y=ny;
  window.updateTeam4RoomDoor?.();
+ updateTreehouseFeatures(document.querySelector('.treehouse-room'));
  const el=document.querySelector('#room-hero');el.style.left=roomHero.x+'%';el.style.top=roomHero.y+'%';
  }else if(!activeObject){
  let dx=Number(keys.has('ArrowRight')||keys.has('d'))-Number(keys.has('ArrowLeft')||keys.has('a'));
@@ -684,6 +686,29 @@ document.querySelector('#debug-go').addEventListener('click',()=>{
 });
 
 setQuest('Explore Village');updateInventory();requestAnimationFrame(tick);
+// Interior interactables use the same EXAMINE -> Got it! dialogue treatment.
+const treehouseFeatures=[
+ {name:'Old Oak Table',x:25,y:43,w:19,h:19,shape:'ellipse(48% 45% at 50% 50%)',text:'The old oak table bears the scratches of a hundred suppers and a thousand imagined adventures. Even the smallest crumbs seem to hold a story.'},
+ {name:'Cozy Bed',x:70,y:34,w:19,h:29,shape:'polygon(14% 0%,84% 0%,100% 16%,100% 90%,84% 100%,4% 100%,0% 15%)',text:'A quilt as blue as the evening sky lies neatly tucked beneath a soft pillow. Many heroic quests have begun here, though most ended with five more minutes of sleep.'},
+ {name:'Sunlit Window',x:43,y:12,w:17,h:19,shape:'inset(0 round 9%)',text:'Sunlight spills through the window, turning the leaves outside into flecks of gold. Somewhere beyond these branches, the wide world is waiting.'},
+ {name:'Books and Potions',x:67,y:13,w:21,h:13,shape:'polygon(0 28%,100% 28%,100% 100%,0 100%)',text:'Dusty volumes sit beside bottles of shimmering blue. One book is titled The Curious Art of Finding Trouble. Its pages look suspiciously well-read.'},
+ {name:'Travel Chest',x:8,y:65,w:14,h:18,shape:'polygon(8% 0%,92% 0%,100% 16%,100% 100%,0 100%,0 16%)',text:'An old wooden chest, its brass corners dulled by time. It once carried treasures from distant places; now it guards memories worth even more.'},
+ {name:'Woven Rug',x:42,y:43,w:20,h:20,shape:'ellipse(49% 48% at 50% 50%)',text:'A handwoven rug patterned like a tiny woodland kingdom. As a child, you imagined its winding vines were roads to places no map could name.'}
+];
+function showInteriorDescription(feature){
+ if(activeObject)return;
+ activeObject={name:feature.name};titleEl.textContent=feature.name;
+ showDialogueCard(feature.text);
+}
+function updateTreehouseFeatures(room){
+ for(const feature of treehouseFeatures){
+  const el=room.querySelector('[data-room-feature="'+feature.name+'"]');if(!el)continue;
+  const cx=feature.x+feature.w/2,cy=feature.y+feature.h/2;
+  const close=!interiorHouse&&Math.hypot((roomHero.x-cx)*1.25,roomHero.y-cy)<18;
+  el.style.pointerEvents=close?'auto':'none';
+  el.style.opacity=close?String(.78+.22*Math.sin(elapsed*5)):'0';
+ }
+}
 function showTreehouse(){
  treehouseIntro=true;
  const scene=document.querySelector('#treehouse-scene');
@@ -701,6 +726,18 @@ function showTreehouse(){
  for(const selector of ['.room-window','.room-bed','.room-table','.room-rug']){
   const old=room.querySelector(selector);if(old)old.style.display='none';
  }
+ for(const feature of treehouseFeatures){
+  let el=room.querySelector('[data-room-feature="'+feature.name+'"]');
+  if(!el){
+   el=document.createElement('button');el.type='button';el.dataset.roomFeature=feature.name;
+   el.setAttribute('aria-label','Examine '+feature.name);
+   Object.assign(el.style,{position:'absolute',zIndex:'9',padding:'0',background:'transparent',border:'3px solid #40e477',boxShadow:'0 0 8px #40e477',cursor:'pointer',transition:'opacity .12s'});
+   el.onclick=()=>{if(!interiorHouse)showInteriorDescription(feature)};
+   room.appendChild(el);
+  }
+  Object.assign(el.style,{left:feature.x+'%',top:feature.y+'%',width:feature.w+'%',height:feature.h+'%',clipPath:feature.shape,display:interiorHouse?'none':'block'});
+ }
+ updateTreehouseFeatures(room);
  const door=room.querySelector('#treehouse-door');
  Object.assign(door.style,{background:'transparent',border:'0',boxShadow:'none',color:'transparent',zIndex:'3'});
  // The transparent hotspot follows the painted arched door, not a rectangular box.
