@@ -153,7 +153,7 @@
       p.textContent="The Magic Potion dissolves the force field. The path is clear!";
       p.hidden=false;updateHud();actions.replaceChildren(button("OK",closeInteraction));
     }));
-    if(panel===12&&type==="H"&&target.id===1){
+    if(panel===12&&type==="VILLAGE_ART"&&target.title==="Fishing Cottage"){
       if(!hasRod)options.push(button("GET FISHING ROD",()=>{
         hasRod=true;p.textContent="You picked up a Fishing Rod!";p.hidden=false;updateHud();
         actions.replaceChildren(button("OK",closeInteraction));
@@ -164,7 +164,7 @@
         p.hidden=false;updateHud();actions.replaceChildren(button("OK",closeInteraction));
       }));
     }
-    if(type==="DOCK"&&hasRod&&!fish&&!hasKey)options.push(button("CATCH FISH",()=>{
+    if(((panel===12&&type==="VILLAGE_ART"&&target.title==="Fishing Dock")||type==="DOCK")&&hasRod&&!fish&&!hasKey)options.push(button("CATCH FISH",()=>{
       fish=1;p.textContent="You caught a fish!";p.hidden=false;updateHud();
       actions.replaceChildren(button("OK",closeInteraction));
     }));
@@ -260,8 +260,20 @@
     ["Forest Boulders","Mossy rocks rest near the edge of the clearing.",.581,.844,.085,.10],
     ["Wildflowers","Colorful flowers bloom all around the enchanted forest.",.299,.828,.098,.11]
   ];
+  const panel12Hotspots=[
+    ["Fishing Cottage","A cozy fisher's cottage with fishing supplies by the door.",.859,.598,.266,.365],
+    ["Fishing Dock","A wooden dock reaches out over the sparkling lake.",.689,.319,.245,.176],
+    ["Crystal Lake","Fish swim beneath the sparkling water and lily pads.",.396,.270,.53,.34],
+    ["Waterfall","A little waterfall splashes into the lake.",.413,.063,.093,.126],
+    ["Fishing Gear","Fishing rods and nets lean beside the cottage.",.664,.697,.099,.161],
+    ["Fish Sign","A wooden sign with a blue fish hangs outside the cottage.",.692,.602,.077,.092],
+    ["Lantern Stump","A glowing lantern rests on a stump by the lake.",.170,.511,.071,.128],
+    ["Forest Tree","A broad leafy tree grows along the lakeshore.",.053,.321,.101,.43],
+    ["Lily Pads","Pink flowers bloom among the lily pads.",.233,.200,.089,.079],
+    ["Lakeside Flowers","Bright flowers grow among the stones by the water.",.287,.475,.082,.085]
+  ];
   function villageTargets(){
-    const art=panel===11?panel11Hotspots:panel===16?panel16Hotspots:panel===21?panel21Hotspots:(villageHotspots[panel]||[]);
+    const art=panel===11?panel11Hotspots:panel===16?panel16Hotspots:panel===21?panel21Hotspots:panel===12?panel12Hotspots:(villageHotspots[panel]||[]);
     if(panel===16&&doorOpen)return art.filter(entry=>entry[0]!=="Wooden Gate").map(([title,description,x,y,w,h],i)=>({type:"VILLAGE_ART",title,description,x,y,w,h,id:i}));
     if(panel===6&&villageGateOpen)return art.filter(entry=>entry[0]!=="Village Gate").map(([title,description,x,y,w,h],i)=>({type:"VILLAGE_ART",title,description,x,y,w,h,id:i}));
     return art.map(([title,description,x,y,w,h],i)=>({
@@ -275,7 +287,7 @@
       return list;
     }
     const list=(objects[panel]||[]).map(([type,x,y],i)=>({type,x,y,id:i}));
-    if(panel===12){list.push({type:"DOCK",x:.81,y:.29,id:100});}
+    // Panel 12 dock uses its illustrated-art hotspot.
     if(panel===11&&!forceFieldRemoved)list.push({type:"FORCE",x:.975,y:.76,id:101});
     if(panel===16&&!doorOpen)list.push({type:"DOOR",x:.965,y:.50,id:103});
     return list;
@@ -285,11 +297,15 @@
     for(const target of targets()){
       // Interactions use an approachable point, not the center of tall artwork.
       // At the doorstep the home must win; the sign requires a close approach.
+      const dock=panel===12&&target.title==="Fishing Dock";
+      const cottage=panel===12&&target.title==="Fishing Cottage";
       const home=panel===1&&target.title==="Cat's Home";
       const sign=panel===1&&target.title==="Paw Sign";
-      const tx=home?.50:target.x,ty=home?.615:target.y;
+      const tx=home?.50:dock?.715:cottage?.81:target.x,ty=home?.615:dock?.405:cottage?.785:target.y;
       const d=Math.hypot((hero.x-tx)*width,(hero.y-ty)*height);
-      const reach=home?Math.min(width,height)*.135:
+      const reach=dock?Math.min(width,height)*.15:
+        cottage?Math.min(width,height)*.15:
+        home?Math.min(width,height)*.135:
         sign?Math.min(width,height)*.075:
         target.type==="VILLAGE_ART"?Math.min(width,height)*.27:
         target.type==="LAKE"?Math.min(width,height)*.32:
@@ -684,7 +700,7 @@
 
   // Illustrated village screens. Load each independently, retaining vector
   // fallback if an image is unavailable.
-  const illustratedPanels = new Set([1,2,6,7,11,16,21]);
+  const illustratedPanels = new Set([1,2,6,7,11,12,16,21]);
   const panelArt = new Map();
   for(const id of illustratedPanels){
     const img=new Image();
@@ -1145,6 +1161,23 @@
     // Art-matched solid footprints, inset from the interaction outlines.
     // Trees collide at their trunks, cottages at their walls, and smaller
     // objects at their bases so the player can still navigate the lawn.
+    if(panel===12){
+      // Lake is impassable except for the accessible wooden dock.
+      const radius=Math.min(width,height)*.012;
+      const inDock=x>.572&&x<.806&&y>.265&&y<.405;
+      const lake=((x-.424)/.445)**2+((y-.238)/.285)**2<1;
+      if(lake&&!inDock)return true;
+      const solid=[
+        [.858,.585,.225,.27], [.055,.32,.075,.29],
+        [.170,.53,.06,.09], [.275,.88,.085,.085],
+        [.59,.71,.055,.07], [.977,.80,.05,.22]
+      ];
+      for(const [cx,cy,w,h] of solid){
+        if(Math.abs(x-cx)*width<w*width/2+radius&&
+           Math.abs(y-cy)*height<h*height/2+radius)return true;
+      }
+      return false;
+    }
     if(panel===21){
       const radius=Math.min(width,height)*.013;
       // Keep the winding path and cottage steps open; collide with the
