@@ -1500,7 +1500,22 @@
       if(!forceFieldRemoved && x>.865&&y>.30&&y<.69)return true;
       return false;
     }
-    if(panel===6&&!villageGateOpen&&y>.68&&y<.88&&x>.40&&x<.61)return true;
+    // Solid village perimeter fencing, fitted to the four illustrated tiles.
+    // Do not fence shared internal panel edges. Panel 6's central opening
+    // becomes passable only after the village gate is unlocked.
+    if(panel===1 && (x<.051 || y<.112))return true;
+    if(panel===2 && (y<.112 || x>.965))return true;
+    if(panel===6){
+      if(x<.055)return true;
+      if(y>.755){
+        const gateOpening=x>.445&&x<.555;
+        if(!gateOpening || !villageGateOpen)return true;
+      }
+      // Locked wooden gate also occupies the approach immediately above
+      // the fence, but the unlocked version has no invisible blocker.
+      if(!villageGateOpen&&y>.685&&x>.405&&x<.605)return true;
+    }
+    if(panel===7 && (x>.965 || y>.825))return true;
     if(illustratedPanels.has(panel)){
       if(houseCollision(x,y))return true;
       const radius=Math.min(width,height)*.016;
@@ -1840,7 +1855,7 @@
         ? Math.max(.045,Math.min(.085,48/height))
         : Math.max(.045,Math.min(.085,48/width));
       // Story gates cannot be bypassed through screen transitions.
-      if(exit && !(panel===6&&direction==="bottom"&&!villageGateOpen) && !(panel===11&&direction==="right"&&!forceFieldRemoved) && !(panel===16&&direction==="right"&&!doorOpen) &&
+      if(exit && !((panel===2||panel===7)&&direction==="right") && !(panel===7&&direction==="bottom") && !(panel===6&&direction==="bottom"&&!villageGateOpen) && !(panel===11&&direction==="right"&&!forceFieldRemoved) && !(panel===16&&direction==="right"&&!doorOpen) &&
           ((panel===11&&direction==="right"||panel===12&&direction==="left") ? Math.abs(coordinate-exit[1])<=tolerance : (villageLink || Math.abs(coordinate-exit[1])<=tolerance)) &&
           panels.has(exit[0])){
         const previousPanel=panel;
