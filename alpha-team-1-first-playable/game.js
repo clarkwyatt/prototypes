@@ -330,6 +330,48 @@
     }
     return found;
   }
+  // Artwork-only outlines: interaction bounds and collision remain unchanged.
+  function illustratedOutline(t){
+    const left=(t.x-t.w/2)*width,top=(t.y-t.h/2)*height;
+    const w=t.w*width,h=t.h*height;
+    const title=t.title.toLowerCase();
+    const poly=points=>{
+      points.forEach(([px,py],i)=>i?ctx.lineTo(left+px*w,top+py*h):ctx.moveTo(left+px*w,top+py*h));
+      ctx.closePath();
+    };
+    if(/cottage|cat's home|lake house|alchemist's cottage/.test(title)){
+      // Stepped roofline, sloping eaves and vertical cottage walls.
+      poly([[.02,.34],[.12,.25],[.24,.17],[.36,.16],[.50,.01],[.64,.16],
+        [.79,.17],[.91,.25],[.99,.34],[.96,.42],[.91,.45],[.91,.98],
+        [.09,.98],[.09,.45],[.04,.42]]);
+    }else if(/tree|oak/.test(title)){
+      // Organic canopy with narrower trunk below.
+      poly([[.44,.04],[.55,.01],[.66,.07],[.74,.04],[.86,.13],[.91,.23],
+        [.99,.34],[.94,.48],[.99,.57],[.88,.69],[.73,.72],[.62,.68],
+        [.57,.76],[.59,.99],[.41,.99],[.43,.76],[.38,.68],[.24,.73],
+        [.11,.66],[.02,.56],[.07,.44],[.01,.33],[.10,.20],[.23,.16],
+        [.32,.06]]);
+    }else if(/sign|map/.test(title)){
+      poly([[.13,.05],[.87,.05],[.98,.15],[.96,.56],[.61,.63],[.61,.98],
+        [.40,.98],[.40,.63],[.04,.56],[.02,.15]]);
+    }else if(/gate|force field|pillar/.test(title)){
+      poly([[.04,.11],[.16,.02],[.30,.02],[.33,.12],[.67,.12],
+        [.70,.02],[.84,.02],[.96,.11],[.96,.98],[.04,.98]]);
+    }else if(/bush|shrub|flowers|flower|lily pads/.test(title)){
+      poly([[.03,.70],[.08,.43],[.21,.40],[.25,.20],[.41,.25],[.50,.05],
+        [.62,.23],[.78,.17],[.86,.41],[.97,.48],[.95,.76],[.78,.94],
+        [.24,.94]]);
+    }else if(/rock|boulder|stone|stump|barrel|crate|lantern|mushroom/.test(title)){
+      poly([[.09,.85],[.03,.52],[.19,.20],[.42,.07],[.70,.12],[.94,.40],
+        [.97,.82],[.79,.97],[.21,.97]]);
+    }else if(/dock|fence|shelf|gear/.test(title)){
+      poly([[.06,.11],[.94,.11],[.98,.89],[.88,.98],[.12,.98],[.02,.89]]);
+    }else if(/lake|waterfall/.test(title)){
+      ctx.ellipse(t.x*width,t.y*height,w*.49,h*.47,0,0,Math.PI*2);
+    }else{
+      ctx.ellipse(t.x*width,t.y*height,w*.47,h*.45,0,0,Math.PI*2);
+    }
+  }
   function highlight(){
     nearby=nearestTarget();
     if(!nearby)return;
@@ -340,7 +382,7 @@
     ctx.lineWidth=3+pulse*2;ctx.shadowColor="#5dff7e";ctx.shadowBlur=7+pulse*11;
     ctx.beginPath();
     if(t.type==="VILLAGE_ART"){
-      ctx.roundRect((t.x-t.w/2)*width,(t.y-t.h/2)*height,t.w*width,t.h*height,9);
+      illustratedOutline(t);
     }else if(t.type==="H"||t.type==="HOME"){
       const w=unit*(t.type==="HOME"?.29:.255),h=unit*(t.type==="HOME"?.23:.205);
       // Trace the cottage's actual roof and walls, not a circle.
