@@ -51,9 +51,10 @@ function connect(id,side,at,halfWidth,canExit=()=>true){
  from.exits[side]={to:to.id,at,halfWidth,canExit};
  to.exits[opposite]={to:from.id,at,halfWidth,canExit};
 }
-// Panel 1 ↔ 2 has a broad painted trail; never bottleneck at the seam.
-connect(1,'east',H/2,90);
-connect(2,'east',H/2,49,()=>quest.gateOpen);
+// Global path tolerance: generous transition openings for art-width variations.
+const PATH_EXIT_HALF_WIDTH=90;
+connect(1,'east',H/2,PATH_EXIT_HALF_WIDTH);
+connect(2,'east',H/2,PATH_EXIT_HALF_WIDTH,()=>quest.gateOpen);
 // Exact student-approved routes. Register each seam once; connect() makes it reciprocal.
 // Unlisted panels have no paths.
 const mapLinks=[
@@ -73,7 +74,7 @@ const mapLinks=[
  [23,'east'],  // 23 ↔ 24
  [24,'east']   // 24 ↔ 25
 ];
-for(const [id,side] of mapLinks)connect(id,side,side==='north'||side==='south'?W/2:H/2,49);
+for(const [id,side] of mapLinks)connect(id,side,side==='north'||side==='south'?W/2:H/2,PATH_EXIT_HALF_WIDTH);
 
 // Panel 1 art: the treehouse doorway is part of the painted background.
 // Keep its interactive outline separate from the image and never repaint it.
