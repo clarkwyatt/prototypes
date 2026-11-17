@@ -93,7 +93,7 @@ panels[1].objects.push({
 panels[1].objects.push({
  id:'gate',name:'Village Gate',x:1085,y:360,outline:gateOutline,solid:true,reach:115,isVisible:()=>!quest.gateOpen,
  description:'A locked wooden gate blocks the way east.',
- draw(ctx){drawGate(ctx,this.x,this.y)},
+ draw(ctx){if(!panelTwoArtReady())drawGate(ctx,this.x,this.y)},
  actions:[{label:'OPEN',primary:true,run:()=>{
  if(!quest.gateKey){copyEl.textContent='The gate is locked. A villager might have the key.';return}
  quest.gateOpen=true;quest.gateKey=false;removeItem('Gate Key');setQuest('Explore Beyond the Village');closePopup();
@@ -467,9 +467,18 @@ function drawHero(c=ctx,x=hero.x,y=hero.y){
 }
 const panelOneArt=new Image();
 panelOneArt.src='./art/team4_panel_01.webp';
+const panelTwoLockedArt=new Image(),panelTwoUnlockedArt=new Image();
+panelTwoLockedArt.src='./art/team4_panel_02_locked.webp';
+panelTwoUnlockedArt.src='./art/team4_panel_02_unlocked.webp';
+const panelTwoArtReady=()=>{
+ const art=quest.gateOpen?panelTwoUnlockedArt:panelTwoLockedArt;
+ return art.complete&&art.naturalWidth>0;
+};
 function draw(){
  if(panel===1&&panelOneArt.complete&&panelOneArt.naturalWidth){
   ctx.drawImage(panelOneArt,0,0,W,H);
+ }else if(panel===2&&panelTwoArtReady()){
+  ctx.drawImage(quest.gateOpen?panelTwoUnlockedArt:panelTwoLockedArt,0,0,W,H);
  }else{
   drawGrass();drawPath();
   if(panel===1)drawTreehouse();
