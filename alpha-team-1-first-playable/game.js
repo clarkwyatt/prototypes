@@ -325,6 +325,12 @@
         const tx=home?.50:cottage?.815:.46;
         const ty=home?.615:cottage?.665:.385;
         d=Math.hypot((hero.x-tx)*width,(hero.y-ty)*height);
+      }else if(target.type==="FORCE"&&panel===11){
+        // The field is a tall barrier; approach its accessible left edge.
+        // Its old center was behind the collision wall and unreachable.
+        const dx=Math.abs(hero.x-.865)*width;
+        const dy=Math.max(0,.30-hero.y,hero.y-.69)*height;
+        d=Math.hypot(dx,dy);
       }else if(target.type==="VILLAGE_ART"){
         // Nearest point on the artwork's visible footprint, with a small
         // inset so merely passing a large bounding box doesn't trigger it.
@@ -336,7 +342,8 @@
       }else{
         d=Math.hypot((hero.x-target.x)*width,(hero.y-target.y)*height);
       }
-      const reach=home||cottage?unit*.085:
+      const reach=target.type==="FORCE"&&panel===11?unit*.105:
+        home||cottage?unit*.085:
         dock?unit*.075:
         sign?unit*.045:
         target.type==="VILLAGE_ART"?unit*.048:
