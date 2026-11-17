@@ -477,6 +477,13 @@ function enterHouse(index){
  activeHouse=index;houseExitPosition={x:houseDoorPositions[index-1][0],y:houseDoorPositions[index-1][1]+70};
  hero.x=W/2;hero.y=H-180;keys.clear();
 }
+function collectHouseEmerald(){
+ if(!quest.started||flags.has('emerald'+activeHouse))return;
+ flags.add('emerald'+activeHouse);quest.emeralds++;
+ for(const name of [...inventory])if(name.endsWith(' / 5 Emeralds'))removeItem(name);
+ addItem(quest.emeralds+' / 5 Emeralds');
+ setQuest(quest.emeralds<5?'Find 5 Emeralds ('+quest.emeralds+'/5)':'Bring 5 Emeralds to the Villager');
+}
 function exitHouse(){
  activeHouse=0;hero.x=houseExitPosition.x;hero.y=houseExitPosition.y;keys.clear();
 }
@@ -490,6 +497,10 @@ function drawHouseInterior(){
   ctx.lineWidth=4;ctx.shadowColor='#6af08c';ctx.shadowBlur=14;
   ctx.strokeRect(interiorExit.x-interiorExit.width/2,interiorExit.y-interiorExit.height/2,interiorExit.width,interiorExit.height);
   ctx.restore();
+ }
+ // Temporary center-room search zone until individual interior objects are mapped.
+ if(quest.started&&!flags.has('emerald'+activeHouse)&&Math.hypot(hero.x-W/2,hero.y-H/2)<170){
+  ctx.save();ctx.strokeStyle='#40d777';ctx.lineWidth=4;ctx.strokeRect(W/2-50,H/2-45,100,90);ctx.restore();
  }
  drawHero();
 }
@@ -585,6 +596,7 @@ canvas.addEventListener('click',e=>{
  // Click must hit the actual object shape AND the player must be nearby.
  const object=visibleObjects().reverse().find(o=>hitsOutline(o,x,y));
  if(activeHouse){
+  if(Math.abs(x-W/2)<110&&Math.abs(y-H/2)<90&&Math.hypot(hero.x-x,hero.y-y)<160)collectHouseEmerald();
   if(Math.abs(x-interiorExit.x)<interiorExit.width/2&&Math.abs(y-interiorExit.y)<interiorExit.height/2&&Math.hypot(hero.x-x,hero.y-y)<165)exitHouse();
   return;
  }
