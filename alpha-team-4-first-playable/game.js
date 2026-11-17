@@ -51,7 +51,8 @@ function connect(id,side,at,halfWidth,canExit=()=>true){
  from.exits[side]={to:to.id,at,halfWidth,canExit};
  to.exits[opposite]={to:from.id,at,halfWidth,canExit};
 }
-connect(1,'east',H/2,49);
+// Panel 1 ↔ 2 has a broad painted trail; never bottleneck at the seam.
+connect(1,'east',H/2,90);
 connect(2,'east',H/2,49,()=>quest.gateOpen);
 // Exact student-approved routes. Register each seam once; connect() makes it reciprocal.
 // Unlisted panels have no paths.
@@ -620,10 +621,10 @@ function moveHero(dx,dy){
   return;
  }
  const x=hero.x+dx,y=hero.y+dy;
- if(dx&&(x<bounds.left?tryExit('west',hero.y):x>bounds.right&&tryExit('east',hero.y)))return;
+ if(dx&&(x<=bounds.left&&dx<0?tryExit('west',hero.y):x>=bounds.right&&dx>0&&tryExit('east',hero.y)))return;
  const nextX=clamp(x,bounds.left,bounds.right);
  if(!blocked(nextX,hero.y))hero.x=nextX;
- if(dy&&(y<bounds.top?tryExit('north',hero.x):y>bounds.bottom&&tryExit('south',hero.x)))return;
+ if(dy&&(y<=bounds.top&&dy<0?tryExit('north',hero.x):y>=bounds.bottom&&dy>0&&tryExit('south',hero.x)))return;
  const nextY=clamp(y,bounds.top,bounds.bottom);
  if(!blocked(hero.x,nextY))hero.y=nextY;
 }
