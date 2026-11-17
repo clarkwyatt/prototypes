@@ -134,7 +134,7 @@
         p.hidden=false;updateHud();actions.replaceChildren(button("OK",closeInteraction));
       }));
     }
-    if(panel===16&&type==="VILLAGE_ART"&&target.title==="Wooden Gate"&&!doorOpen){
+    if(panel===16&&type==="VILLAGE_ART"&&target.title==="Wooden Gate"&&!doorOpen&&hasKey){
       options.push(button("USE GOLDEN KEY",()=>{
         if(hasKey){doorOpen=true;hasKey=false;doorVfxStart=performance.now();playGateUnlockSfx();
           p.textContent="The Golden Key unlocks the wooden gate! The way ahead is open.";updateHud();}
