@@ -190,7 +190,7 @@ for(const piece of armorPieces){
   actions:[{label:'EQUIP',primary:true,run:()=>{
    if(flags.has('equipped'+piece.name))return;
    flags.add('equipped'+piece.name);
-   addItem('Leather '+piece.name+' (Equipped)');
+   updateEquipment();
    const count=armorPieces.filter(p=>flags.has('equipped'+p.name)).length;
    setQuest(count===armorPieces.length?'Explore the Goblin Camp':'Find Leather Armor ('+count+'/5)');
    closePopup();
@@ -325,7 +325,16 @@ function resize(){
 }
 new ResizeObserver(resize).observe(game);resize();
 function setQuest(value=''){questEl.textContent=value}
-function updateInventory(){itemsEl.textContent=[...inventory].join(' · ')||'Empty'}
+function updateEquipment(){
+ for(const part of ['Helm','Breastplate','Gauntlets','Greaves','Boots']){
+  const shape=document.querySelector('[data-armor="'+part+'"]');
+  if(!shape)continue;
+  const equipped=flags.has('equipped'+part);
+  shape.classList.toggle('equipped',equipped);
+  shape.querySelector('title').textContent=part+': '+(equipped?'equipped':'not equipped');
+ }
+}
+function updateInventory(){itemsEl.textContent=[...inventory].filter(item=>!/^Leather (Breastplate|Helm|Gauntlets|Greaves|Boots) \(Equipped\)$/.test(item)).join(' · ')||'Empty';updateEquipment()}
 function addItem(name){inventory.add(name);updateInventory()}
 function removeItem(name){inventory.delete(name);updateInventory()}
 let activeObject=null;
