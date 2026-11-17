@@ -352,6 +352,58 @@
     ctx.closePath();
     return true;
   }
+  // Per-object silhouettes for the other illustrated panels. Coordinates are
+  // relative to each object's measured art bounds, not a shared screen polygon.
+  function traceSceneryOutline(t){
+    const name=t.title.toLowerCase(),l=t.x-t.w/2,r=t.x+t.w/2,top=t.y-t.h/2,bottom=t.y+t.h/2;
+    const pts=[];
+    if(/cottage|cat's home/.test(name)){
+      pts.push([.02,.35],[.10,.31],[.18,.22],[.29,.16],[.38,.11],[.50,.015],
+        [.62,.11],[.72,.16],[.83,.22],[.92,.31],[.98,.35],[.96,.41],
+        [.91,.43],[.91,.98],[.09,.98],[.09,.43],[.04,.41]);
+    }else if(/tree|oak/.test(name)){
+      pts.push([.48,.03],[.62,.06],[.72,.13],[.85,.15],[.94,.28],[.96,.42],
+        [.89,.50],[.94,.61],[.80,.72],[.62,.76],[.56,.73],[.56,.97],
+        [.43,.97],[.44,.73],[.34,.77],[.18,.71],[.07,.59],[.12,.48],
+        [.04,.37],[.12,.24],[.26,.15],[.38,.08]);
+    }else if(/flower|bush|shrub|lily pad/.test(name)){
+      pts.push([.04,.70],[.08,.49],[.20,.39],[.25,.23],[.40,.25],[.49,.07],
+        [.61,.21],[.75,.18],[.86,.35],[.96,.50],[.92,.74],
+        [.80,.90],[.62,.95],[.42,.91],[.22,.96],[.08,.86]);
+    }else if(/sign|map/.test(name)){
+      pts.push([.10,.10],[.25,.04],[.80,.04],[.95,.14],[.95,.55],
+        [.62,.64],[.60,.98],[.41,.98],[.40,.64],[.05,.56],[.05,.18]);
+    }else if(/gate|force field/.test(name)){
+      pts.push([.04,.10],[.14,.03],[.30,.03],[.34,.12],[.67,.12],
+        [.70,.03],[.86,.03],[.96,.10],[.96,.98],[.04,.98]);
+    }else if(/rock|boulder|stone|stump|mushroom|barrel|crate|lantern/.test(name)){
+      pts.push([.05,.78],[.09,.43],[.25,.17],[.45,.06],[.70,.14],
+        [.91,.38],[.97,.77],[.81,.96],[.19,.96]);
+    }else if(/lake|waterfall/.test(name)){
+      ctx.ellipse(t.x*width,t.y*height,t.w*width*.48,t.h*height*.47,0,0,Math.PI*2);
+      return;
+    }else{
+      pts.push([.07,.13],[.93,.13],[.97,.88],[.86,.96],[.13,.96],[.03,.88]);
+    }
+    pts.forEach(([px,py],i)=>{
+      const x=(l+px*(r-l))*width,y=(top+py*(bottom-top))*height;
+      if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);
+    });
+    ctx.closePath();
+  }
+  function houseCollision(x,y){
+    // A full roof-to-foundation footprint: the cat cannot walk across the
+    // painted roof or walls. Interaction remains possible from the doorstep.
+    const radius=Math.min(width,height)*.010;
+    for(const t of villageTargets()){
+      if(!/cottage|cat's home/i.test(t.title))continue;
+      const left=t.x-t.w*.49,right=t.x+t.w*.49;
+      const top=t.y-t.h*.49,bottom=t.y+t.h*.49;
+      const px=radius/width,py=radius/height;
+      if(x>=left-px&&x<=right+px&&y>=top-py&&y<=bottom+py)return true;
+    }
+    return false;
+  }
   function highlight(){
     nearby=nearestTarget();
     if(!nearby)return;
@@ -368,7 +420,7 @@
       const left=(t.x-t.w/2)*width-pad;
       const top=(t.y-t.h/2)*height-pad;
       const w=t.w*width+pad*2,h=t.h*height+pad*2;
-      if(!(panel===1&&tracePanel1Outline(t)))ctx.roundRect(left,top,w,h,Math.min(12,unit*.013));
+      if(!(panel===1&&tracePanel1Outline(t)))traceSceneryOutline(t);
     }else if(t.type==="H"||t.type==="HOME"){
       const w=unit*(t.type==="HOME"?.29:.255),h=unit*(t.type==="HOME"?.23:.205);
       // Trace the cottage's actual roof and walls, not a circle.
@@ -1279,6 +1331,7 @@
       return false;
     }
     if(panel===17){
+      if(houseCollision(x,y))return true;
       // Keep the winding east-west trail clear; solid scenery only.
       const radius=Math.min(width,height)*.012;
       const solid=[
@@ -1298,6 +1351,7 @@
       return false;
     }
     if(panel===12){
+      if(houseCollision(x,y))return true;
       // Lake is impassable except for the accessible wooden dock.
       const radius=Math.min(width,height)*.012;
       const inDock=x>.572&&x<.806&&y>.265&&y<.405;
@@ -1315,6 +1369,7 @@
       return false;
     }
     if(panel===21){
+      if(houseCollision(x,y))return true;
       const radius=Math.min(width,height)*.013;
       // Keep the winding path and cottage steps open; collide with the
       // building walls, tree trunks, magical stone, and large scenery.
@@ -1361,6 +1416,7 @@
     }
     if(panel===6&&!villageGateOpen&&y>.68&&y<.88&&x>.40&&x<.61)return true;
     if(illustratedPanels.has(panel)){
+      if(houseCollision(x,y))return true;
       const radius=Math.min(width,height)*.016;
       for(const t of villageTargets()){
         const name=t.title.toLowerCase();
