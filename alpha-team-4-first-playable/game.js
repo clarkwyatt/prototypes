@@ -155,6 +155,48 @@ panels[14].objects.push({
   }
  }}]
 });
+// Leather armor pickups appear after the sword is equipped.
+// Keep these small and away from the center paths until the art pass.
+const armorPieces=[
+ {panel:14,name:'Breastplate',x:295,y:220},
+ {panel:13,name:'Helm',x:825,y:220},
+ {panel:18,name:'Gauntlets',x:820,y:215},
+ {panel:17,name:'Greaves',x:815,y:215},
+ {panel:16,name:'Boots',x:300,y:215}
+];
+const armorOutline=new Path2D('M -19 -17 H 19 V 17 H -19 Z');
+function drawArmorPickup(ctx,x,y,name){
+ ctx.save();ctx.translate(x,y);
+ ctx.fillStyle='#7b5434';ctx.strokeStyle='#d6a46c';ctx.lineWidth=3;
+ if(name==='Helm'){
+  ctx.beginPath();ctx.arc(0,0,18,Math.PI,Math.PI*2);ctx.lineTo(18,13);ctx.lineTo(7,13);ctx.lineTo(7,2);ctx.lineTo(-7,2);ctx.lineTo(-7,13);ctx.lineTo(-18,13);ctx.closePath();ctx.fill();ctx.stroke();
+ }else if(name==='Breastplate'){
+  ctx.beginPath();ctx.moveTo(-17,-18);ctx.lineTo(-8,-23);ctx.lineTo(8,-23);ctx.lineTo(17,-18);ctx.lineTo(22,-7);ctx.lineTo(12,-2);ctx.lineTo(11,22);ctx.lineTo(-11,22);ctx.lineTo(-12,-2);ctx.lineTo(-22,-7);ctx.closePath();ctx.fill();ctx.stroke();
+ }else{
+  const offset=name==='Gauntlets'?14:12;
+  for(const side of [-1,1]){
+   ctx.fillRect(side*offset-9,-18,18,35);ctx.strokeRect(side*offset-9,-18,18,35);
+  }
+ }
+ ctx.restore();
+}
+for(const piece of armorPieces){
+ panels[piece.panel-1].objects.push({
+  id:'armor'+piece.name,name:'Leather '+piece.name,x:piece.x,y:piece.y,
+  outline:armorOutline,reach:105,
+  description:'A piece of leather armor left behind on the forest floor.',
+  isVisible:()=>flags.has('swordEquipped')&&!flags.has('equipped'+piece.name),
+  draw(ctx){drawArmorPickup(ctx,this.x,this.y,piece.name)},
+  actions:[{label:'EQUIP',primary:true,run:()=>{
+   if(flags.has('equipped'+piece.name))return;
+   flags.add('equipped'+piece.name);
+   addItem('Leather '+piece.name+' (Equipped)');
+   const count=armorPieces.filter(p=>flags.has('equipped'+p.name)).length;
+   setQuest(count===armorPieces.length?'Explore the Goblin Camp':'Find Leather Armor ('+count+'/5)');
+   closePopup();
+  }}]
+ });
+}
 // Step 5: lightweight combat prototype; goblins only live in the camp.
 const goblins=[
  {x:300,y:235,hp:50,lastAttack:-1},{x:820,y:235,hp:50,lastAttack:-1},
