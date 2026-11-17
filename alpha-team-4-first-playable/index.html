@@ -28,9 +28,9 @@ canvas{display:block;width:100%;height:100%;touch-action:none}
 
 #treehouse-scene{position:absolute;inset:0;z-index:8;display:grid;place-items:center;background:#0b211bc9}
 #treehouse-scene[hidden]{display:none}
-.treehouse-room{position:relative;width:min(760px,88vw);height:min(540px,78vh);overflow:hidden;border:12px solid #755037;border-radius:26px;background:repeating-linear-gradient(90deg,#bb8b57 0 35px,#a77749 36px 39px,#c4955f 40px 75px);box-shadow:0 0 0 5px #d7b37c,0 30px 80px #08130bd9,inset 0 0 45px #553b2580}
-.treehouse-room:before{content:"";position:absolute;inset:22% 5% 12%;background:repeating-linear-gradient(0deg,#cfa879 0 48px,#ad8358 49px 53px);border:8px solid #8b603d;border-radius:12px;box-shadow:inset 0 0 38px #6c482b55}
-.room-window{position:absolute;top:10%;left:43%;width:112px;height:92px;background:linear-gradient(#a8d5e6 60%,#8dbd81 61%);border:11px solid #775038;border-radius:14px;box-shadow:inset 0 0 0 3px #d9bc89}
+.treehouse-room{position:relative;width:min(760px,88vw);height:min(540px,78vh);overflow:hidden;border:12px solid #755037;border-radius:26px;background:#9d794f url('./art/team4_treehouse_interior.webp') center/100% 100% no-repeat;box-shadow:0 0 0 5px #d7b37c,0 30px 80px #08130bd9,inset 0 0 45px #553b2580}
+ .treehouse-room:before{display:none;content:"";position:absolute;inset:22% 5% 12%;background:repeating-linear-gradient(0deg,#cfa879 0 48px,#ad8358 49px 53px);border:8px solid #8b603d;border-radius:12px;box-shadow:inset 0 0 38px #6c482b55}
+.room-window,.room-bed,.room-table,.room-rug{display:none}.room-window{position:absolute;top:10%;left:43%;width:112px;height:92px;background:linear-gradient(#a8d5e6 60%,#8dbd81 61%);border:11px solid #775038;border-radius:14px;box-shadow:inset 0 0 0 3px #d9bc89}
 .room-window:after{content:"";position:absolute;left:42%;top:0;bottom:0;border-left:7px solid #775038}
 .room-bed{position:absolute;left:10%;top:33%;width:29%;height:37%;background:#8b5c3d;border:9px solid #67452d;border-radius:24px;box-shadow:0 12px 0 #533924}
 .room-bed:before{content:"";position:absolute;inset:9% 9% 7%;background:#5c9c83;border-radius:12px;border-bottom:18px solid #3c7969}
@@ -40,7 +40,7 @@ canvas{display:block;width:100%;height:100%;touch-action:none}
 .room-boy{position:absolute;left:50%;top:57%;transform:translate(-50%,-50%);width:34px;height:53px;background:#5b9a68;border-radius:13px 13px 7px 7px;box-shadow:-8px 27px 0 -5px #34495d,8px 27px 0 -5px #34495d}
 .room-boy:before{content:"";position:absolute;left:5px;top:-21px;width:24px;height:26px;border-radius:50%;background:linear-gradient(#49372e 0 27%,#efbd91 28%)}
 .room-door{position:absolute;left:50%;bottom:1%;transform:translateX(-50%);width:128px;height:88px;background:linear-gradient(90deg,#70482d,#98663c);border:9px solid #513823;border-radius:50% 50% 5px 5px;cursor:pointer;color:#fff4d5;font-size:13px;font-weight:900;box-shadow:inset -13px 0 #5a3c2a}
-.room-door:hover,.room-door:focus-visible{outline:4px solid #70df89;outline-offset:2px}
+.room-door{background:transparent;border:0;box-shadow:none;color:transparent}.room-door:hover,.room-door:focus-visible{outline:4px solid #70df89;outline-offset:2px}
 @media(max-width:700px){.treehouse-room{width:94vw;height:min(530px,75vh);border-width:7px}.room-window{width:75px;height:70px}.room-door{width:104px;height:76px}}
 .room-hero{position:absolute;left:50%;top:57%;transform:translate(-50%,-50%);width:70px;height:91px;pointer-events:none;z-index:2}.room-door{z-index:3}
 #debug-nav{position:absolute;right:12px;bottom:12px;z-index:7;display:flex;align-items:center;gap:7px;padding:8px 10px;background:#fff9e9ee;border:2px solid #d9c69c;border-radius:12px;box-shadow:0 3px 12px #20392b45;font:700 12px system-ui,sans-serif;color:#385342}
