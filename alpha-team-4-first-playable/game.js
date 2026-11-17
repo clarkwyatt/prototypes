@@ -324,63 +324,7 @@ function resize(){
  ctx.setTransform(canvas.width/W,0,0,canvas.height/H,0,0);
 }
 new ResizeObserver(resize).observe(game);resize();
-// Quest celebrations are queued so dialogue and other popups always finish first.
-const questEvents=[];
-let questName='',questModal=false,audioContext=null;
-const questStages=[
- ['Explore Village','Explore Village'],
- ['Find 5 Emeralds','Find 5 Emeralds'],
- ['Bring 5 Emeralds to the Villager','Bring 5 Emeralds to the Villager'],
- ['Unlock the Village Gate','Unlock the Village Gate'],
- ['Explore Beyond the Village','Explore Beyond the Village'],
- ['Find the Sword','Find the Sword'],
- ['Find Leather Armor','Find Leather Armor'],
- ['Explore the Goblin Camp','Explore the Goblin Camp']
-];
-function questStage(value){
- return questStages.find(([prefix])=>value===prefix||value.startsWith(prefix+' ('))?.[1]||value;
-}
-function playQuestJingle(completed){
- try{
-  const AudioClass=window.AudioContext||window.webkitAudioContext;
-  if(!AudioClass)return;
-  audioContext ||=new AudioClass();
-  if(audioContext.state==='suspended')audioContext.resume().catch(()=>{});
-  const notes=completed?[523.25,659.25,783.99,1046.5]:[392,523.25,659.25,783.99];
-  const start=audioContext.currentTime+.02;
-  notes.forEach((frequency,i)=>{
-   const osc=audioContext.createOscillator(),gain=audioContext.createGain();
-   osc.type='triangle';osc.frequency.value=frequency;
-   const t=start+i*.105;
-   gain.gain.setValueAtTime(.0001,t);
-   gain.gain.exponentialRampToValueAtTime(.11,t+.018);
-   gain.gain.exponentialRampToValueAtTime(.0001,t+.24);
-   osc.connect(gain);gain.connect(audioContext.destination);
-   osc.start(t);osc.stop(t+.25);
-  });
- }catch(error){/* Audio may be blocked by browser autoplay rules. */}
-}
-function showNextQuestEvent(){
- if(!questEvents.length||activeObject||treehouseIntro||!layer.hidden)return;
- const event=questEvents.shift();
- questModal=true;activeObject={id:'questCelebration'};
- layer.querySelector('.popup').classList.add('quest-celebration');
- titleEl.textContent=event.completed?'Quest Completed!':'Quest Started!';
- copyEl.textContent=event.name;
- actionsEl.replaceChildren();
- const ok=document.createElement('button');ok.type='button';ok.className='primary';ok.textContent='OK!';
- ok.addEventListener('click',closePopup);actionsEl.appendChild(ok);
- layer.hidden=false;ok.focus();playQuestJingle(event.completed);
-}
-function setQuest(value=''){
- questEl.textContent=value;
- const next=questStage(value);
- if(next===questName)return;
- if(questName)questEvents.push({completed:true,name:questName});
- questName=next;
- if(next)questEvents.push({completed:false,name:next});
- showNextQuestEvent();
-}
+function setQuest(value=''){questEl.textContent=value}
 function updateEquipment(){
  for(const part of ['Helm','Breastplate','Gauntlets','Greaves','Boots']){
   const shape=document.querySelector('[data-armor="'+part+'"]');
@@ -398,12 +342,8 @@ function closePopup(){
  if(!activeObject)return;
  activeObject=null;
  layer.hidden=true;
- questModal=false;
- layer.querySelector('.popup').classList.remove('quest-celebration');
  actionsEl.replaceChildren();
  canvas.focus({preventScroll:true});
- // Allow the current interaction to open follow-up dialogue before showing queued quests.
- queueMicrotask(showNextQuestEvent);
 }
 closeButton.addEventListener('click',closePopup);
 layer.addEventListener('click',e=>{if(e.target===layer)closePopup()});
@@ -597,7 +537,7 @@ document.querySelector('#debug-go').addEventListener('click',()=>{
  if(activeObject)closePopup();
  treehouseIntro=false;
  document.querySelector('#treehouse-scene').hidden=true;
- showNextQuestEvent();
+ 
  panel=target;
  // Start at a walkable location rather than inside scenery.
  const positions=[[W/2,H/2],[W/2,460],[W/2,300],[W/2,580],[W/2,180]];
@@ -614,7 +554,7 @@ function showTreehouse(){
  scene.hidden=false;
  const hc=document.querySelector('#room-hero'),hctx=hc.getContext('2d');hctx.clearRect(0,0,100,130);hctx.setTransform(1.6,0,0,1.6,50,83);drawHero(hctx,0,0);
  document.querySelector('#treehouse-door').addEventListener('click',()=>{
-  treehouseIntro=false;scene.hidden=true;hero.x=340;hero.y=390;keys.clear();canvas.focus({preventScroll:true});showNextQuestEvent();
+  treehouseIntro=false;scene.hidden=true;hero.x=340;hero.y=390;keys.clear();canvas.focus({preventScroll:true});
  },{once:true});
 }
 showTreehouse();
