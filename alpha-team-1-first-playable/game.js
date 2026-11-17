@@ -561,6 +561,67 @@
     const [mx,my]=offsets[facing];
     return {x:hero.x*width+mx*.72,y:hero.y*height+my*.72};
   }
+  // Load the supplied ZIP directly: no manual extraction or added dependency.
+  const dogFrames={up:[],down:[],left:[],right:[]};
+  let dogSpritesReady=false;
+  async function loadDogSprites(){
+    try{
+      const response=await fetch("assets/dogs/team1_dog_sprites_v1.zip");
+      if(!response.ok)throw Error("Dog ZIP HTTP "+response.status);
+      const bytes=new Uint8Array(await response.arrayBuffer());
+      const view=new DataView(bytes.buffer);
+      const u16=p=>view.getUint16(p,true),u32=p=>view.getUint32(p,true);
+      const decoder=new TextDecoder();
+      const loaded=[];
+      // Read ZIP local headers (the supplied package contains regular deflated PNGs).
+      for(let p=0;p+30<bytes.length;){
+        if(u32(p)!==0x04034b50)break;
+        const method=u16(p+8),size=u32(p+18),nameLength=u16(p+26),extraLength=u16(p+28);
+        const name=decoder.decode(bytes.subarray(p+30,p+30+nameLength));
+        const start=p+30+nameLength+extraLength;
+        if(start+size>bytes.length)throw Error("Incomplete dog ZIP");
+        const match=/^guard_dog_(up|down|left|right)_([012])\\.png$/.exec(name);
+        if(match){
+          const compressed=bytes.slice(start,start+size);
+          const stream=new Blob([compressed]).stream();
+          const decoded=method===8?stream.pipeThrough(new DecompressionStream("deflate-raw")):stream;
+          const png=await new Response(decoded).blob();
+          const url=URL.createObjectURL(new Blob([png],{type:"image/png"}));
+          const img=new Image();
+          img.src=url;
+          await img.decode();
+          loaded.push({dir:match[1],index:Number(match[2]),img});
+        }
+        p=start+size;
+      }
+      if(loaded.length!==12)throw Error("Expected 12 dog frames, found "+loaded.length);
+      for(const frame of loaded)dogFrames[frame.dir][frame.index]=frame.img;
+      dogSpritesReady=true;
+    }catch(err){console.warn("Guard dog sprite loading failed; using fallback artwork",err);}
+  }
+  loadDogSprites();
+  function dogDirection(angle){
+    const dx=Math.cos(angle),dy=Math.sin(angle);
+    return Math.abs(dx)>Math.abs(dy)?(dx>0?"right":"left"):(dy>0?"down":"up");
+  }
+  function drawGuardDogSprite(d,u){
+    const angle=d.mode==="watch"?dogFacing(d):(d.heading??dogFacing(d));
+    const dir=dogDirection(angle);
+    const moving=d.mode==="chase"||d.mode==="investigate";
+    const frame=moving?Math.floor(mazeClock*8)%3:
+      d.mode==="eating"?Math.floor(d.timer*5)%3:Math.floor(mazeClock*1.5)%3;
+    const img=dogFrames[dir][frame]||dogFrames[dir][0];
+    if(!img)return false;
+    const size=u*.078;
+    const w=size*(img.naturalWidth/img.naturalHeight),h=size;
+    ctx.save();
+    ctx.imageSmoothingEnabled=false;
+    ctx.fillStyle="rgba(20,35,20,.24)";
+    ctx.beginPath();ctx.ellipse(0,h*.38,w*.27,h*.09,0,0,Math.PI*2);ctx.fill();
+    ctx.drawImage(img,-w/2,-h*.70,w,h);
+    ctx.restore();
+    return true;
+  }
   function drawMazeActors(){
     if(panel!==18)return;
     const u=Math.min(width,height);
@@ -576,18 +637,16 @@
         ctx.arc(x,y,radius,a-Math.PI/5,a+Math.PI/5);ctx.closePath();ctx.fill();
       }
       ctx.save();ctx.translate(x,y);
-      ctx.rotate(d.mode==="watch"?dogFacing(d):(d.heading ?? 0));
-      if(d.mode==="eating"){
-        // Gentle chewing with a tiny head tilt and no body thrust.
-        const chew=Math.sin(d.timer*9);
-        ctx.rotate(chew*.018);
+      if(!dogSpritesReady||!drawGuardDogSprite(d,u)){
+        // Fallback until ZIP frames finish loading.
+        ctx.rotate(d.mode==="watch"?dogFacing(d):(d.heading??0));
+        ellipse(0,0,u*.029,u*.023,"#9d7047");
+        ellipse(u*.019,0,u*.022,u*.020,"#c59159");
+        ellipse(u*.024,-u*.019,u*.010,u*.012,"#6b4631");
+        ellipse(u*.024,u*.019,u*.010,u*.012,"#6b4631");
+        ellipse(u*.036,-u*.007,u*.003,u*.003,"#2d302a");
+        ellipse(u*.036,u*.007,u*.003,u*.003,"#2d302a");
       }
-      ellipse(0,0,u*.029,u*.023,"#9d7047");
-      ellipse(u*.019,0,u*.022,u*.020,"#c59159");
-      ellipse(u*.024,-u*.019,u*.010,u*.012,"#6b4631");
-      ellipse(u*.024,u*.019,u*.010,u*.012,"#6b4631");
-      ellipse(u*.036,-u*.007,u*.003,u*.003,"#2d302a");
-      ellipse(u*.036,u*.007,u*.003,u*.003,"#2d302a");
       ctx.restore();
       if(d.mode==="asleep"){
         // Gentle rising sleep letters above the dog, no permanent HUD text.
