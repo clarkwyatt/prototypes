@@ -424,24 +424,25 @@
   // The bends and short branches add variety without closing the central passage.
   // Four alternating gates force a winding, continuous route through the maze.
   // Walls reach the screen edges, so the cat must go around each open end.
+  // Geometry traced from the illustrated panel 18 (normalized 1632x960).
+  // These segments replace the old vector maze and are collision-only.
   const mazeHedges=[
-    [[.22,0],[.22,.60]],
-    [[.40,.31],[.40,1]],
-    [[.58,0],[.58,.60]],
-    [[.76,.31],[.76,1]],
-    // Small cul-de-sacs off the main route (not blocking the intended route).
-    [[.05,.17],[.13,.17]],[[.13,.17],[.13,.30]],
-    [[.22,.83],[.27,.83]],[[.22,.83],[.22,1]],
-    [[.46,.15],[.52,.15]],
-    [[.58,.83],[.63,.83]],[[.58,.83],[.58,1]],
-    [[.83,.17],[.91,.17]],[[.91,.17],[.91,.28]]
+    [[.225,0],[.225,.565]],
+    [[.385,.205],[.385,1]],
+    [[.579,0],[.579,.565]],
+    [[.743,.205],[.743,1]],
+    [[.038,.135],[.145,.135]],[[.145,.135],[.145,.255]],
+    [[.205,.775],[.205,1]],[[.205,.775],[.268,.775]],
+    [[.443,.135],[.51,.135]],
+    [[.557,.775],[.557,1]],[[.557,.775],[.625,.775]],
+    [[.844,.135],[.925,.135]],[[.925,.135],[.925,.255]]
   ];
-  // Each dog guards the next bend, with meat accessible on the approach.
+  // Dogs occupy the open corridors between the illustrated hedges.
   const dogSeeds=[
-    {x:.17,y:.63,axis:"vertical",phase:0},
-    {x:.35,y:.39,axis:"vertical",phase:4.2},
-    {x:.53,y:.63,axis:"vertical",phase:7.8},
-    {x:.71,y:.39,axis:"vertical",phase:2.5}
+    {x:.155,y:.635,axis:"vertical",phase:0},
+    {x:.315,y:.39,axis:"vertical",phase:4.2},
+    {x:.495,y:.635,axis:"vertical",phase:7.8},
+    {x:.665,y:.39,axis:"vertical",phase:2.5}
   ];
   let facing = "down", walking = false, walkTime = 0;
   let dogs=[], meat=[], carrying=false, caught=false, mazeClock=0, chaseTime=0;
@@ -455,7 +456,7 @@
   function resetMaze(){
     dogs=dogSeeds.map((d,i)=>({...d,id:i,mode:"watch",timer:0,target:null,x:d.x,y:d.y}));
     // Each bait sits beyond a guarded sightline, requiring a timed crossing to collect it, then a return to bait the dog.
-    meat=[{x:.082,y:.24,used:false},{x:.31,y:.06,used:false},{x:.335,y:.94,used:false},{x:.695,y:.94,used:false}];
+    meat=[{x:.075,y:.30,used:false},{x:.305,y:.09,used:false},{x:.475,y:.91,used:false},{x:.665,y:.91,used:false}];
     carrying=false;caught=false;chaseTime=0;mazeClock=0;
     hero.x=.065;hero.y=.50;facing="right";
     catchModal.classList.remove("open");keys.clear();
@@ -715,7 +716,7 @@
 
   // Illustrated village screens. Load each independently, retaining vector
   // fallback if an image is unavailable.
-  const illustratedPanels = new Set([1,2,6,7,11,12,16,17,21]);
+  const illustratedPanels = new Set([1,2,6,7,11,12,16,17,18,21]);
   const panelArt = new Map();
   for(const id of illustratedPanels){
     const img=new Image();
@@ -850,7 +851,7 @@
     for(const points of newTrails[panel]||[])path(points,unit*.12,"#b89e79");
 
     if(panel===22)path([[1,.55],[.84,.55],[.84,.73]],unit*.12,"#b89e79");
-    if(panel===18){
+    if(panel===18&&!illustratedPanels.has(panel)){
       // Garden-maze walls: leafy hedges with flowering corners and textured bases.
       for(const [a,b] of mazeHedges){
         const x1=a[0]*width,y1=a[1]*height,x2=b[0]*width,y2=b[1]*height;
@@ -1176,6 +1177,20 @@
     // Art-matched solid footprints, inset from the interaction outlines.
     // Trees collide at their trunks, cottages at their walls, and smaller
     // objects at their bases so the player can still navigate the lawn.
+    if(panel===18){
+      const px=x*width,py=y*height;
+      // Keep the cat out of the hedge art, with a modest body-size margin.
+      const thickness=Math.min(width,height)*.032;
+      for(const [a,b] of mazeHedges){
+        const ax=a[0]*width,ay=a[1]*height,bx=b[0]*width,by=b[1]*height;
+        const vx=bx-ax,vy=by-ay;
+        const t=Math.max(0,Math.min(1,((px-ax)*vx+(py-ay)*vy)/(vx*vx+vy*vy)));
+        if(Math.hypot(px-(ax+t*vx),py-(ay+t*vy))<thickness)return true;
+      }
+      // Dense tree border on the top and bottom, away from the open maze.
+      if(y<.055||y>.95)return true;
+      return false;
+    }
     if(panel===17){
       // Keep the winding east-west trail clear; solid scenery only.
       const radius=Math.min(width,height)*.012;
