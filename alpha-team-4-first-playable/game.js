@@ -25,8 +25,8 @@ function connect(id,side,at,halfWidth,canExit=()=>true){
  from.exits[side]={to:to.id,at,halfWidth,canExit};
  to.exits[opposite]={to:from.id,at,halfWidth,canExit};
 }
-connect(1,'east',H/2,35);
-connect(2,'east',H/2,35,()=>quest.gateOpen);
+connect(1,'east',H/2,49);
+connect(2,'east',H/2,49,()=>quest.gateOpen);
 // Exact student-approved routes. Register each seam once; connect() makes it reciprocal.
 // Unlisted panels have no paths.
 const mapLinks=[
@@ -46,8 +46,18 @@ const mapLinks=[
  [23,'east'],  // 23 ↔ 24
  [24,'east']   // 24 ↔ 25
 ];
-for(const [id,side] of mapLinks)connect(id,side,side==='north'||side==='south'?W/2:H/2,35);
+for(const [id,side] of mapLinks)connect(id,side,side==='north'||side==='south'?W/2:H/2,49);
 
+// Panel 1 art: the treehouse doorway is part of the painted background.
+// Keep its interactive outline separate from the image and never repaint it.
+const treehouseDoorOutline=new Path2D('M -47 49 L -47 -15 Q -47 -71 0 -71 Q 47 -71 47 -15 L 47 49 Z');
+panels[0].objects.push({
+ id:'treehouseDoor',name:'Treehouse Door',x:268,y:187,
+ outline:treehouseDoorOutline,reach:180,solid:false,
+ description:'The doorway back into the treehouse.',
+ draw(){},
+ actions:[{label:'ENTER',primary:true,run:()=>{closePopup();showTreehouse()}}]
+});
 const housePositions=[[210,230],[410,230],[610,230],[310,520],[570,520]];
 // These local outlines are shared by the art, green glow, clicks, and collision.
 const houseOutline=new Path2D('M -53 -24 L 0 -65 L 53 -24 H 43 V 44 H -43 V -24 Z');
@@ -303,7 +313,7 @@ function drawPath(){
  const open=Object.entries(exits);
  if(!open.length)return;
  ctx.save();ctx.fillStyle='#668657';ctx.strokeStyle='#7e9c66';ctx.lineWidth=2;
- const centerX=W/2,centerY=H/2,half=35;
+ const centerX=W/2,centerY=H/2,half=49;
  // The center junction connects only the directions actually open on this panel.
  for(const [side,e] of open){
   if(side==='west'||side==='east'){
@@ -574,9 +584,9 @@ function showTreehouse(){
  Object.assign(door.style,{background:'transparent',border:'0',boxShadow:'none',color:'transparent',zIndex:'3'});
  const heroCanvas=room.querySelector('#room-hero');heroCanvas.style.zIndex='2';
  const hc=document.querySelector('#room-hero'),hctx=hc.getContext('2d');hctx.clearRect(0,0,100,130);hctx.setTransform(1.6,0,0,1.6,50,83);drawHero(hctx,0,0);
- document.querySelector('#treehouse-door').addEventListener('click',()=>{
+ document.querySelector('#treehouse-door').onclick=()=>{
   treehouseIntro=false;scene.hidden=true;hero.x=340;hero.y=390;keys.clear();canvas.focus({preventScroll:true});
- },{once:true});
+ };
 }
 showTreehouse();
 // Internal foundation API for later student-designed content.
