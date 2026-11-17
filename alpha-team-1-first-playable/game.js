@@ -330,6 +330,27 @@
     }
     return found;
   }
+  // Hand-traced silhouettes from the approved Panel 1 artwork.
+  // Normalized full-panel coordinates; never reused on unrelated scenery.
+  const panel1OutlinePaths={
+    "Cat's Home":[[.352,.374],[.370,.358],[.372,.341],[.397,.333],[.405,.269],[.445,.251],[.463,.204],[.489,.204],[.516,.164],[.539,.199],[.572,.211],[.606,.238],[.655,.246],[.683,.290],[.692,.348],[.677,.374],[.673,.623],[.360,.623]],
+    "Village Cottage":[[.737,.293],[.748,.261],[.766,.238],[.781,.202],[.798,.174],[.815,.135],[.838,.118],[.861,.140],[.879,.178],[.902,.219],[.925,.264],[.927,.299],[.913,.315],[.913,.421],[.754,.421],[.754,.315]],
+    "Blue-Roof Cottage":[[.749,.675],[.761,.649],[.778,.625],[.800,.595],[.822,.576],[.845,.575],[.866,.598],[.886,.619],[.918,.641],[.936,.674],[.937,.707],[.927,.720],[.927,.864],[.763,.864],[.763,.719]],
+    "Old Oak Tree":[[.040,.368],[.050,.302],[.073,.278],[.067,.240],[.097,.203],[.122,.201],[.133,.149],[.171,.127],[.209,.134],[.235,.167],[.269,.180],[.289,.218],[.318,.241],[.329,.283],[.317,.326],[.327,.371],[.304,.413],[.275,.443],[.236,.453],[.225,.490],[.233,.554],[.256,.592],[.231,.608],[.188,.581],[.171,.627],[.148,.604],[.153,.547],[.149,.484],[.117,.459],[.086,.455],[.059,.417]],
+    "Berry Bush":[[.150,.818],[.158,.787],[.179,.778],[.188,.749],[.209,.755],[.218,.735],[.240,.759],[.262,.758],[.276,.793],[.291,.802],[.299,.844],[.288,.876],[.269,.900],[.181,.902],[.154,.873]],
+    "Paw Sign":[[.611,.614],[.621,.596],[.663,.596],[.672,.614],[.669,.683],[.654,.695],[.654,.745],[.630,.745],[.630,.695],[.612,.682]]
+  };
+  function tracePanel1Outline(t){
+    const pts=panel1OutlinePaths[t.title];
+    if(!pts)return false;
+    for(let i=0;i<pts.length;i++){
+      const [x,y]=pts[i];
+      if(i===0)ctx.moveTo(x*width,y*height);
+      else ctx.lineTo(x*width,y*height);
+    }
+    ctx.closePath();
+    return true;
+  }
   function highlight(){
     nearby=nearestTarget();
     if(!nearby)return;
@@ -337,8 +358,8 @@
     const pulse=(Math.sin(performance.now()/230)+1)/2;
     ctx.save();
     // Understated, consistent highlights across the entire demo.
-    ctx.strokeStyle="rgba(95,235,128,"+(.42+pulse*.14)+")";
-    ctx.lineWidth=2;ctx.shadowColor="#60dc82";ctx.shadowBlur=3+pulse*3;
+    ctx.strokeStyle="rgba(75,255,112,"+(.78+pulse*.18)+")";
+    ctx.lineWidth=3.5+pulse*.7;ctx.shadowColor="#42ff78";ctx.shadowBlur=7+pulse*5;
     ctx.beginPath();
     if(t.type==="VILLAGE_ART"){
       // Simple rounded bounding box, not an approximate object silhouette.
@@ -346,7 +367,7 @@
       const left=(t.x-t.w/2)*width-pad;
       const top=(t.y-t.h/2)*height-pad;
       const w=t.w*width+pad*2,h=t.h*height+pad*2;
-      ctx.roundRect(left,top,w,h,Math.min(12,unit*.013));
+      if(!(panel===1&&tracePanel1Outline(t)))ctx.roundRect(left,top,w,h,Math.min(12,unit*.013));
     }else if(t.type==="H"||t.type==="HOME"){
       const w=unit*(t.type==="HOME"?.29:.255),h=unit*(t.type==="HOME"?.23:.205);
       // Trace the cottage's actual roof and walls, not a circle.
