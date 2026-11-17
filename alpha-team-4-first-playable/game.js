@@ -70,8 +70,8 @@ const panelOneSolids=[
  new Path2D('M 770 675 L 900 645 L 1030 670 L 1120 610 V 720 H 770 Z')
 ];
 function panelOneBlocked(x,y){
- // Keep the steps and winding path open; doorway is reached from the steps.
- if(x>210&&x<325&&y>210&&y<420)return false;
+ // Keep the entire door-to-path approach open, including the exterior spawn.
+ if(x>205&&x<440&&y>195&&y<470)return false;
  return panelOneSolids.some(shape=>ctx.isPointInPath(shape,x,y));
 }
 const housePositions=[[210,230],[410,230],[610,230],[310,520],[570,520]];
@@ -504,7 +504,7 @@ function collectHouseEmerald(){
  setQuest(quest.emeralds<5?'Find 5 Emeralds ('+quest.emeralds+'/5)':'Bring 5 Emeralds to the Villager');
 }
 function exitHouse(){
- activeHouse=0;hero.x=houseExitPosition.x;hero.y=houseExitPosition.y;keys.clear();
+ activeHouse=0;placeHeroSafely(houseExitPosition.x,houseExitPosition.y);keys.clear();
 }
 function drawHouseInterior(){
  const image=houseInteriorArt[activeHouse-1];
@@ -562,6 +562,20 @@ function draw(){
  drawGoblins();drawHero();drawSwing();drawCombatHUD();
 }
 function blocked(x,y){return (panel===1&&panelOneBlocked(x,y))||visibleObjects().some(o=>o.solid&&hitsOutline(o,x,y,12))}
+// Global spawn safety: no transition or doorway may place the hero inside
+// collision. Search nearby walkable ground before accepting a spawn.
+function safeSpawn(x,y){
+ const valid=(px,py)=>px>=bounds.left+14&&px<=bounds.right-14&&py>=bounds.top+14&&py<=bounds.bottom-14&&!blocked(px,py);
+ if(valid(x,y))return {x,y};
+ for(let radius=16;radius<=260;radius+=16){
+  for(let angle=0;angle<Math.PI*2;angle+=Math.PI/12){
+   const px=x+Math.cos(angle)*radius,py=y+Math.sin(angle)*radius;
+   if(valid(px,py))return {x:px,y:py};
+  }
+ }
+ return {x:W/2,y:H/2};
+}
+function placeHeroSafely(x,y){const p=safeSpawn(x,y);hero.x=p.x;hero.y=p.y;}
 function tryExit(side,axis){
  const exit=panels[panel-1].exits[side];
  if(!exit||Math.abs(axis-exit.at)>exit.halfWidth||!exit.canExit())return false;
@@ -570,6 +584,7 @@ function tryExit(side,axis){
  if(side==='east')hero.x=bounds.left+6;
  if(side==='north')hero.y=bounds.bottom-6;
  if(side==='south')hero.y=bounds.top+6;
+ placeHeroSafely(hero.x,hero.y);
  return true;
 }
 function moveHero(dx,dy){
@@ -679,7 +694,7 @@ function showTreehouse(){
  const heroCanvas=room.querySelector('#room-hero');heroCanvas.style.zIndex='2';
  const hc=document.querySelector('#room-hero'),hctx=hc.getContext('2d');hctx.clearRect(0,0,100,130);hctx.setTransform(1.6,0,0,1.6,50,83);drawHero(hctx,0,0);
  document.querySelector('#treehouse-door').onclick=()=>{
-  treehouseIntro=false;scene.hidden=true;hero.x=340;hero.y=390;keys.clear();canvas.focus({preventScroll:true});
+  treehouseIntro=false;scene.hidden=true;placeHeroSafely(340,390);keys.clear();canvas.focus({preventScroll:true});
  };
 }
 showTreehouse();
