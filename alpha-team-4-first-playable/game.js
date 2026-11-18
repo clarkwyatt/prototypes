@@ -91,16 +91,26 @@ panels[0].objects.push({
 // Doorway remains a clickable hotspot; solid scenery never draws over the artwork.
 // Panel 1: only the elevated treehouse structure is solid. The complete
 // winding dirt path and every stepping stone remain walkable.
+// Obstacles traced from the approved 1632x960 Panel 1 artwork, scaled to W/H.
+// Keep the central winding trail, stepping stones and treehouse steps walkable.
+function insideEllipse(x,y,cx,cy,rx,ry){return ((x-cx)/rx)**2+((y-cy)/ry)**2<1}
 function panelOneBlocked(x,y){
- // Panel 1's outer perimeter is solid. Only the mapped eastward trail
- // into Panel 2 is open; north, south and west are dead ends.
- const margin=26;
- const eastTrail=Math.abs(y-H/2)<=PATH_EXIT_HALF_WIDTH-14;
- if(y<margin||y>H-margin||x<margin)return true;
- if(x>W-margin&&!eastTrail)return true;
- // The elevated treehouse wall and trunk are solid. Keep its front
- // doorway, stairs, winding trail and stepping stones approachable.
- if(x<215&&y<335)return true;
+ const edge=26;
+ if(x<edge||y<edge||y>H-edge)return true;
+ if(x>W-edge&&Math.abs(y-H/2)>PATH_EXIT_HALF_WIDTH-14)return true;
+ // Treehouse walls, supporting trunk and roots, excluding the steps.
+ if(x<205&&y<360)return true;
+ if(insideEllipse(x,y,110,365,105,62))return true;
+ if(insideEllipse(x,y,465,305,115,92))return true; // broad right-hand roots
+ // Fallen log and large rune stones in the forest.
+ if(insideEllipse(x,y,697,275,88,36))return true;
+ if(insideEllipse(x,y,566,208,54,58))return true;
+ if(insideEllipse(x,y,855,225,52,80))return true;
+ if(insideEllipse(x,y,922,490,55,86))return true;
+ // Dense shrubs and rock clusters along the lower edge.
+ if(insideEllipse(x,y,247,575,65,48))return true;
+ if(insideEllipse(x,y,470,604,38,37))return true;
+ if(insideEllipse(x,y,845,680,75,43))return true;
  return false;
 }
 const housePositions=[[210,230],[410,230],[610,230],[310,520],[570,520]];
@@ -109,10 +119,9 @@ const houseDoorPositions=[[190,221],[438,221],[665,221],[229,547],[600,547]];
 // These local outlines are shared by the art, green glow, clicks, and collision.
 const houseOutline=new Path2D('M -53 -24 L 0 -65 L 53 -24 H 43 V 44 H -43 V -24 Z');
 const villagerOutline=new Path2D('M -12 -29 H 12 V -21 C 17 -11 8 -4 6 -4 H 13 V 25 H 10 V 37 H 3 V 25 H -2 V 37 H -9 V 25 H -13 V -4 H -6 C -8 -4 -17 -11 -12 -21 Z');
-const gateOutline=new Path2D('M -19 -68 H -9 V -55 H 9 V -68 H 19 V 68 H 9 V 63 H -9 V 68 H -19 Z');
-for(let y=-42;y<50;y+=21){
- gateOutline.moveTo(-9,y);gateOutline.lineTo(-9,y+8);gateOutline.lineTo(9,y+8);gateOutline.lineTo(9,y);gateOutline.closePath();
-}
+// The gate is painted at the northeast bend of the approved Panel 2 art.
+// Its silhouette includes the two posts and arched double doors.
+const gateOutline=new Path2D('M -91 68 L -91 -59 L -79 -75 L -63 -75 L -54 -60 Q 0 -112 54 -60 L 63 -75 L 79 -75 L 91 -59 L 91 68 Z');
 const house=(x,y,index)=>({
  id:'house'+index,name:'Village House',x:houseDoorPositions[index-1][0],y:houseDoorPositions[index-1][1],
  outline:new Path2D('M -19 29 L -19 -17 Q -19 -38 0 -38 Q 19 -38 19 -17 L 19 29 Z'),solid:false,reach:DOOR_REACH,
@@ -140,9 +149,9 @@ panels[1].objects.push({
  }}]
 });
 panels[1].objects.push({
- id:'gate',name:'Village Gate',x:1085,y:360,outline:gateOutline,solid:true,reach:115,isVisible:()=>!quest.gateOpen,
+ id:'gate',name:'Village Gate',x:982,y:266,outline:gateOutline,solid:true,reach:90,isVisible:()=>!quest.gateOpen,
  description:'A locked wooden gate blocks the way east.',
- draw(ctx){if(!panelTwoArtReady())drawGate(ctx,this.x,this.y)},
+ draw(ctx){/* Gate is already painted into the locked/unlocked background. */},
  actions:[{label:'OPEN',primary:true,run:()=>{
  if(!quest.gateKey){copyEl.textContent='The gate is locked. A villager might have the key.';return}
  quest.gateOpen=true;quest.gateKey=false;removeItem('Gate Key');setQuest('Explore Beyond the Village');closePopup();
@@ -597,21 +606,32 @@ function draw(){
  drawGoblins();drawHero();drawSwing();drawCombatHUD();
 }
 function panelTwoBlocked(x,y){
- // Solid outer perimeter, except the actual west/east path openings.
  const margin=26,opening=Math.abs(y-H/2)<=PATH_EXIT_HALF_WIDTH-14;
  if(y<margin||y>H-margin)return true;
  if((x<margin||x>W-margin)&&!opening)return true;
- // Buildings are painted into Panel 2's background; the doorway hotspots
- // are non-solid, so explicitly block the visible building footprints.
- // Each footprint has a roof and wall area; a clear approach remains at its door.
- const footprints=[
-  {x:190,y:150,w:138,h:138},{x:438,y:150,w:138,h:138},
-  {x:665,y:150,w:138,h:138},{x:229,y:474,w:138,h:138},
-  {x:600,y:474,w:138,h:138}
+ // Houses and scenery measured from the approved Panel 2 image.
+ // House entrances remain approachable from the path and clearings.
+ const buildings=[
+  [178,179,96,94],[433,178,97,97],[665,179,96,94],
+  [226,483,115,110],[606,484,113,110]
  ];
- for(const h of footprints){
-  if(x>h.x-h.w/2-12&&x<h.x+h.w/2+12&&y>h.y-h.h/2-12&&y<h.y+h.h/2+12)return true;
+ for(const [cx,cy,rx,ry] of buildings){
+  if(x>cx-rx&&x<cx+rx&&y>cy-ry&&y<cy+ry)return true;
  }
+ // Fence segments, large boulders and substantial tree trunks.
+ const ellipses=[
+  [43,241,49,44],[804,229,48,44],[840,286,42,43],
+  [1065,405,45,48],[389,651,62,58],
+  [1074,540,54,110],[1006,680,115,65],
+  [737,546,45,72],[366,438,40,55],[105,642,75,54]
+ ];
+ if(ellipses.some(([cx,cy,rx,ry])=>insideEllipse(x,y,cx,cy,rx,ry)))return true;
+ // Wooden fence beside the top-right houses and between lower homes.
+ if(x>744&&x<807&&y>231&&y<263)return true;
+ if(x>325&&x<391&&y>504&&y<550)return true;
+ if(x>686&&x<788&&y>506&&y<549)return true;
+ // Locked gate's real painted position, not the old right-edge placeholder.
+ if(!quest.gateOpen&&hitsOutline({x:982,y:266,outline:gateOutline},x,y,0))return true;
  return false;
 }
 function blocked(x,y){
