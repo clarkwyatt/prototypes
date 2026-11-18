@@ -308,34 +308,27 @@ function drawSword(ctx,x,y){
 panels[14].objects.push({
  id:'returningUnicorn',name:'Unicorn',kind:'npc',x:390,y:480,
  outline:unicornOutline,reach:110,
- description:'The unicorn has appeared beside you.',
- isVisible:()=>flags.has('swordEquipped'),
+ description:'The Unicorn has stepped through a shimmer of ancient starlight.',
+ isVisible:()=>flags.has('swordEquipped')&&!swordRevealPending,
  draw(ctx){drawUnicorn(ctx,this.x,this.y)},
  actions:[{label:'TALK',primary:true,run:()=>{
   flags.add('armorWarning');
   setQuest('Find Leather Armor');
-  copyEl.textContent='So, the forgotten blade has chosen you. Yet steel alone will not turn aside every claw. Goblins gather beneath the dark boughs ahead. Seek the scattered pieces of leather armor before you challenge their camp.';
+  copyEl.textContent=unicornSwordWarning;
  }}]
 });
 panels[14].objects.push({
  id:'forestSword',name:'Sword',x:790,y:450,outline:swordOutline,reach:95,
- description:'A sturdy sword rests on the ground. It looks ready for an adventurer.',
+ description:'Half-hidden in the forest lies a blade of ancient craftsmanship. Its silver edge glimmers without a trace of rust, and a faint warmth stirs in the hilt as you draw near. Perhaps this is the forgotten weapon of which the Unicorn spoke.',
  isVisible:()=>!flags.has('swordEquipped'),
- draw(ctx){drawSword(ctx,this.x,this.y)},
+ draw(ctx){if(!(panelFifteenSwordArt.complete&&panelFifteenSwordArt.naturalWidth>0))drawSword(ctx,this.x,this.y)},
  actions:[{label:'EQUIP',primary:true,run:()=>{
   if(flags.has('swordEquipped'))return;
   flags.add('swordEquipped');
   addItem('Sword (Equipped)');
   setQuest('Find Leather Armor');
   closePopup();
-  // Show the returning unicorn immediately, without waiting for a panel transition.
-  const visitor=panels[14].objects.find(o=>o.id==='returningUnicorn');
-  if(visitor){
-   activeObject=visitor;
-   titleEl.textContent='Unicorn';
-   showDialogueCard('Well done finding the sword! But beware: there is a goblin camp nearby. You had better look for some armor along the way before facing those goblins.');
-   flags.add('armorWarning');
-  }
+  beginSwordReveal();
  }}]
 });
 // Leather armor pickups appear after the sword is equipped.
@@ -692,6 +685,26 @@ panelOneArt.src='./art/team4_panel_01.webp';
 const panelTwoLockedArt=new Image(),panelTwoUnlockedArt=new Image();
 panelTwoLockedArt.src='./art/team4_panel_02_locked.webp';
 panelTwoUnlockedArt.src='./art/team4_panel_02_unlocked.webp';
+const panelFifteenSwordArt=new Image(),panelFifteenNoSwordArt=new Image();
+panelFifteenSwordArt.src='./art/team4_panel_15_sword.webp';
+panelFifteenNoSwordArt.src='./art/team4_panel_15_no_sword.webp';
+let swordFlash=0;
+let swordRevealPending=false;
+const unicornSwordWarning='The blade has awakened, brave one. Yet its light alone will not shield you from the shadows ahead. A goblin warband gathers beneath the dark trees. Seek the scattered pieces of leather armor before you dare enter their camp.';
+function beginSwordReveal(){
+ swordFlash=1.35;
+ swordRevealPending=true;
+}
+function finishSwordReveal(){
+ swordRevealPending=false;
+ const visitor=panels[14].objects.find(o=>o.id==='returningUnicorn');
+ if(visitor){
+  activeObject=visitor;
+  titleEl.textContent='Unicorn';
+  showDialogueCard(unicornSwordWarning);
+  flags.add('armorWarning');
+ }
+}
 const panelFourteenArt=new Image();
 panelFourteenArt.src='./art/team4_panel_14.webp';
 const panelNineArt=new Image();
@@ -718,6 +731,12 @@ function draw(){
   ctx.drawImage(panelNineArt,0,0,W,H);
  }else if(panel===14&&panelFourteenArt.complete&&panelFourteenArt.naturalWidth>0){
   ctx.drawImage(panelFourteenArt,0,0,W,H);
+ }else if(panel===15){
+  const swordArt=panelFifteenSwordArt.complete&&panelFifteenSwordArt.naturalWidth>0;
+  const clearedArt=panelFifteenNoSwordArt.complete&&panelFifteenNoSwordArt.naturalWidth>0;
+  if(flags.has('swordEquipped')&&clearedArt)ctx.drawImage(panelFifteenNoSwordArt,0,0,W,H);
+  else if(swordArt)ctx.drawImage(panelFifteenSwordArt,0,0,W,H);
+  else{drawGrass();drawPath();}
  }else{
   drawGrass();drawPath();
   if(panel===1)drawTreehouse();
@@ -735,6 +754,12 @@ function draw(){
   ctx.restore();
  }
  drawGoblins();drawHero();drawSwing();drawCombatHUD();
+ if(panel===15&&swordFlash>0){
+  const progress=1-swordFlash/1.35;
+  const opacity=progress<0.32?progress/0.32:Math.pow(Math.max(0,(1-progress)/0.68),2);
+  ctx.save();ctx.fillStyle='rgba(255,250,214,'+Math.min(1,opacity)+')';ctx.fillRect(0,0,W,H);
+  ctx.restore();
+ }
 }
 function panelTwoBlocked(x,y){
  const margin=26,opening=Math.abs(y-H/2)<=PATH_EXIT_HALF_WIDTH-14;
@@ -818,6 +843,12 @@ function moveHero(dx,dy){
 }
 function tick(now){
  const dt=Math.min((now-last)/1000,.04);last=now;elapsed+=dt;
+ if(swordFlash>0){
+  const previous=swordFlash;
+  swordFlash=Math.max(0,swordFlash-dt);
+  // Reveal the new background while the screen is at peak brightness.
+  if(swordRevealPending&&previous>0.48&&swordFlash<=0.48)finishSwordReveal();
+ }
  if(treehouseIntro){
  const rx=Number(keys.has('ArrowRight')||keys.has('d'))-Number(keys.has('ArrowLeft')||keys.has('a'));
  const ry=Number(keys.has('ArrowDown')||keys.has('s'))-Number(keys.has('ArrowUp')||keys.has('w'));
