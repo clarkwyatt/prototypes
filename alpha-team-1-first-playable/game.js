@@ -689,25 +689,46 @@
     }
     return false;
   }
-  // Short synthesized double bark, triggered only when a dog first spots the cat.
-  let barkAudioContext=null;
+  // A rough, percussive double "woof": filtered noise plus a short chesty growl.
+  // Avoid long pitched tones, which sounded like a spoken "uh-oh".
+  let barkAudioContext=null,barkNoiseBuffer=null;
   function playGuardDogBark(){
     try{
       const AC=window.AudioContext||window.webkitAudioContext;
       if(!AC)return;
       barkAudioContext??=new AC();
-      if(barkAudioContext.state==="suspended")barkAudioContext.resume().catch(()=>{});
-      const ctx=barkAudioContext,now=ctx.currentTime;
-      for(const [offset,duration,pitch] of [[0,.115,180],[.17,.15,145]]){
-        const osc=ctx.createOscillator(),gain=ctx.createGain(),filter=ctx.createBiquadFilter();
-        osc.type="sawtooth";filter.type="lowpass";filter.frequency.value=850;
-        osc.frequency.setValueAtTime(pitch*1.5,now+offset);
-        osc.frequency.exponentialRampToValueAtTime(pitch*.65,now+offset+duration);
-        gain.gain.setValueAtTime(.0001,now+offset);
-        gain.gain.exponentialRampToValueAtTime(.13,now+offset+.012);
-        gain.gain.exponentialRampToValueAtTime(.0001,now+offset+duration);
-        osc.connect(filter);filter.connect(gain);gain.connect(ctx.destination);
-        osc.start(now+offset);osc.stop(now+offset+duration+.01);
+      const ctx=barkAudioContext;
+      if(ctx.state==="suspended")ctx.resume().catch(()=>{});
+      if(!barkNoiseBuffer){
+        const length=Math.ceil(ctx.sampleRate*.36);
+        barkNoiseBuffer=ctx.createBuffer(1,length,ctx.sampleRate);
+        const samples=barkNoiseBuffer.getChannelData(0);
+        for(let i=0;i<length;i++)samples[i]=Math.random()*2-1;
+      }
+      const now=ctx.currentTime+.015;
+      for(const [offset,duration,level] of [[0,.14,.19],[.205,.17,.16]]){
+        const t=now+offset;
+        const noise=ctx.createBufferSource();
+        noise.buffer=barkNoiseBuffer;
+        const band=ctx.createBiquadFilter();
+        band.type="bandpass";band.frequency.setValueAtTime(720,t);
+        band.frequency.exponentialRampToValueAtTime(420,t+duration);
+        band.Q.value=.65;
+        const noiseGain=ctx.createGain();
+        noiseGain.gain.setValueAtTime(.0001,t);
+        noiseGain.gain.linearRampToValueAtTime(level,t+.012);
+        noiseGain.gain.exponentialRampToValueAtTime(.0001,t+duration);
+        noise.connect(band);band.connect(noiseGain);noiseGain.connect(ctx.destination);
+        noise.start(t);noise.stop(t+duration+.01);
+        const growl=ctx.createOscillator(),growlGain=ctx.createGain();
+        growl.type="sawtooth";
+        growl.frequency.setValueAtTime(135,t);
+        growl.frequency.exponentialRampToValueAtTime(78,t+duration);
+        growlGain.gain.setValueAtTime(.0001,t);
+        growlGain.gain.linearRampToValueAtTime(.065,t+.016);
+        growlGain.gain.exponentialRampToValueAtTime(.0001,t+duration);
+        growl.connect(growlGain);growlGain.connect(ctx.destination);
+        growl.start(t);growl.stop(t+duration+.01);
       }
     }catch(e){console.warn("Guard dog bark unavailable",e);}
   }
