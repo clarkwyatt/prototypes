@@ -851,7 +851,7 @@ const houseFeatures={
  1:[
   {name:'Captain’s Locker',x:13,y:21,w:20,h:31,shape:'polygon(0 0,100% 0,100% 96%,8% 100%,0 94%)',text:'The blue locker smells faintly of salt and adventure. A faded mark inside reads: Every great voyage begins with a brave first step.'},
   {name:'Sailor’s Table',x:27,y:48,w:20,h:14,shape:'polygon(5% 10%,95% 10%,100% 80%,90% 100%,10% 100%,0 80%)',text:'A sturdy table laden with a lantern and a bowl of bright red fruit. Someone has been planning a voyage here—or perhaps just a very hearty breakfast.'},
-  {name:'Treasure Chest',x:50,y:39,w:13,h:14,shape:'inset(0 round 13%)',text:'Iron bands hold this chest shut. Its worn lock has weathered more storms than most sailors, and it seems unwilling to surrender its secrets.'},
+  {name:'Treasure Chest',x:49,y:35,w:13,h:12,shape:'inset(0 round 13%)',text:'Iron bands hold this chest shut. Its worn lock has weathered more storms than most sailors, and it seems unwilling to surrender its secrets.'},
   {name:'Sea View Window',x:43,y:11,w:17,h:23,shape:'inset(0 round 7%)',text:'Beyond the glass, white sails and distant cliffs shimmer beneath a clear sky. The horizon seems to whisper that the world is much bigger than this room.'},
   {name:'Captain’s Bed',x:76,y:42,w:22,h:28,shape:'polygon(15% 0,100% 0,100% 100%,0 100%,0 30%)',text:'A neatly made bunk, its blue blanket embroidered with curling waves. A sailor could dream of faraway shores here without ever leaving the harbor.'},
   {name:'Anchor Rug',x:33,y:54,w:35,h:19,shape:'inset(0 round 12%)',text:'A proud golden anchor decorates this well-traveled rug. Even adventurers need something to keep their feet on the ground.'}
@@ -875,7 +875,7 @@ function currentInteriorFeatures(){
  // Selective highlights: doors handled separately, quest storage first.
  const features=interiorHouse?(houseFeatures[interiorHouse]||[]):treehouseFeatures;
  if(!interiorHouse)return features.filter(f=>['Travel Chest','Books and Potions'].includes(f.name));
- if(interiorHouse===1)return features; // All painted House 1 objects can highlight.
+ if(interiorHouse===1)return features.filter(f=>f.name!=='Anchor Rug'); // Rug is decorative, not interactive.
  return features.filter(f=>f.name==='Treasure Chest');
 }
 function isEmeraldStorage(feature){
@@ -928,16 +928,23 @@ function showTreehouse(){
  for(const selector of ['.room-window','.room-bed','.room-table','.room-rug']){
   const old=room.querySelector(selector);if(old)old.style.display='none';
  }
- for(const feature of [...treehouseFeatures,...Object.values(houseFeatures).flat()]){
-  let el=room.querySelector('[data-room-feature="'+feature.name+'"]');
-  if(!el){
-   el=document.createElement('button');el.type='button';el.dataset.roomFeature=feature.name;
-   el.setAttribute('aria-label','Examine '+feature.name);
-   Object.assign(el.style,{position:'absolute',zIndex:'9',padding:'0',background:'transparent',border:'3px solid #40e477',boxShadow:'0 0 8px #40e477',cursor:'pointer',transition:'opacity .12s'});
-   el.onclick=()=>{if(currentInteriorFeatures().includes(feature))showInteriorDescription(feature)};
-   room.appendChild(el);
-  }
-  Object.assign(el.style,{left:feature.x+'%',top:feature.y+'%',width:feature.w+'%',height:feature.h+'%',clipPath:feature.shape,display:currentInteriorFeatures().includes(feature)?'block':'none'});
+ // Rebuild hotspots for the active room only. Reusing the same DOM element
+ // by feature name across five houses previously overwrote chest positions
+ // and left click handlers bound to features from the wrong house.
+ room.querySelectorAll('[data-room-feature]').forEach(el=>el.remove());
+ for(const feature of currentInteriorFeatures()){
+  const el=document.createElement('button');el.type='button';
+  el.dataset.roomFeature=feature.name;
+  el.setAttribute('aria-label','Examine '+feature.name);
+  Object.assign(el.style,{
+   position:'absolute',zIndex:'9',padding:'0',background:'transparent',
+   border:'3px solid #40e477',boxShadow:'0 0 8px #40e477',
+   cursor:'pointer',transition:'opacity .12s',pointerEvents:'none',
+   left:feature.x+'%',top:feature.y+'%',width:feature.w+'%',
+   height:feature.h+'%',clipPath:feature.shape,opacity:'0'
+  });
+  el.onclick=()=>{if(currentInteriorFeatures().includes(feature))showInteriorDescription(feature)};
+  room.appendChild(el);
  }
  updateTreehouseFeatures(room);
  const door=room.querySelector('#treehouse-door');
