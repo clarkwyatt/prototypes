@@ -307,7 +307,7 @@ panels[1].objects.push({
   if(!quest.started){quest.started=true;setQuest('Find 5 Emeralds ('+quest.emeralds+'/5)');copyEl.textContent='Five green stars once protected this village. Their keepers hid them among treasured belongings. Search carefully, and bring the stones to me. Only then may the ancient gate be unsealed.';return}
   if(quest.emeralds<5){copyEl.textContent='I sense '+quest.emeralds+' of the five green stars in your keeping. The others still slumber somewhere in the village. Seek what our people have hidden away.';return}
   quest.gateKey=true;for(const name of [...inventory])if(name.endsWith(' / 5 Emeralds'))removeItem(name);addItem('Gate Key');setQuest('Unlock the Village Gate');copyEl.textContent='The five stars shine as one again! You have restored an ancient promise. Take this key, brave traveler, and let the road beyond our walls be yours.';
-   appendItemReward('Gate Key');
+   appendItemReward('a Gate Key');
  }}]
 });
 panels[1].objects.push({
@@ -588,7 +588,8 @@ layer.addEventListener('keydown',e=>{
 // Match A Village Tale: action choices are replaced by the dialogue card's close button.
 function appendItemReward(item){
  const reveal=document.createElement('div');
- reveal.textContent='YOU GOT '+item.toUpperCase()+'!';
+ const phrase=/^(a |an |the |some |\d)/i.test(item)?item:'a '+item;
+ reveal.textContent='YOU GOT '+phrase.toUpperCase()+'!';
  Object.assign(reveal.style,{marginTop:'14px',fontWeight:'900',fontSize:'1.12em',letterSpacing:'.03em',color:'#147c4a'});
  copyEl.appendChild(reveal);
 }
@@ -762,7 +763,7 @@ function finishSwordReveal(){
   activeObject=visitor;
   titleEl.textContent='Unicorn';
   showDialogueCard(unicornSwordWarning);
-  appendItemReward('Sword');
+  appendItemReward('a Sword');
   flags.add('armorWarning');
  }
 }
