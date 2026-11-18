@@ -224,18 +224,22 @@ panels[12].objects.push({
 });
 // Panel 14: the western trail stays sealed until this route is introduced later.
 // Reuse the Panel 8 bramble artwork, rotated across the horizontal path.
-const westBramblesY=H*0.46;
+const westBramblesY=H/2;
 const westBramblesOutline=new Path2D('M -24 -93 L 22 -88 L 40 -58 L 25 -20 L 43 17 L 25 57 L 19 90 L -24 95 Z');
 panels[13].objects.push({
  id:'westBrambles',name:'Thorny Brambles',x:65,y:westBramblesY,
  outline:westBramblesOutline,reach:85,solid:true,
- description:'A vicious snarl of thorny vines has swallowed the western trail. The branches twist so tightly together that there is no safe passage this way yet.',
+ isVisible:()=>!flags.has('westBramblesCleared'),
+ description:'A vicious snarl of thorny vines has swallowed the western trail. Your sword may be able to cut through them.',
  draw(ctx){
   ctx.save();ctx.translate(this.x,this.y);ctx.rotate(-Math.PI/2);
   ctx.translate(-W/2,-(H-65));drawSouthBrambles(ctx);
   ctx.restore();
  },
- actions:[]
+ actions:[{label:'CUT BRAMBLES',primary:true,available:()=>flags.has('swordEquipped'),run:()=>{
+  flags.add('westBramblesCleared');
+  copyEl.textContent='Your sword cuts through the tangled thorns, opening the trail!';
+ }}]
 });
 // Panel 1 art: the treehouse doorway is part of the painted background.
 // Keep its interactive outline separate from the image and never repaint it.
@@ -382,7 +386,7 @@ panels[14].objects.push({
 // Leather armor pickups appear after the sword is equipped.
 // Keep these small and away from the center paths until the art pass.
 const armorPieces=[
- {panel:14,name:'Breastplate',x:295,y:220},
+ {panel:14,name:'Breastplate',x:170,y:560},
  {panel:13,name:'Helm',x:825,y:220},
  {panel:18,name:'Gauntlets',x:820,y:215},
  {panel:17,name:'Greaves',x:815,y:215},
@@ -751,7 +755,7 @@ panelFifteenSwordArt.src='./art/team4_panel_15_sword.webp';
 panelFifteenNoSwordArt.src='./art/team4_panel_15_no_sword.webp';
 let swordFlash=0;
 let swordRevealPending=false;
-const unicornSwordWarning='A fine blade, brave traveler! But you will need armor before facing the goblins. They have been known to hide spare pieces of leather armor in the bushes along the path to their camp. Perhaps you can find what you need there.';
+const unicornSwordWarning='A fine blade, brave traveler! But you will need armor before facing the goblins. They have been known to hide spare pieces of leather armor in places along the path to their camp. Search carefully, and you may find what you need.';
 function beginSwordReveal(){
  swordFlash=1.35;
  swordRevealPending=true;
@@ -960,8 +964,8 @@ function tryExit(side,axis){
  if(panel===2&&side==='east')return false;
  if(panel===8&&side==='south'&&!flags.has('southBramblesCleared'))return false;
  if(panel===13&&side==='north'&&!flags.has('southBramblesCleared'))return false;
- if(panel===14&&side==='west')return false; // Brambles block the route for now.
- if(panel===13&&side==='east')return false; // Do not enter behind the same barrier.
+ if(panel===14&&side==='west'&&!flags.has('westBramblesCleared'))return false;
+ if(panel===13&&side==='east'&&!flags.has('westBramblesCleared'))return false;
  panel=exit.to;
  if(side==='west')hero.x=bounds.right-6;
  if(side==='east')hero.x=bounds.left+6;
