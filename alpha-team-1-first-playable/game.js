@@ -73,6 +73,17 @@
     b.className="interaction-btn"+(label==="EXAMINE"||label==="CLOSE"||label==="OK"?" secondary":"");
     b.addEventListener("click",action);return b;
   }
+  let mazeWarningShown=false;
+  function showMazeWarning(){
+    if(mazeWarningShown||panel!==18)return;
+    mazeWarningShown=true;
+    dialogOpen=true;keys.clear();modal.classList.add("open");
+    modal.querySelector("#interaction-title").textContent="WATCH OUT!!";
+    const p=modal.querySelector("#interaction-description");
+    p.textContent="These are hungry Guard Dogs! Place meat where they will look, but don't let them see you!";
+    p.hidden=false;
+    modal.querySelector("#interaction-actions").replaceChildren(button("GOT IT!",closeInteraction));
+  }
   function playGateUnlockSfx(){
     try{
       const AC=window.AudioContext||window.webkitAudioContext;
@@ -1918,6 +1929,7 @@
     if(keys.has("ArrowUp")||keys.has("w")) dy--;
     if(keys.has("ArrowDown")||keys.has("s")) dy++;
     if(dx&&dy){dx*=Math.SQRT1_2;dy*=Math.SQRT1_2;}
+    showMazeWarning();
     walking = !dialogOpen && !caught && (dx !== 0 || dy !== 0);
     if (walking) {
       if (Math.abs(dx) > Math.abs(dy)) facing = dx > 0 ? "right" : "left";
