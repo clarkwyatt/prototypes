@@ -19,6 +19,25 @@ function treehouseFloorBlocked(x,y){
  // Room movement is expressed in percentages of the INNER .treehouse-room
  // (the same coordinate space as the painted image and the room hero).
  // These are the boy's floor-contact coordinates, not screen/canvas pixels.
+ if(interiorHouse===4){
+  // House 4 carpenter's workshop: percentages of the inner room artwork.
+  // Collision follows floor-contact (feet), not the sprite center.
+  const fy=y+4;
+  if(x<5||x>95||fy<16||fy>91)return true;
+  if(fy<29)return true; // back wall, window and mounted tools
+  // Workbench, timber barrel, tools and stool along the left.
+  if(x<44&&fy>31&&fy<65)return true;
+  if(x<16&&fy>62&&fy<82)return true; // lower-left wooden crate
+  // Chopping stump, axe and upright boards beneath the window.
+  if(x>45&&x<60&&fy>38&&fy<60)return true;
+  // Drawers and locked storage cupboard along the right wall.
+  if(x>63&&fy>30&&fy<62)return true;
+  // Two stacked crates along the right edge.
+  if(x>82&&fy>53&&fy<83)return true;
+  // Keep the foreground doorway solid while leaving both rugs walkable.
+  if(x>39&&x<61&&fy>72)return true;
+  return false;
+ }
  if(interiorHouse===3){
   // House 3 apothecary: coordinates are percentages of the displayed room,
   // and fy tracks the character's feet rather than the sprite center.
