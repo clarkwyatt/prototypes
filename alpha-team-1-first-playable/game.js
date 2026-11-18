@@ -597,9 +597,18 @@
           if(m.used||m.placed)return false;
           if(Math.hypot((m.x-x)*width,(m.y-y)*height)>unit*.07)return false;
           if(Math.hypot((m.x-hero.x)*width,(m.y-hero.y)*height)>unit*.17)return false;
-          for(let i=1;i<=12;i++){
-            const t=i/12;
-            if(blocked(hero.x+(m.x-hero.x)*t,hero.y+(m.y-hero.y)*t))return false;
+          // Check only solid walls separating the cat and meat; the old
+          // sampled blocked() ray also rejected pickups near hedge edges.
+          for(const [a,b] of mazeHedges){
+            const ax=a[0]*width,ay=a[1]*height,bx=b[0]*width,by=b[1]*height;
+            const hx=hero.x*width,hy=hero.y*height,mx=m.x*width,my=m.y*height;
+            const cross=(ux,uy,vx,vy)=>ux*vy-uy*vx;
+            const rx=mx-hx,ry=my-hy,sx=bx-ax,sy=by-ay;
+            const denom=cross(rx,ry,sx,sy);
+            if(Math.abs(denom)<.0001)continue;
+            const t=cross(ax-hx,ay-hy,sx,sy)/denom;
+            const u=cross(ax-hx,ay-hy,rx,ry)/denom;
+            if(t>.02&&t<.98&&u>=0&&u<=1)return false;
           }
           return true;
         });
@@ -659,7 +668,7 @@
   function resetMaze(){
     dogs=dogSeeds.map((d,i)=>({...d,id:i,mode:"watch",timer:0,target:null,x:d.x,y:d.y}));
     // Each bait sits beyond a guarded sightline, requiring a timed crossing to collect it, then a return to bait the dog.
-    meat=[{x:.075,y:.30,used:false},{x:.315,y:.19,used:false},{x:.265,y:.87,used:false},{x:.685,y:.79,used:false}];
+    meat=[{x:.075,y:.30,used:false},{x:.315,y:.29,used:false},{x:.265,y:.87,used:false},{x:.685,y:.79,used:false}];
     carrying=false;caught=false;chaseTime=0;mazeClock=0;
     hero.x=.065;hero.y=.50;facing="right";
     catchModal.classList.remove("open");keys.clear();
