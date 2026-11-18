@@ -66,7 +66,7 @@ function treehouseFloorBlocked(x,y){
   if(x<5||x>95||fy<17||fy>91)return true;
   if(fy<28)return true; // rear wall, shelves and window
   if(x<28&&fy<62)return true; // left potion shelves and drawers
-  if(x<24&&fy>58&&fy<83)return true; // left chest, crate and sack
+  if(x<17&&fy>58&&fy<83)return true; // left chest and crate; leave room to approach
   if(x>28&&x<72&&fy>33&&fy<52)return true; // apothecary workbench
   if(x>72&&fy<62)return true; // right-hand drawer cabinet and barrel
   if(x>76&&fy>59&&fy<85)return true; // herb crate and mushroom box
@@ -867,7 +867,7 @@ const houseFeatures={
 // with one emerald each; the collected state persists after leaving the house.
 for(let i=2;i<=5;i++){
  houseFeatures[i].push({
-  name:'Treasure Chest',x:i===2?82:i===3?3:54,y:i===2?55:i===3?55:32,w:i===3?12:13,h:i===2?21:i===3?18:13,
+  name:'Treasure Chest',x:i===2?82:i===3?3:54,y:i===2?55:i===3?54:32,w:i===3?13:13,h:i===2?21:i===3?19:13,
   shape:'inset(0 round 13%)',
   text:i===2?'A blue-and-gold chest with a sturdy golden lock.':i===3?'A wooden storage chest with iron bands.':'A small wooden chest with a brass latch.'
  });
@@ -895,32 +895,71 @@ houseFeatures[4].push({
  shape:'polygon(0 0,100% 0,100% 100%,0 100%)',
  text:'A sturdy workshop cabinet with rows of small drawers for tools and supplies.'
 });
+// Additional examination hotspots follow the painted furnishings, never rugs.
+const examinationFeatures={
+ 1:[
+  {name:'Fishing Trophies',x:63,y:8,w:14,h:30,text:'Silver fish and a weathered trophy recall the captain’s voyages across distant seas.'},
+  {name:'Ship’s Supplies',x:68,y:34,w:19,h:20,text:'Coiled rope, a sturdy barrel, and a small boat stand ready for the next voyage.'}
+ ],
+ 2:[
+  {name:'Ancient Bookshelf',x:11,y:12,w:23,h:37,text:'Dusty chronicles speak of forgotten roads, lost kingdoms, and the courage of travelers.'},
+  {name:'Scholar’s Writing Desk',x:24,y:36,w:23,h:28,text:'An open tome, ink, and a warm lantern suggest a scholar was interrupted mid-discovery.'},
+  {name:'Crystal Cabinet',x:65,y:14,w:18,h:37,text:'Purple crystals and curious bottles gleam behind the carved doors.'}
+ ],
+ 3:[
+  {name:'Potion Shelves',x:13,y:18,w:15,h:38,text:'Bottles of many colors hold fragrant herbs and mysterious alchemical mixtures.'},
+  {name:'Alchemist’s Workbench',x:29,y:35,w:42,h:22,text:'A simmering violet potion, old recipes, and carefully ground herbs cover the workbench.'},
+  {name:'Herbal Drawers',x:73,y:35,w:20,h:29,text:'Tiny labeled drawers contain roots, seeds, and dried flowers from distant groves.'}
+ ],
+ 4:[
+  {name:'Carpenter’s Workbench',x:14,y:36,w:29,h:28,text:'Fresh shavings curl around a hand plane, chisels, and unfinished wooden fittings.'},
+  {name:'Woodworking Tools',x:61,y:12,w:22,h:30,text:'Well-used saws and hammers hang in neat rows, each with a tale of hard work.'},
+  {name:'Locked Timber Cupboard',x:82,y:20,w:12,h:42,text:'An old cupboard bears the village tree crest and a heavy iron lock.'}
+ ],
+ 5:[
+  {name:'Travel Library',x:10,y:12,w:23,h:43,text:'Shelves of maps and journals tell of faraway valleys and forgotten pathways.'},
+  {name:'Ancient Map Drawers',x:26,y:37,w:16,h:22,text:'The drawers hold hand-drawn charts of lands no traveler has visited in generations.'},
+  {name:'Sealed Wardrobe',x:71,y:20,w:14,h:34,text:'A tall wardrobe is sealed with a brass lock bearing the village crest.'}
+ ]
+};
+for(let house=1;house<=5;house++)houseFeatures[house].push(...examinationFeatures[house]);
 houseFeatures[1].find(f=>f.name==='Treasure Chest').text='A sturdy wooden chest with iron bands and a worn brass latch.';
 function currentInteriorFeatures(){
  // Selective highlights: doors handled separately, quest storage first.
  const features=interiorHouse?(houseFeatures[interiorHouse]||[]):treehouseFeatures;
  if(!interiorHouse)return features.filter(f=>['Travel Chest','Books and Potions'].includes(f.name));
- if(interiorHouse===1)return features.filter(f=>f.name!=='Anchor Rug'); // Rug is decorative, not interactive.
- if(interiorHouse===4)return features.filter(f=>['Workshop Drawers','Wooden Storage Box'].includes(f.name));
- if(interiorHouse===5)return features.filter(f=>['Cartographer’s Desk','Right Storage Chest'].includes(f.name));
- return features.filter(f=>f.name==='Treasure Chest');
+ if(interiorHouse===1)return features.filter(f=>f.name!=='Anchor Rug');
+ const questFeatures=interiorHouse===4?['Workshop Drawers','Wooden Storage Box']:interiorHouse===5?['Cartographer’s Desk','Right Storage Chest']:['Treasure Chest'];
+ return features.filter(f=>questFeatures.includes(f.name)||examinationFeatures[interiorHouse].includes(f));
 }
 function isEmeraldStorage(feature){
  return interiorHouse>0&&(feature.name==='Treasure Chest'||(interiorHouse===4&&feature.name==='Wooden Storage Box')||(interiorHouse===5&&feature.name==='Right Storage Chest'));
 }
 function showInteriorDescription(feature){
  if(activeObject)return;
+ const emeraldStorage=isEmeraldStorage(feature);
+ const found=emeraldStorage&&!flags.has('emerald'+interiorHouse);
  let description=feature.text;
- if(isEmeraldStorage(feature)&&(quest.started||interiorHouse===1||interiorHouse===2||interiorHouse===3||interiorHouse===4||interiorHouse===5)){
-  if(!flags.has('emerald'+interiorHouse)){
-   collectHouseEmerald();
-   description+=' Inside, you find one sparkling emerald and add it to your inventory.';
-  }else{
-   description+=' It is empty. You already collected its emerald.';
-  }
+ if(emeraldStorage){
+  const contents={
+   1:'Inside lie a brass compass, a faded sailor’s letter, and a handful of sea-glass.',
+   2:'Inside are a silver quill, an old star chart, and a velvet pouch.',
+   3:'Inside are dried lavender, a tiny copper mortar, and several corked vials.',
+   4:'Inside are carved wooden figures, a spool of twine, and a small brass hinge.',
+   5:'Inside are rolled maps, a broken spyglass, and a leather-bound travel journal.'
+  };
+  description=contents[interiorHouse];
+  if(found)collectHouseEmerald();
+  else description+=' The emerald has already been taken.';
  }
  activeObject={name:feature.name};titleEl.textContent=feature.name;
  showDialogueCard(description);
+ if(found){
+  const reveal=document.createElement('div');
+  reveal.textContent='YOU FOUND AN EMERALD!';
+  Object.assign(reveal.style,{marginTop:'14px',fontWeight:'900',fontSize:'1.12em',letterSpacing:'.03em',color:'#147c4a'});
+  copyEl.appendChild(reveal);
+ }
 }
 function updateTreehouseFeatures(room){
  for(const feature of currentInteriorFeatures()){
