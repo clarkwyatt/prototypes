@@ -876,24 +876,65 @@ function panelTwoBlocked(x,y){
 // Keep a walkable approach to every hidden armor search hotspot. This protects
 // the painted forest boundaries without putting invisible walls across trails.
 const forestPanels=new Set([3,8,9,13,14,15,16,17,18,21]);
+// Painted forest walls extend far inside the screen; a thin 48px border
+// leaves the character walking through trees. These masks follow the major
+// tree/rock masses while keeping the trail openings and armor searches open.
+const forestFoliageShapes={
+ 8:[
+  [[0,0],[690,0],[595,80],[540,145],[410,205],[305,250],[190,260],[0,275]],
+  [[850,0],[1120,0],[1120,275],[1020,265],[950,220],[895,150]],
+  [[0,430],[95,450],[170,510],[235,600],[280,720],[0,720]],
+  [[1120,400],[1040,455],[980,525],[925,650],[900,720],[1120,720]]
+ ],
+ 15:[
+  [[0,0],[1120,0],[1120,230],[1030,255],[960,205],[855,225],[755,200],[640,220],[510,200],[380,240],[240,215],[105,260],[0,245]],
+  [[0,470],[80,485],[175,535],[260,620],[315,720],[0,720]],
+  [[1120,450],[1050,495],[960,570],[885,720],[1120,720]]
+ ]
+};
+const forestCollisionPaths=Object.fromEntries(Object.entries(forestFoliageShapes).map(([id,shapes])=>[
+ Number(id),shapes.map(points=>{
+  const path=new Path2D();path.moveTo(points[0][0],points[0][1]);
+  for(const [x,y] of points.slice(1))path.lineTo(x,y);
+  path.closePath();return path;
+ })
+]));
 function forestFoliageBlocked(x,y){
  if(!forestPanels.has(panel))return false;
- const edge=48;
  const exits=panels[panel-1].exits;
  const passage=(side,coordinate)=>{
   const e=exits[side];
-  return e&&Math.abs(coordinate-e.at)<=e.halfWidth+12;
+  return e&&Math.abs(coordinate-e.at)<=e.halfWidth+15;
  };
- const armor=typeof armorPieces!=='undefined'?armorPieces.find(p=>p.panel===panel):null;
- // The foliage immediately around armor remains reachable for searching.
- const nearArmor=armor&&Math.hypot(x-armor.x,y-armor.y)<105;
- if(nearArmor)return false;
- if(x<edge&&!passage('west',y))return true;
- if(x>W-edge&&!passage('east',y))return true;
- if(y<edge&&!passage('north',x))return true;
- if(y>H-edge&&!passage('south',x))return true;
+ // Armor is hidden in the undergrowth, but the player must be able to
+ // approach it from the open side. Preserve the full interaction radius.
+ const armor=armorPieces.find(p=>p.panel===panel);
+ if(armor&&Math.hypot(x-armor.x,y-armor.y)<112)return false;
+ // Keep all intended screen transitions free of foliage collision.
+ if(x<95&&passage('west',y))return false;
+ if(x>W-95&&passage('east',y))return false;
+ if(y<95&&passage('north',x))return false;
+ if(y>H-95&&passage('south',x))return false;
+ // Deep corner foliage applies throughout the forest, not only to the
+ // screen's outermost pixels.
+ const corner=155;
+ if((x<corner||x>W-corner)&&(y<corner||y>H-corner))return true;
+ // Each side is solid except where a painted trail actually exits.
+ if(x<70&&!passage('west',y))return true;
+ if(x>W-70&&!passage('east',y))return true;
+ if(y<80&&!passage('north',x))return true;
+ if(y>H-80&&!passage('south',x))return true;
+ // Detailed interior tree-line masks for the forest junction and sword glade.
+ const shapes=forestCollisionPaths[panel];
+ if(shapes){
+  ctx.save();ctx.resetTransform();
+  const hit=shapes.some(shape=>ctx.isPointInPath(shape,x,y));
+  ctx.restore();
+  if(hit)return true;
+ }
  return false;
 }
+
 function blocked(x,y){
  const radius=12;
  const sample=[[0,0],[-radius,0],[radius,0],[0,-radius],[0,radius]];
