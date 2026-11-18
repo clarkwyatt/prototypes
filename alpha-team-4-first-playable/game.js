@@ -898,14 +898,14 @@ function showInteriorDescription(feature){
 function updateTreehouseFeatures(room){
  for(const feature of currentInteriorFeatures()){
   const el=room.querySelector('[data-room-feature="'+feature.name+'"]');if(!el)continue;
-  // Test a 10 CSS-pixel trigger from the actual feature rectangle.
+  // House 1: allow a comfortable 35 CSS-pixel reach from the object's visible hotspot.
   // Room percentages must be converted using the displayed popup dimensions.
   const width=room.clientWidth,height=room.clientHeight;
   const px=roomHero.x*width/100,py=(roomHero.y+4)*height/100;
   const left=feature.x*width/100,right=(feature.x+feature.w)*width/100;
   const top=feature.y*height/100,bottom=(feature.y+feature.h)*height/100;
   const dx=Math.max(left-px,0,px-right),dy=Math.max(top-py,0,py-bottom);
-  const close=interiorHouse===1?Math.hypot(dx,dy)<=10:
+  const close=interiorHouse===1?Math.hypot(dx,dy)<=35:
     Math.hypot((roomHero.x-feature.x-feature.w/2)*1.25,roomHero.y-feature.y-feature.h/2)<17;
   el.style.pointerEvents=close?'auto':'none';
   el.style.opacity=close?String(.78+.22*Math.sin(elapsed*5)):'0';
