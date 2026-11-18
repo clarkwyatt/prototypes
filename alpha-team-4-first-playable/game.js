@@ -19,6 +19,20 @@ function treehouseFloorBlocked(x,y){
  // Room movement is expressed in percentages of the INNER .treehouse-room
  // (the same coordinate space as the painted image and the room hero).
  // These are the boy's floor-contact coordinates, not screen/canvas pixels.
+ if(interiorHouse===3){
+  // House 3 apothecary: coordinates are percentages of the displayed room,
+  // and fy tracks the character's feet rather than the sprite center.
+  const fy=y+4;
+  if(x<5||x>95||fy<17||fy>91)return true;
+  if(fy<28)return true; // rear wall, shelves and window
+  if(x<28&&fy<62)return true; // left potion shelves and drawers
+  if(x<24&&fy>58&&fy<83)return true; // left chest, crate and sack
+  if(x>28&&x<72&&fy>33&&fy<52)return true; // apothecary workbench
+  if(x>72&&fy<62)return true; // right-hand drawer cabinet and barrel
+  if(x>76&&fy>59&&fy<85)return true; // herb crate and mushroom box
+  if(x>39&&x<61&&fy>72)return true; // foreground exit door
+  return false;
+ }
  if(interiorHouse===2){
   // House 2 study: room-relative percentages, using the boy's feet.
   const fy=y+4;
