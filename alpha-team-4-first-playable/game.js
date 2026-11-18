@@ -110,9 +110,11 @@ function treehouseFloorBlocked(x,y){
   if(x>39&&x<61&&fy>72)return true;
   return false;
  }
- // Preserve the other rooms until their art is mapped individually.
- if(x<29||x>79||y<31||y>76)return true;
+ // Other house interiors retain their existing movement limits.
+ // Do NOT apply these limits to the starting treehouse: its left floor
+ // extends well beyond x=29% and was being blocked invisibly.
  if(interiorHouse){
+  if(x<29||x>79||y<31||y>76)return true;
   if(x>39&&x<61&&y>64)return true;
   return false;
  }
