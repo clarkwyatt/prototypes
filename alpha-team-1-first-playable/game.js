@@ -842,7 +842,7 @@
       right:[24,-17],left:[-24,-17],down:[0,-13],up:[0,-29]
     };
     const [mx,my]=offsets[facing];
-    return {x:hero.x*width+mx*.72,y:hero.y*height+my*.72};
+    return {x:hero.x*width+mx*.792,y:hero.y*height+my*.792};
   }
   // Load the supplied ZIP directly: no manual extraction or added dependency.
   const dogFrames={up:[],down:[],left:[],right:[]};
@@ -1508,7 +1508,7 @@
     ctx.save();
     ctx.translate(hero.x*width,hero.y*height);
     // Keep the cat proportional to houses and maze dogs across all panels.
-    ctx.scale(.72,.72);
+    ctx.scale(.792,.792);
     if(catAssetsReady && selectedCat) drawPixelCat();
     else drawHero();
     ctx.restore();
