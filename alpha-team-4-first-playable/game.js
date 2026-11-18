@@ -865,9 +865,9 @@ const houseFeatures={
 // with one emerald each; the collected state persists after leaving the house.
 for(let i=2;i<=5;i++){
  houseFeatures[i].push({
-  name:'Treasure Chest',x:i===2?82:54,y:i===2?55:32,w:13,h:i===2?21:13,
+  name:'Treasure Chest',x:i===2?82:i===3?3:54,y:i===2?55:i===3?55:32,w:i===3?12:13,h:i===2?21:i===3?18:13,
   shape:'inset(0 round 13%)',
-  text:i===2?'A blue-and-gold chest with a sturdy golden lock.':'A small wooden chest with a brass latch.'
+  text:i===2?'A blue-and-gold chest with a sturdy golden lock.':i===3?'A wooden storage chest with iron bands.':'A small wooden chest with a brass latch.'
  });
 }
 houseFeatures[1].find(f=>f.name==='Treasure Chest').text='A sturdy wooden chest with iron bands and a worn brass latch.';
@@ -884,7 +884,7 @@ function isEmeraldStorage(feature){
 function showInteriorDescription(feature){
  if(activeObject)return;
  let description=feature.text;
- if(isEmeraldStorage(feature)&&(quest.started||interiorHouse===1||interiorHouse===2)){
+ if(isEmeraldStorage(feature)&&(quest.started||interiorHouse===1||interiorHouse===2||interiorHouse===3)){
   if(!flags.has('emerald'+interiorHouse)){
    collectHouseEmerald();
    description+=' Inside the chest, you find one sparkling emerald and add it to your inventory.';
@@ -905,7 +905,7 @@ function updateTreehouseFeatures(room){
   const left=feature.x*width/100,right=(feature.x+feature.w)*width/100;
   const top=feature.y*height/100,bottom=(feature.y+feature.h)*height/100;
   const dx=Math.max(left-px,0,px-right),dy=Math.max(top-py,0,py-bottom);
-  const close=(interiorHouse===1||interiorHouse===2)?Math.hypot(dx,dy)<=35:
+  const close=(interiorHouse===1||interiorHouse===2||interiorHouse===3)?Math.hypot(dx,dy)<=35:
     Math.hypot((roomHero.x-feature.x-feature.w/2)*1.25,roomHero.y-feature.y-feature.h/2)<17;
   el.style.pointerEvents=close?'auto':'none';
   el.style.opacity=close?String(.78+.22*Math.sin(elapsed*5)):'0';
