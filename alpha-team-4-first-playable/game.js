@@ -881,6 +881,11 @@ houseFeatures[5].push({
  text:'A cartographer’s writing desk covered with maps, books and travel notes.'
 });
 houseFeatures[4].push({
+ name:'Wooden Storage Box',x:3,y:61,w:13,h:18,
+ shape:'inset(0 round 3%)',
+ text:'A sturdy wooden storage box tucked beside the workshop bench.'
+});
+houseFeatures[4].push({
  name:'Workshop Drawers',x:64,y:39,w:15,h:22,
  shape:'polygon(0 0,100% 0,100% 100%,0 100%)',
  text:'A sturdy workshop cabinet with rows of small drawers for tools and supplies.'
@@ -891,22 +896,22 @@ function currentInteriorFeatures(){
  const features=interiorHouse?(houseFeatures[interiorHouse]||[]):treehouseFeatures;
  if(!interiorHouse)return features.filter(f=>['Travel Chest','Books and Potions'].includes(f.name));
  if(interiorHouse===1)return features.filter(f=>f.name!=='Anchor Rug'); // Rug is decorative, not interactive.
- if(interiorHouse===4)return features.filter(f=>f.name==='Workshop Drawers');
+ if(interiorHouse===4)return features.filter(f=>['Workshop Drawers','Wooden Storage Box'].includes(f.name));
  if(interiorHouse===5)return features.filter(f=>f.name==='Cartographer’s Desk');
  return features.filter(f=>f.name==='Treasure Chest');
 }
 function isEmeraldStorage(feature){
- return interiorHouse>0&&feature.name==='Treasure Chest';
+ return interiorHouse>0&&(feature.name==='Treasure Chest'||(interiorHouse===4&&feature.name==='Wooden Storage Box'));
 }
 function showInteriorDescription(feature){
  if(activeObject)return;
  let description=feature.text;
- if(isEmeraldStorage(feature)&&(quest.started||interiorHouse===1||interiorHouse===2||interiorHouse===3)){
+ if(isEmeraldStorage(feature)&&(quest.started||interiorHouse===1||interiorHouse===2||interiorHouse===3||interiorHouse===4)){
   if(!flags.has('emerald'+interiorHouse)){
    collectHouseEmerald();
-   description+=' Inside the chest, you find one sparkling emerald and add it to your inventory.';
+   description+=' Inside, you find one sparkling emerald and add it to your inventory.';
   }else{
-   description+=' The chest is empty. You already collected its emerald.';
+   description+=' It is empty. You already collected its emerald.';
   }
  }
  activeObject={name:feature.name};titleEl.textContent=feature.name;
