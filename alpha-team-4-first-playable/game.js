@@ -204,6 +204,21 @@ panels[7].objects.push({
   copyEl.textContent='With a sweep of your sword, the thorny vines split and recoil. The southern trail is open!';
  }}]
 });
+// Panel 14: the western trail stays sealed until this route is introduced later.
+// Reuse the Panel 8 bramble artwork, rotated across the horizontal path.
+const westBramblesY=H*0.46;
+const westBramblesOutline=new Path2D('M -24 -93 L 22 -88 L 40 -58 L 25 -20 L 43 17 L 25 57 L 19 90 L -24 95 Z');
+panels[13].objects.push({
+ id:'westBrambles',name:'Thorny Brambles',x:65,y:westBramblesY,
+ outline:westBramblesOutline,reach:85,solid:true,
+ description:'A vicious snarl of thorny vines has swallowed the western trail. The branches twist so tightly together that there is no safe passage this way yet.',
+ draw(ctx){
+  ctx.save();ctx.translate(this.x,this.y);ctx.rotate(-Math.PI/2);
+  ctx.translate(-W/2,-(H-65));drawSouthBrambles(ctx);
+  ctx.restore();
+ },
+ actions:[]
+});
 // Panel 1 art: the treehouse doorway is part of the painted background.
 // Keep its interactive outline separate from the image and never repaint it.
 const DOOR_REACH=48;
@@ -846,6 +861,8 @@ function tryExit(side,axis){
  // The village gate is a clickable doorway, not an edge-of-screen exit.
  if(panel===2&&side==='east')return false;
  if(panel===8&&side==='south'&&!flags.has('southBramblesCleared'))return false;
+ if(panel===14&&side==='west')return false; // Brambles block the route for now.
+ if(panel===13&&side==='east')return false; // Do not enter behind the same barrier.
  panel=exit.to;
  if(side==='west')hero.x=bounds.right-6;
  if(side==='east')hero.x=bounds.left+6;
