@@ -751,22 +751,16 @@ panelFifteenSwordArt.src='./art/team4_panel_15_sword.webp';
 panelFifteenNoSwordArt.src='./art/team4_panel_15_no_sword.webp';
 let swordFlash=0;
 let swordRevealPending=false;
-const unicornSwordWarning='The blade has awakened, brave one! But before you face the goblin camp, you must find leather armor. The goblins hide spare pieces in bushes at the OUTER EDGES of the forest trails, never in the middle of the path. Begin by searching the thick bushes beside the trail near this sword clearing for a breastplate. Then explore the other forest paths and examine suspicious bushes along their edges for the helm, gauntlets, greaves, and boots. Look for the green glow when you approach a hiding place.';
+const unicornSwordWarning='A fine blade, brave traveler! But you will need armor before facing the goblins. They have been known to hide spare pieces of leather armor in the bushes along the path to their camp. Perhaps you can find what you need there.';
 function beginSwordReveal(){
  swordFlash=1.35;
  swordRevealPending=true;
 }
 function finishSwordReveal(){
+ // The unicorn appears in the clearing; the player must approach and TALK.
  swordRevealPending=false;
- const visitor=panels[14].objects.find(o=>o.id==='returningUnicorn');
- if(visitor){
-  activeObject=visitor;
-  titleEl.textContent='Unicorn';
-  showDialogueCard(unicornSwordWarning);
-  appendItemReward('a Sword');
-  flags.add('armorWarning');
- }
 }
+
 const panelSixteenArt=new Image();
 panelSixteenArt.src='./art/team4_panel_16.webp';
 const panelSeventeenArt=new Image();
