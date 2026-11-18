@@ -2009,11 +2009,23 @@
   // Developer-only panel teleporter. It does not grant or require inventory items.
   const debugBox=document.createElement("div");
   debugBox.style.cssText="position:absolute;right:12px;bottom:12px;z-index:50;font:700 13px Nunito,system-ui,sans-serif;color:#263d36";
-  debugBox.innerHTML='<button id="debug-toggle" type="button" style="border:2px solid #e7d7ad;border-radius:12px;background:#fff9e8;padding:10px;cursor:pointer;font-weight:800">DEBUG</button><div id="debug-panel" style="display:none;margin-top:6px;background:#fff9e8;border:2px solid #e7d7ad;border-radius:12px;padding:10px;box-shadow:0 5px 18px #0003"><label for="debug-destination">Teleport to panel</label><select id="debug-destination" style="display:block;margin:8px 0;padding:7px;width:100%"></select><button id="debug-go" type="button" style="background:#3d9b68;color:white;border:0;border-radius:8px;padding:8px 16px;cursor:pointer">GO</button></div>';
+  debugBox.innerHTML='<button id="debug-toggle" type="button" style="border:2px solid #e7d7ad;border-radius:12px;background:#fff9e8;padding:10px;cursor:pointer;font-weight:800">DEBUG</button><div id="debug-panel" style="display:none;margin-top:6px;background:#fff9e8;border:2px solid #e7d7ad;border-radius:12px;padding:10px;box-shadow:0 5px 18px #0003"><label for="debug-destination">Teleport to panel</label><select id="debug-destination" style="display:block;margin:8px 0;padding:7px;width:100%"></select><button id="debug-go" type="button" style="background:#3d9b68;color:white;border:0;border-radius:8px;padding:8px 16px;cursor:pointer">GO</button><div id="debug-commit" style="margin-top:10px;font-size:11px;font-weight:600;opacity:.8">GitHub commit: checking…</div></div>';
   document.querySelector("#game").appendChild(debugBox);
+  // Latest repository commit, which may be newer than a cached deployed page.
+  const debugCommit=debugBox.querySelector("#debug-commit");
+  async function refreshDebugCommit(){
+    try{
+      const response=await fetch("https://api.github.com/repos/clarkwyatt/prototypes/commits?path=alpha-team-1-first-playable/game.js&per_page=1",{cache:"no-store"});
+      if(!response.ok)throw new Error("GitHub unavailable");
+      const commits=await response.json();
+      if(!commits[0]?.sha)throw new Error("No commit found");
+      debugCommit.textContent="GitHub latest: "+commits[0].sha.slice(0,7);
+      debugCommit.title="Latest GitHub commit for game.js; cached game code may be older.";
+    }catch(e){debugCommit.textContent="GitHub commit unavailable";}
+  }
   const debugSelect=debugBox.querySelector("#debug-destination");
   for(let i=1;i<=25;i++){const option=document.createElement("option");option.value=i;option.textContent="Panel "+i;debugSelect.appendChild(option);}
-  debugBox.querySelector("#debug-toggle").onclick=()=>{const menu=debugBox.querySelector("#debug-panel");menu.style.display=menu.style.display==="none"?"block":"none";debugSelect.value=panel;};
+  debugBox.querySelector("#debug-toggle").onclick=()=>{const menu=debugBox.querySelector("#debug-panel");menu.style.display=menu.style.display==="none"?"block":"none";debugSelect.value=panel;if(menu.style.display==="block")refreshDebugCommit();};
   debugBox.querySelector("#debug-go").onclick=()=>{
     panel=Number(debugSelect.value);hero.x=panel===18?.065:.5;hero.y=panel===18?.5:.65;
     // Debug navigation must not reset completed dog encounters.
