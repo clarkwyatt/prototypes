@@ -781,7 +781,7 @@ const treehouseFeatures=[
 // Per-house inspectable scenery. Positions are percentages of each interior image.
 const houseFeatures={
  1:[
-  {name:'Captain’s Locker',x:13,y:24,w:15,h:38,shape:'inset(0 round 5%)',text:'The blue locker smells faintly of salt and adventure. A faded mark inside reads: Every great voyage begins with a brave first step.'},
+  {name:'Captain’s Locker',x:13,y:21,w:20,h:31,shape:'polygon(0 0,100% 0,100% 96%,8% 100%,0 94%)',text:'The blue locker smells faintly of salt and adventure. A faded mark inside reads: Every great voyage begins with a brave first step.'},
   {name:'Sailor’s Table',x:27,y:48,w:20,h:14,shape:'polygon(5% 10%,95% 10%,100% 80%,90% 100%,10% 100%,0 80%)',text:'A sturdy table laden with a lantern and a bowl of bright red fruit. Someone has been planning a voyage here—or perhaps just a very hearty breakfast.'},
   {name:'Treasure Chest',x:50,y:39,w:13,h:14,shape:'inset(0 round 13%)',text:'Iron bands hold this chest shut. Its worn lock has weathered more storms than most sailors, and it seems unwilling to surrender its secrets.'},
   {name:'Sea View Window',x:43,y:11,w:17,h:23,shape:'inset(0 round 7%)',text:'Beyond the glass, white sails and distant cliffs shimmer beneath a clear sky. The horizon seems to whisper that the world is much bigger than this room.'},
