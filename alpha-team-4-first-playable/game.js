@@ -92,9 +92,16 @@ panels[0].objects.push({
 // Panel 1: only the elevated treehouse structure is solid. The complete
 // winding dirt path and every stepping stone remain walkable.
 function panelOneBlocked(x,y){
- // Treehouse wall and trunk only, never the stairs, roots beside the path,
- // stones, or scenery across the forest trail.
- return x<215&&y<335;
+ // Panel 1's outer perimeter is solid. Only the mapped eastward trail
+ // into Panel 2 is open; north, south and west are dead ends.
+ const margin=26;
+ const eastTrail=Math.abs(y-H/2)<=PATH_EXIT_HALF_WIDTH-14;
+ if(y<margin||y>H-margin||x<margin)return true;
+ if(x>W-margin&&!eastTrail)return true;
+ // The elevated treehouse wall and trunk are solid. Keep its front
+ // doorway, stairs, winding trail and stepping stones approachable.
+ if(x<215&&y<335)return true;
+ return false;
 }
 const housePositions=[[210,230],[410,230],[610,230],[310,520],[570,520]];
 // Measured from approved Panel 2 art, converted from 1632x960 to 1120x720 canvas.
