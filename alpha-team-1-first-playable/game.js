@@ -614,8 +614,10 @@
         });
         if(m){m.used=true;carrying=true;}
       }else{
-        // Drop at the cat's feet; only nearby clicks are accepted.
-        if(Math.hypot((x-hero.x)*width,(y-hero.y)*height)<Math.min(width,height)*.14){
+        // Trackpad-friendly: any click in the maze drops the carried meat
+        // at the cat's feet, rather than requiring a tiny click near the cat.
+        // Do not place bait inside hedge collision.
+        if(!blocked(hero.x,hero.y)){
           const drop={x:hero.x,y:hero.y};carrying=false;
           meat.push({...drop,used:false,placed:true});
           // Dogs notice placed meat only when their cone actually turns toward it.
