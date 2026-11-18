@@ -325,7 +325,7 @@ panels[2].objects.push({
  }}]
 });
 // Step 4 foundation: find and equip the sword; combat will be added later.
-const swordOutline=new Path2D('M -7 -51 L 0 -69 L 7 -51 L 7 5 L 22 5 L 22 14 L 5 14 L 5 31 L -5 31 L -5 14 L -22 14 L -22 5 L -7 5 Z');
+const swordOutline=new Path2D('M -8 -64 L 8 -64 L 9 -30 L 24 -30 L 24 -17 L 10 -17 L 10 64 L 0 88 L -10 64 L -10 -17 L -24 -17 L -24 -30 L -9 -30 Z');
 function drawSword(ctx,x,y){
  ctx.save();ctx.translate(x,y);
  ctx.fillStyle='#cbd9e0';ctx.fill(swordOutline);
@@ -348,7 +348,7 @@ panels[14].objects.push({
  }}]
 });
 panels[14].objects.push({
- id:'forestSword',name:'Sword',x:790,y:450,outline:swordOutline,reach:95,
+ id:'forestSword',name:'Sword',x:805,y:270,outline:swordOutline,reach:110,
  description:'Half-hidden in the forest lies a blade of ancient craftsmanship. Its silver edge glimmers without a trace of rust, and a faint warmth stirs in the hilt as you draw near. Perhaps this is the forgotten weapon of which the Unicorn spoke.',
  isVisible:()=>!flags.has('swordEquipped'),
  draw(ctx){if(!(panelFifteenSwordArt.complete&&panelFifteenSwordArt.naturalWidth>0))drawSword(ctx,this.x,this.y)},
@@ -731,7 +731,7 @@ panelFifteenSwordArt.src='./art/team4_panel_15_sword.webp';
 panelFifteenNoSwordArt.src='./art/team4_panel_15_no_sword.webp';
 let swordFlash=0;
 let swordRevealPending=false;
-const unicornSwordWarning='The blade has awakened, brave one. Yet steel alone will not protect you from the goblin warband gathering beneath the dark trees. Goblins are cunning scavengers, known to hide their spare armor deep within the forest\'s thickest bushes. Search the tangled foliage along your journey. What they have carelessly concealed may yet save your life.';
+const unicornSwordWarning='The blade has awakened, brave one! But before you face the goblin camp, you must find leather armor. The goblins hide spare pieces in bushes at the OUTER EDGES of the forest trails, never in the middle of the path. Begin by searching the thick bushes beside the trail near this sword clearing for a breastplate. Then explore the other forest paths and examine suspicious bushes along their edges for the helm, gauntlets, greaves, and boots. Look for the green glow when you approach a hiding place.';
 function beginSwordReveal(){
  swordFlash=1.35;
  swordRevealPending=true;
