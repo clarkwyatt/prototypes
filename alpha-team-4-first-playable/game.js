@@ -593,7 +593,8 @@ function appendItemReward(item){
  copyEl.appendChild(reveal);
 }
 function showDialogueCard(message){
- copyEl.textContent=message;
+ // Preserve formatted reward nodes when converting action text into a dialogue card.
+ if(message!==undefined)copyEl.textContent=message;
  actionsEl.replaceChildren();
  const done=document.createElement('button');
  done.type='button';done.className='primary';done.textContent='Got it!';
@@ -626,7 +627,7 @@ function openPopup(object){
    updateInventory();
    // Once an action displays dialogue, hide EXAMINE/TALK and show only Got it!
    if(activeObject===selected&&!layer.hidden&&copyEl.textContent.trim()){
-    showDialogueCard(copyEl.textContent);
+    showDialogueCard();
    }
   });
   actionsEl.appendChild(button);
