@@ -170,6 +170,11 @@ const mapLinks=[
 for(const [id,side] of mapLinks)connect(id,side,side==='north'||side==='south'?W/2:H/2,PATH_EXIT_HALF_WIDTH);
 // Panel 9's organic path exits south right of center. Match Panel 14's
 // north entry to the same seam coordinate so both directions are traversable.
+// Panel 16's lower opening and Panel 21's upper entrance share a wide corridor.
+const campExit=panels[15].exits.south;
+if(campExit){campExit.at=W/2;campExit.halfWidth=155;}
+const campEntrance=panels[20].exits.north;
+if(campEntrance){campEntrance.at=W/2;campEntrance.halfWidth=155;}
 const forestSeamX=W*0.595;
 for(const [id,side] of [[9,'south'],[14,'north']]){
  const exit=panels[id-1].exits[side];
@@ -422,9 +427,9 @@ for(const piece of armorPieces){
 }
 // Step 5: lightweight combat prototype; goblins only live in the camp.
 const goblins=[
- {x:490,y:215,hp:50,lastAttack:-1,attackStart:-10,hitDone:false,variant:0},
- {x:720,y:340,hp:50,lastAttack:-1,attackStart:-10,hitDone:false,variant:1},
- {x:510,y:510,hp:50,lastAttack:-1,attackStart:-10,hitDone:false,variant:2}
+ {x:355,y:390,hp:50,lastAttack:-1,attackStart:-10,hitDone:false,variant:0},
+ {x:755,y:445,hp:50,lastAttack:-1,attackStart:-10,hitDone:false,variant:1},
+ {x:500,y:555,hp:50,lastAttack:-1,attackStart:-10,hitDone:false,variant:2}
 ];
 // Reusable, fully drawn sword with blade, crossguard, grip and pommel.
 // Tip points toward local negative Y; rotate the whole weapon to swing.
@@ -1072,7 +1077,7 @@ function forestFoliageBlocked(x,y){
   // Follow the painted lower bend: the trail is farther left before
   // curving back toward the south exit. Allow room for the hero's radius.
   const t=Math.max(0,Math.min(1,(y-390)/300));
-  const left=225+135*t,right=515+195*t;
+  const left=210+145*t,right=535+205*t;
   if(x>left&&x<right)return false;
  }
  // Deep corner foliage applies throughout the forest, not only to the
