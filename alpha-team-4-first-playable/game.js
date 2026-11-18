@@ -763,6 +763,10 @@ function finishSwordReveal(){
   flags.add('armorWarning');
  }
 }
+const panelSixteenArt=new Image();
+panelSixteenArt.src='./art/team4_panel_16.webp';
+const panelSeventeenArt=new Image();
+panelSeventeenArt.src='./art/team4_panel_17.webp';
 const panelEighteenArt=new Image();
 panelEighteenArt.src='./art/team4_panel_18.webp';
 const panelThirteenArt=new Image();
@@ -793,6 +797,10 @@ function draw(){
   ctx.drawImage(panelNineArt,0,0,W,H);
  }else if(panel===13&&panelThirteenArt.complete&&panelThirteenArt.naturalWidth>0){
   ctx.drawImage(panelThirteenArt,0,0,W,H);
+ }else if(panel===16&&panelSixteenArt.complete&&panelSixteenArt.naturalWidth>0){
+  ctx.drawImage(panelSixteenArt,0,0,W,H);
+ }else if(panel===17&&panelSeventeenArt.complete&&panelSeventeenArt.naturalWidth>0){
+  ctx.drawImage(panelSeventeenArt,0,0,W,H);
  }else if(panel===18&&panelEighteenArt.complete&&panelEighteenArt.naturalWidth>0){
   ctx.drawImage(panelEighteenArt,0,0,W,H);
  }else if(panel===14&&panelFourteenArt.complete&&panelFourteenArt.naturalWidth>0){
