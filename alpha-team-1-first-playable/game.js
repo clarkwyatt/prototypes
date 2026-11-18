@@ -142,6 +142,19 @@
         p.hidden=false;actions.replaceChildren(button("OK",closeInteraction));
       }));
     }
+    if(panel===16&&type==="VILLAGE_ART"&&target.title==="Wooden Gate"&&doorOpen){
+      options.push(button("ENTER GATE",()=>{
+        closeInteraction();
+        // The path enters Panel 17 from its upper-left western opening.
+        // Check the landing against Panel 17 collision before moving.
+        const oldPanel=panel,oldX=hero.x,oldY=hero.y;
+        panel=17;
+        const landings=[[.085,.34],[.105,.34],[.085,.39],[.13,.40],[.16,.43]];
+        const landing=landings.find(([x,y])=>!blocked(x,y));
+        if(landing){hero.x=landing[0];hero.y=landing[1];}
+        else{panel=oldPanel;hero.x=oldX;hero.y=oldY;}
+      }));
+    }
     if(panel===21&&type==="VILLAGE_ART"&&target.title==="Alchemist\'s Cottage"&&!hasPotion&&!forceFieldRemoved)options.push(button("GET POTION",()=>{
       hasPotion=true;
       p.textContent="You found a Magic Potion! It has been added to your inventory.";
@@ -291,7 +304,7 @@
   ];
   function villageTargets(){
     const art=panel===11?panel11Hotspots:panel===16?panel16Hotspots:panel===21?panel21Hotspots:panel===12?panel12Hotspots:panel===17?panel17Hotspots:(villageHotspots[panel]||[]);
-    if(panel===16&&doorOpen)return art.filter(entry=>entry[0]!=="Wooden Gate").map(([title,description,x,y,w,h],i)=>({type:"VILLAGE_ART",title,description,x,y,w,h,id:i}));
+    // Keep the wooden gate interactive after unlocking so it can be clicked to enter Panel 17.
     if(panel===6&&villageGateOpen)return art.filter(entry=>entry[0]!=="Village Gate").map(([title,description,x,y,w,h],i)=>({type:"VILLAGE_ART",title,description,x,y,w,h,id:i}));
     return art.map(([title,description,x,y,w,h],i)=>({
       type:"VILLAGE_ART",title,description,x,y,w,h,id:i
@@ -325,6 +338,11 @@
         const tx=home?.50:cottage?.815:.46;
         const ty=home?.615:cottage?.665:.385;
         d=Math.hypot((hero.x-tx)*width,(hero.y-ty)*height);
+      }else if(panel===16&&target.title==="Wooden Gate"){
+        // Reach the gate from the open trail, not its center behind the posts.
+        const dx=Math.max(0,Math.abs(hero.x-.895)-.065)*width;
+        const dy=Math.max(0,.255-hero.y,hero.y-.445)*height;
+        d=Math.hypot(dx,dy);
       }else if(target.type==="FORCE"&&panel===11){
         // The field is a tall barrier; approach its accessible left edge.
         // Its old center was behind the collision wall and unreachable.
@@ -342,7 +360,8 @@
       }else{
         d=Math.hypot((hero.x-target.x)*width,(hero.y-target.y)*height);
       }
-      const reach=target.type==="FORCE"&&panel===11?unit*.105:
+      const reach=panel===16&&target.title==="Wooden Gate"?unit*.085:
+        target.type==="FORCE"&&panel===11?unit*.105:
         home||cottage?unit*.085:
         dock?unit*.075:
         sign?unit*.045:
