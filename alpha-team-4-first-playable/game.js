@@ -416,7 +416,7 @@ for(const piece of armorPieces){
    const count=armorPieces.filter(p=>flags.has('equipped'+p.name)).length;
    setQuest(count===armorPieces.length?'Explore the Goblin Camp':'Find Leather Armor ('+count+'/5)');
    copyEl.textContent=armorDescriptions[piece.name];
-   appendItemReward('Leather '+piece.name);
+   appendItemReward(piece.name==='Gauntlets'?'Leather Gauntlets':'Leather '+piece.name);
   }}]
  });
 }
@@ -592,7 +592,7 @@ layer.addEventListener('keydown',e=>{
 // Match A Village Tale: action choices are replaced by the dialogue card's close button.
 function appendItemReward(item){
  const reveal=document.createElement('div');
- const phrase=/^(a |an |the |some |\d)/i.test(item)?item:'a '+item;
+ const phrase=/^(a |an |the |some |\d)/i.test(item)||/\bgauntlets$/i.test(item)?item:'a '+item;
  reveal.textContent='YOU GOT '+phrase.toUpperCase()+'!';
  Object.assign(reveal.style,{marginTop:'14px',fontWeight:'900',fontSize:'1.12em',letterSpacing:'.03em',color:'#147c4a'});
  copyEl.appendChild(reveal);
