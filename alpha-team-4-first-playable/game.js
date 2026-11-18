@@ -226,7 +226,7 @@ panels[1].objects.push({
  draw(ctx){drawVillager(ctx,this.x,this.y)},
  actions:[{label:'TALK',primary:true,run:()=>{
   if(quest.gateKey||quest.gateOpen){copyEl.textContent='Good luck on your adventure!';return}
-  if(!quest.started){quest.started=true;setQuest('Find 5 Emeralds (0/5)');copyEl.textContent='Please open the chest in each of the five houses to find an emerald.';return}
+  if(!quest.started){quest.started=true;setQuest('Find 5 Emeralds ('+quest.emeralds+'/5)');copyEl.textContent='Please open the chest in each of the five houses to find an emerald.';return}
   if(quest.emeralds<5){copyEl.textContent='You have '+quest.emeralds+' of the five emeralds.';return}
   quest.gateKey=true;for(const name of [...inventory])if(name.endsWith(' / 5 Emeralds'))removeItem(name);addItem('Gate Key');setQuest('Unlock the Village Gate');copyEl.textContent='Thank you! Here is the key to the gate.';
  }}]
@@ -619,7 +619,7 @@ function enterHouse(index){
  showTreehouse();
 }
 function collectHouseEmerald(){
- if(!quest.started||!interiorHouse||flags.has('emerald'+interiorHouse))return;
+ if(!interiorHouse||flags.has('emerald'+interiorHouse))return;
  flags.add('emerald'+interiorHouse);quest.emeralds++;
  for(const name of [...inventory])if(name.endsWith(' / 5 Emeralds'))removeItem(name);
  addItem(quest.emeralds+' / 5 Emeralds');
@@ -875,7 +875,7 @@ function currentInteriorFeatures(){
  // Selective highlights: doors handled separately, quest storage first.
  const features=interiorHouse?(houseFeatures[interiorHouse]||[]):treehouseFeatures;
  if(!interiorHouse)return features.filter(f=>['Travel Chest','Books and Potions'].includes(f.name));
- if(interiorHouse===1)return features.filter(f=>['Treasure Chest','Captain’s Locker'].includes(f.name));
+ if(interiorHouse===1)return features; // All painted House 1 objects can highlight.
  return features.filter(f=>f.name==='Treasure Chest');
 }
 function isEmeraldStorage(feature){
@@ -884,7 +884,7 @@ function isEmeraldStorage(feature){
 function showInteriorDescription(feature){
  if(activeObject)return;
  let description=feature.text;
- if(isEmeraldStorage(feature)&&quest.started){
+ if(isEmeraldStorage(feature)&&(quest.started||interiorHouse===1)){
   if(!flags.has('emerald'+interiorHouse)){
    collectHouseEmerald();
    description+=' Inside the chest, you find one sparkling emerald and add it to your inventory.';
@@ -898,8 +898,15 @@ function showInteriorDescription(feature){
 function updateTreehouseFeatures(room){
  for(const feature of currentInteriorFeatures()){
   const el=room.querySelector('[data-room-feature="'+feature.name+'"]');if(!el)continue;
-  const cx=feature.x+feature.w/2,cy=feature.y+feature.h/2;
-  const close=Math.hypot((roomHero.x-cx)*1.25,roomHero.y-cy)<17;
+  // Test a 10 CSS-pixel trigger from the actual feature rectangle.
+  // Room percentages must be converted using the displayed popup dimensions.
+  const width=room.clientWidth,height=room.clientHeight;
+  const px=roomHero.x*width/100,py=(roomHero.y+4)*height/100;
+  const left=feature.x*width/100,right=(feature.x+feature.w)*width/100;
+  const top=feature.y*height/100,bottom=(feature.y+feature.h)*height/100;
+  const dx=Math.max(left-px,0,px-right),dy=Math.max(top-py,0,py-bottom);
+  const close=interiorHouse===1?Math.hypot(dx,dy)<=10:
+    Math.hypot((roomHero.x-feature.x-feature.w/2)*1.25,roomHero.y-feature.y-feature.h/2)<17;
   el.style.pointerEvents=close?'auto':'none';
   el.style.opacity=close?String(.78+.22*Math.sin(elapsed*5)):'0';
  }
