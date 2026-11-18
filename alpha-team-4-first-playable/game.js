@@ -16,22 +16,37 @@ const treehouseDoorShape='polygon(8% 100%,8% 30%,12% 20%,19% 10%,29% 3%,50% 0%,7
 const treehouseDoorBounds={left:39, right:61, top:65, bottom:100};
 function treehouseDoorNearby(){return Math.abs(roomHero.x-50)<17&&roomHero.y>=49&&roomHero.y<=67;}
 function treehouseFloorBlocked(x,y){
- if(x<29||x>79||y<31||y>76)return true;
- if(interiorHouse){
-  if(x>39&&x<61&&y>64)return true; // Solid painted door
-  // Keep the center rug and route to the exit completely clear.
-  if(interiorHouse===1){
-   if(x>12&&x<29&&y>24&&y<60)return true; // Locker
-   if(x>27&&x<47&&y>43&&y<59)return true; // Table and stools
-   if(x>50&&x<64&&y>39&&y<54)return true; // Chest
-   if(x>75&&y>38&&y<72)return true; // Bed and basket
-  }
+ // Room movement is expressed in percentages of the INNER .treehouse-room
+ // (the same coordinate space as the painted image and the room hero).
+ // These are the boy's floor-contact coordinates, not screen/canvas pixels.
+ if(interiorHouse===1){
+  const fy=y+4; // the sprite is centered at y; its feet extend below that
+  if(x<5||x>95||fy<13||fy>91)return true;
+  // Top wall and mounted shelving, with open floor beneath.
+  if(fy<24)return true;
+  // Locker and hanging rope at left; stay out of the painted cabinet.
+  if(x<24&&fy<55)return true;
+  // Table, stools and fruit bowl: close fitting footprint.
+  if(x>21&&x<47&&fy>39&&fy<59)return true;
+  // Main chest, baskets, barrel and bed on the right.
+  if(x>49&&x<62&&fy>36&&fy<51)return true;
+  if(x>63&&x<77&&fy>34&&fy<49)return true;
+  if(x>75&&fy>39&&fy<72)return true;
+  // Lower left storage chest and coil of rope.
+  if(x<22&&fy>63&&fy<84)return true;
+  // Lower right basket and crate.
+  if(x>76&&fy>67&&fy<86)return true;
+  // Solid painted exit door, while allowing approach from the rug.
+  if(x>39&&x<61&&fy>72)return true;
   return false;
  }
- // Bottom-center door occupies the foreground: feet cannot overlap its painted face.
+ // Preserve the other rooms until their art is mapped individually.
+ if(x<29||x>79||y<31||y>76)return true;
+ if(interiorHouse){
+  if(x>39&&x<61&&y>64)return true;
+  return false;
+ }
  if(x>treehouseDoorBounds.left&&x<treehouseDoorBounds.right&&y>65)return true;
- // Furniture silhouettes: table/stools left, bed and chest right.
- // Table ends around x=44%; leave its right side and rug unobstructed.
  if(x<43&&y>35&&y<64)return true;
  if(x>69&&y>31&&y<69)return true;
  return false;
