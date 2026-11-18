@@ -340,36 +340,30 @@ const armorPieces=[
  {panel:17,name:'Greaves',x:815,y:215},
  {panel:16,name:'Boots',x:300,y:215}
 ];
-const armorOutline=new Path2D('M -19 -17 H 19 V 17 H -19 Z');
-function drawArmorPickup(ctx,x,y,name){
- ctx.save();ctx.translate(x,y);
- ctx.fillStyle='#7b5434';ctx.strokeStyle='#d6a46c';ctx.lineWidth=3;
- if(name==='Helm'){
-  ctx.beginPath();ctx.arc(0,0,18,Math.PI,Math.PI*2);ctx.lineTo(18,13);ctx.lineTo(7,13);ctx.lineTo(7,2);ctx.lineTo(-7,2);ctx.lineTo(-7,13);ctx.lineTo(-18,13);ctx.closePath();ctx.fill();ctx.stroke();
- }else if(name==='Breastplate'){
-  ctx.beginPath();ctx.moveTo(-17,-18);ctx.lineTo(-8,-23);ctx.lineTo(8,-23);ctx.lineTo(17,-18);ctx.lineTo(22,-7);ctx.lineTo(12,-2);ctx.lineTo(11,22);ctx.lineTo(-11,22);ctx.lineTo(-12,-2);ctx.lineTo(-22,-7);ctx.closePath();ctx.fill();ctx.stroke();
- }else{
-  const offset=name==='Gauntlets'?14:12;
-  for(const side of [-1,1]){
-   ctx.fillRect(side*offset-9,-18,18,35);ctx.strokeRect(side*offset-9,-18,18,35);
-  }
- }
- ctx.restore();
-}
+// Each armor piece is concealed in a patch of outer foliage; no armor art is drawn.
+const foliageOutline=new Path2D('M -49 17 Q -64 -7 -44 -26 Q -35 -51 -8 -38 Q 17 -53 37 -31 Q 62 -20 49 7 Q 56 31 25 35 Q -5 48 -25 33 Q -48 39 -49 17 Z');
+const armorDescriptions={
+ Breastplate:'The branches are tangled around a battered leather breastplate. A goblin must have hidden it here, then forgotten its hiding place.',
+ Helm:'Beneath the leaves rests a leather helm, tucked away from prying eyes by a careless goblin.',
+ Gauntlets:'A pair of sturdy leather gauntlets lies beneath the brambles, wrapped in damp moss.',
+ Greaves:'Two leather greaves have been pushed into the undergrowth, nearly swallowed by the ferns.',
+ Boots:'Deep in the thicket, a pair of goblin-stashed leather boots awaits a new owner.'
+};
 for(const piece of armorPieces){
  panels[piece.panel-1].objects.push({
-  id:'armor'+piece.name,name:'Leather '+piece.name,x:piece.x,y:piece.y,
-  outline:armorOutline,reach:105,
-  description:'A piece of leather armor left behind on the forest floor.',
+  id:'armor'+piece.name,name:'Dense Foliage',x:piece.x,y:piece.y,
+  outline:foliageOutline,reach:105,
+  description:'The leaves here have been disturbed. Something may be hidden beneath them.',
   isVisible:()=>flags.has('swordEquipped')&&!flags.has('equipped'+piece.name),
-  draw(ctx){drawArmorPickup(ctx,this.x,this.y,piece.name)},
-  actions:[{label:'EQUIP',primary:true,run:()=>{
+  // The existing foliage belongs to the background artwork, not a new drawn object.
+  draw(){},
+  actions:[{label:'SEARCH',primary:true,run:()=>{
    if(flags.has('equipped'+piece.name))return;
    flags.add('equipped'+piece.name);
    updateEquipment();
    const count=armorPieces.filter(p=>flags.has('equipped'+p.name)).length;
    setQuest(count===armorPieces.length?'Explore the Goblin Camp':'Find Leather Armor ('+count+'/5)');
-   closePopup();
+   copyEl.textContent=armorDescriptions[piece.name]+'\\n\\nYOU FOUND LEATHER '+piece.name.toUpperCase()+'!';
   }}]
  });
 }
@@ -690,7 +684,7 @@ panelFifteenSwordArt.src='./art/team4_panel_15_sword.webp';
 panelFifteenNoSwordArt.src='./art/team4_panel_15_no_sword.webp';
 let swordFlash=0;
 let swordRevealPending=false;
-const unicornSwordWarning='The blade has awakened, brave one. Yet its light alone will not shield you from the shadows ahead. A goblin warband gathers beneath the dark trees. Seek the scattered pieces of leather armor before you dare enter their camp.';
+const unicornSwordWarning='The blade has awakened, brave one. Yet steel alone will not protect you from the goblin warband gathering beneath the dark trees. Goblins are cunning scavengers, known to hide their spare armor deep within the forest\'s thickest bushes. Search the tangled foliage along your journey. What they have carelessly concealed may yet save your life.';
 function beginSwordReveal(){
  swordFlash=1.35;
  swordRevealPending=true;
