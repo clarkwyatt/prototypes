@@ -43,10 +43,14 @@ canvas{display:block;width:100%;height:100%;touch-action:none}
 .room-door{background:transparent;border:0;box-shadow:none;color:transparent}.room-door:hover,.room-door:focus-visible{outline:4px solid #70df89;outline-offset:2px}
 @media(max-width:700px){.treehouse-room{width:94vw;height:min(530px,75vh);border-width:7px}.room-window{width:75px;height:70px}.room-door{width:104px;height:76px}}
 .room-hero{position:absolute;left:50%;top:57%;transform:translate(-50%,-50%);width:70px;height:91px;pointer-events:none;z-index:2}.room-door{z-index:3}
-#debug-nav{position:absolute;right:12px;bottom:12px;z-index:7;display:flex;align-items:center;gap:7px;padding:8px 10px;background:#fff9e9ee;border:2px solid #d9c69c;border-radius:12px;box-shadow:0 3px 12px #20392b45;font:700 12px system-ui,sans-serif;color:#385342}
-#debug-nav select{font:inherit;padding:5px;border:1px solid #b8b09a;border-radius:7px;background:white;color:#243c2e}
-#debug-nav button{font:inherit;padding:6px 10px;border:0;border-radius:7px;background:#358b5d;color:white;cursor:pointer}
-#build-commit{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);z-index:12;padding:4px 9px;border-radius:7px;background:#173c35dd;color:#fff9e9;font:600 11px system-ui,sans-serif;letter-spacing:.03em;pointer-events:none;white-space:nowrap}
+#debug-nav{position:absolute;right:12px;bottom:12px;z-index:12;font:700 12px system-ui,sans-serif;color:#385342}
+#debug-toggle{padding:9px 14px;border:2px solid #d9c69c;border-radius:12px;background:#fff9e9ee;color:#385342;font:inherit;cursor:pointer;box-shadow:0 3px 12px #20392b45}
+#debug-menu{position:absolute;right:0;bottom:calc(100% + 8px);width:185px;padding:12px;background:#fff9e9;border:2px solid #d9c69c;border-radius:12px;box-shadow:0 4px 16px #20392b65}
+#debug-menu[hidden]{display:none}
+#debug-menu label{display:block;margin-bottom:5px}
+#debug-menu select{width:100%;font:inherit;padding:6px;border:1px solid #b8b09a;border-radius:7px;background:white;color:#243c2e}
+#debug-go{margin-top:8px;width:100%;font:inherit;padding:7px;border:0;border-radius:7px;background:#358b5d;color:white;cursor:pointer}
+#build-commit{margin-top:10px;padding-top:9px;border-top:1px solid #d9c69c;font:600 11px system-ui,sans-serif;color:#385342;overflow-wrap:anywhere}
 </style></head><body><main id="game">
 <canvas id="world" tabindex="-1" aria-label="Team 4 top-down game"></canvas>
 <div class="hud"><div class="quest"><strong>Quest</strong><span id="quest-text" aria-live="polite"></span></div><div class="center-hud"><div class="inventory"><span>Inventory</span><b id="items" aria-live="polite">Empty</b></div></div></div><div class="right-hud"><div class="compass" role="img" aria-label="Compass"><b class="n">N</b><b class="e">E</b><b class="s">S</b><b class="w">W</b><i></i></div><div class="equipment"><svg class="paper-doll" viewBox="0 0 80 118" role="img" aria-label="Leather armor equipment status">
@@ -58,17 +62,31 @@ canvas{display:block;width:100%;height:100%;touch-action:none}
 </svg></div></div>
 <div class="controls"><strong>Controls</strong>Move: WASD / Arrow Keys · Sword: Right Mouse Button</div>
 <div id="popup-layer" class="popup-layer" hidden><div class="popup" role="dialog" aria-modal="true" aria-labelledby="popup-title"><button id="popup-close" type="button" class="close" aria-label="Close">×</button><h2 id="popup-title"></h2><div id="popup-copy" aria-live="polite"></div><div class="actions" id="popup-actions"></div></div></div>
-<div id="build-commit" aria-label="Game commit">Commit: checking…</div><div id="debug-nav"><label for="debug-panel">Debug</label><select id="debug-panel" aria-label="Jump to panel"></select><button id="debug-go" type="button">GO</button></div><div id="treehouse-scene"><div class="treehouse-room" role="group" aria-label="Treehouse interior"><img class="treehouse-art" src="./art/team4_treehouse_interior.webp" alt="" decoding="async"><div class="room-window"></div><div class="room-bed"></div><div class="room-table"></div><div class="room-rug"></div><canvas id="room-hero" class="room-hero" width="100" height="130" aria-label="Boy"></canvas><button id="treehouse-door" class="room-door" aria-label="Exit treehouse"></button></div></div></main><script>
-// Display the latest main-branch commit at bottom center. The label reflects
+<div id="debug-nav"><button id="debug-toggle" type="button" aria-expanded="false" aria-controls="debug-menu">Debug</button><div id="debug-menu" hidden><label for="debug-panel">Teleport to panel</label><select id="debug-panel" aria-label="Jump to panel"></select><button id="debug-go" type="button">GO</button><div id="build-commit" aria-label="Latest GitHub commit">Commit: checking…</div></div></div><div id="treehouse-scene"><div class="treehouse-room" role="group" aria-label="Treehouse interior"><img class="treehouse-art" src="./art/team4_treehouse_interior.webp" alt="" decoding="async"><div class="room-window"></div><div class="room-bed"></div><div class="room-table"></div><div class="room-rug"></div><canvas id="room-hero" class="room-hero" width="100" height="130" aria-label="Boy"></canvas><button id="treehouse-door" class="room-door" aria-label="Exit treehouse"></button></div></div></main><script>
+const debugToggle=document.getElementById('debug-toggle');
+const debugMenu=document.getElementById('debug-menu');
+debugToggle.addEventListener('click',()=>{
+ const open=debugMenu.hidden;
+ debugMenu.hidden=!open;
+ debugToggle.setAttribute('aria-expanded',String(open));
+});
+document.addEventListener('pointerdown',event=>{
+ if(!document.getElementById('debug-nav').contains(event.target)){
+  debugMenu.hidden=true;
+  debugToggle.setAttribute('aria-expanded','false');
+ }
+});
+// Display the latest main-branch commit inside the debug menu. The label reflects
 // GitHub's revision; GitHub Pages publication can lag behind the commit.
 (async()=>{
  const label=document.getElementById('build-commit');
+ label.textContent='Commit: bc24ecf (last known)';
  try{
   const response=await fetch('https://api.github.com/repos/clarkwyatt/prototypes/commits?per_page=1',{cache:'no-store'});
   if(!response.ok)throw new Error('GitHub revision unavailable');
   const commits=await response.json();
   label.textContent=commits[0]?.sha?'Commit: '+commits[0].sha.slice(0,7):'Commit: unavailable';
- }catch(_){label.textContent='Commit: unavailable'}
+ }catch(_){/* Retain last-known revision when GitHub API is unavailable. */}
 })();
 // Load fresh game logic inside the Google Sites iframe without changing its embed URL.
 const gameScript=document.createElement('script');
