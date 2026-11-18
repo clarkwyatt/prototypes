@@ -477,9 +477,19 @@ function drawGoblins(){
  }
 }
 function drawCombatHUD(){
+ // Combat health floats above the player rather than occupying the HUD.
  if(panel!==21)return;
- ctx.save();ctx.fillStyle='#fff8e9';ctx.fillRect(18,100,155,33);
- ctx.fillStyle='#294a38';ctx.font='bold 14px sans-serif';ctx.fillText('HP '+heroHP+'/100',27,121);ctx.restore();
+ const width=56,height=7,x=hero.x-width/2,y=hero.y-57;
+ const ratio=Math.max(0,Math.min(1,heroHP/100));
+ const color=ratio<.25?'#e44942':ratio<=.5?'#f2c644':'#42c76b';
+ // Critical health pulses visibly without hiding the bar completely.
+ const alpha=ratio<.25?.35+.65*(.5+.5*Math.sin(elapsed*13)):1;
+ ctx.save();
+ ctx.globalAlpha=alpha;
+ ctx.fillStyle='rgba(18,34,25,.85)';ctx.beginPath();ctx.roundRect(x-2,y-2,width+4,height+4,4);ctx.fill();
+ ctx.fillStyle='#343c37';ctx.fillRect(x,y,width,height);
+ ctx.fillStyle=color;if(ratio>0)ctx.fillRect(x,y,width*ratio,height);
+ ctx.restore();
 }
 function drawSwing(){
  if(!flags.has('swordEquipped')||elapsed>swingUntil)return;
