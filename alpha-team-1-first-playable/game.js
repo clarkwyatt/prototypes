@@ -689,6 +689,28 @@
     }
     return false;
   }
+  // Short synthesized double bark, triggered only when a dog first spots the cat.
+  let barkAudioContext=null;
+  function playGuardDogBark(){
+    try{
+      const AC=window.AudioContext||window.webkitAudioContext;
+      if(!AC)return;
+      barkAudioContext??=new AC();
+      if(barkAudioContext.state==="suspended")barkAudioContext.resume().catch(()=>{});
+      const ctx=barkAudioContext,now=ctx.currentTime;
+      for(const [offset,duration,pitch] of [[0,.115,180],[.17,.15,145]]){
+        const osc=ctx.createOscillator(),gain=ctx.createGain(),filter=ctx.createBiquadFilter();
+        osc.type="sawtooth";filter.type="lowpass";filter.frequency.value=850;
+        osc.frequency.setValueAtTime(pitch*1.5,now+offset);
+        osc.frequency.exponentialRampToValueAtTime(pitch*.65,now+offset+duration);
+        gain.gain.setValueAtTime(.0001,now+offset);
+        gain.gain.exponentialRampToValueAtTime(.13,now+offset+.012);
+        gain.gain.exponentialRampToValueAtTime(.0001,now+offset+duration);
+        osc.connect(filter);filter.connect(gain);gain.connect(ctx.destination);
+        osc.start(now+offset);osc.stop(now+offset+duration+.01);
+      }
+    }catch(e){console.warn("Guard dog bark unavailable",e);}
+  }
   function updateDogs(dt){
     if(panel!==18||caught||dialogOpen)return;
     mazeClock+=dt;
@@ -714,6 +736,7 @@
       }
       // The cat is always caught when visible, even if meat is in the same cone.
       if(sight(d,hero.x,hero.y) || catOverlapsVisionCone(d)){
+        if(d.mode!=="chase")playGuardDogBark();
         d.mode="chase";chaseTime=0;
       }else if(d.mode==="watch"){
         const bait=meat.find(m=>m.placed&&!m.used&&!m.claimed&&sight(d,m.x,m.y));
