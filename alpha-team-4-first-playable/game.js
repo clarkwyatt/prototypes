@@ -19,6 +19,22 @@ function treehouseFloorBlocked(x,y){
  // Room movement is expressed in percentages of the INNER .treehouse-room
  // (the same coordinate space as the painted image and the room hero).
  // These are the boy's floor-contact coordinates, not screen/canvas pixels.
+ if(interiorHouse===2){
+  // House 2 study: room-relative percentages, using the boy's feet.
+  const fy=y+4;
+  if(x<5||x>95||fy<16||fy>91)return true;
+  if(fy<29)return true;
+  if(x<17&&fy<69)return true; // globe, drawers, plants and bookcase
+  if(x>17&&x<39&&fy>35&&fy<65)return true; // desk, chair and lamp
+  if(x>39&&x<64&&fy<48)return true; // window cabinet
+  if(x>64&&x<80&&fy<55)return true; // tall cabinet and drawers
+  if(x>80&&fy<58)return true; // right-hand cabinets
+  if(x>79&&fy>55&&fy<78)return true; // emerald chest and scroll crate
+  if(x>91&&fy>77)return true; // lower-right books and planter
+  if(x<13&&fy>79)return true; // lower-left planter
+  if(x>39&&x<61&&fy>72)return true; // painted exit door
+  return false;
+ }
  if(interiorHouse===1){
   const fy=y+4; // the sprite is centered at y; its feet extend below that
   if(x<5||x>95||fy<13||fy>91)return true;
@@ -797,7 +813,7 @@ const houseFeatures={
 // with one emerald each; the collected state persists after leaving the house.
 for(let i=2;i<=5;i++){
  houseFeatures[i].push({
-  name:'Treasure Chest',x:54,y:32,w:13,h:13,
+  name:'Treasure Chest',x:i===2?82:54,y:i===2?55:32,w:13,h:i===2?21:13,
   shape:'inset(0 round 13%)',
   text:'A small wooden chest with a brass latch.'
  });
