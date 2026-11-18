@@ -967,6 +967,7 @@ function tryExit(side,axis){
  if(panel===14&&side==='west'&&!flags.has('westBramblesCleared'))return false;
  if(panel===13&&side==='east'&&!flags.has('westBramblesCleared'))return false;
  panel=exit.to;
+ if(panel===2&&!quest.started&&!quest.gateKey&&!quest.gateOpen)setQuest('Talk to Old Villager');
  if(side==='west')hero.x=bounds.right-6;
  if(side==='east')hero.x=bounds.left+6;
  if(side==='north')hero.y=bounds.bottom-6;
