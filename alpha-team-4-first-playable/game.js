@@ -378,7 +378,7 @@ panels[14].objects.push({
   if(flags.has('swordEquipped'))return;
   flags.add('swordEquipped');
   addItem('Sword (Equipped)');
-  setQuest('Find Leather Armor');
+  setQuest('Talk to the Unicorn');
   closePopup();
   beginSwordReveal();
  }}]
