@@ -590,7 +590,19 @@
       const bounds=canvas.getBoundingClientRect();
       const x=(e.clientX-bounds.left)/bounds.width,y=(e.clientY-bounds.top)/bounds.height;
       if(!carrying){
-        const m=meat.find(m=>!m.used&&Math.hypot((m.x-x)*width,(m.y-y)*height)<Math.min(width,height)*.05&&Math.hypot((m.x-hero.x)*width,(m.y-hero.y)*height)<Math.min(width,height)*.10);
+        const unit=Math.min(width,height);
+        // Give all four meat pickups a forgiving click target and reach.
+        // Require a clear approach so meat cannot be grabbed through hedges.
+        const m=meat.find(m=>{
+          if(m.used||m.placed)return false;
+          if(Math.hypot((m.x-x)*width,(m.y-y)*height)>unit*.07)return false;
+          if(Math.hypot((m.x-hero.x)*width,(m.y-hero.y)*height)>unit*.17)return false;
+          for(let i=1;i<=12;i++){
+            const t=i/12;
+            if(blocked(hero.x+(m.x-hero.x)*t,hero.y+(m.y-hero.y)*t))return false;
+          }
+          return true;
+        });
         if(m){m.used=true;carrying=true;}
       }else{
         // Drop at the cat's feet; only nearby clicks are accepted.
