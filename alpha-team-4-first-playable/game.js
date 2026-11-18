@@ -390,7 +390,7 @@ const armorPieces=[
  {panel:13,name:'Helm',x:825,y:220},
  {panel:18,name:'Gauntlets',x:820,y:215},
  {panel:17,name:'Greaves',x:815,y:215},
- {panel:16,name:'Boots',x:300,y:215}
+ {panel:16,name:'Boots',x:210,y:535}
 ];
 // Each armor piece is concealed in a patch of outer foliage; no armor art is drawn.
 const foliageOutline=new Path2D('M -49 17 Q -64 -7 -44 -26 Q -35 -51 -8 -38 Q 17 -53 37 -31 Q 62 -20 49 7 Q 56 31 25 35 Q -5 48 -25 33 Q -48 39 -49 17 Z');
