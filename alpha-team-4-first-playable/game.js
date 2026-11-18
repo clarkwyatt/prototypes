@@ -49,8 +49,10 @@ function treehouseFloorBlocked(x,y){
   if(x<16&&fy>62&&fy<82)return true; // lower-left wooden crate
   // Chopping stump, axe and upright boards beneath the window.
   if(x>45&&x<60&&fy>38&&fy<60)return true;
-  // Drawers and locked storage cupboard along the right wall.
-  if(x>63&&fy>30&&fy<62)return true;
+  // Right-hand drawer cabinet: allow approach along its front and left side.
+  if(x>64&&x<80&&fy>38&&fy<58)return true;
+  // Tall locked cupboard and barrel, behind the approach to the drawers.
+  if(x>80&&fy>25&&fy<59)return true;
   // Two stacked crates along the right edge.
   if(x>82&&fy>53&&fy<83)return true;
   // Keep the foreground doorway solid while leaving both rugs walkable.
@@ -870,12 +872,20 @@ for(let i=2;i<=5;i++){
   text:i===2?'A blue-and-gold chest with a sturdy golden lock.':i===3?'A wooden storage chest with iron bands.':'A small wooden chest with a brass latch.'
  });
 }
+// House 4: the visible storage furniture is a drawer cabinet, NOT a chest.
+// Do not assign its emerald until the user chooses a hiding place.
+houseFeatures[4].push({
+ name:'Workshop Drawers',x:64,y:39,w:15,h:22,
+ shape:'polygon(0 0,100% 0,100% 100%,0 100%)',
+ text:'A sturdy workshop cabinet with rows of small drawers for tools and supplies.'
+});
 houseFeatures[1].find(f=>f.name==='Treasure Chest').text='A sturdy wooden chest with iron bands and a worn brass latch.';
 function currentInteriorFeatures(){
  // Selective highlights: doors handled separately, quest storage first.
  const features=interiorHouse?(houseFeatures[interiorHouse]||[]):treehouseFeatures;
  if(!interiorHouse)return features.filter(f=>['Travel Chest','Books and Potions'].includes(f.name));
  if(interiorHouse===1)return features.filter(f=>f.name!=='Anchor Rug'); // Rug is decorative, not interactive.
+ if(interiorHouse===4)return features.filter(f=>f.name==='Workshop Drawers');
  return features.filter(f=>f.name==='Treasure Chest');
 }
 function isEmeraldStorage(feature){
@@ -905,7 +915,7 @@ function updateTreehouseFeatures(room){
   const left=feature.x*width/100,right=(feature.x+feature.w)*width/100;
   const top=feature.y*height/100,bottom=(feature.y+feature.h)*height/100;
   const dx=Math.max(left-px,0,px-right),dy=Math.max(top-py,0,py-bottom);
-  const close=(interiorHouse===1||interiorHouse===2||interiorHouse===3)?Math.hypot(dx,dy)<=35:
+  const close=(interiorHouse>=1&&interiorHouse<=4)?Math.hypot(dx,dy)<=35:
     Math.hypot((roomHero.x-feature.x-feature.w/2)*1.25,roomHero.y-feature.y-feature.h/2)<17;
   el.style.pointerEvents=close?'auto':'none';
   el.style.opacity=close?String(.78+.22*Math.sin(elapsed*5)):'0';
