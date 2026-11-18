@@ -422,8 +422,8 @@ for(const piece of armorPieces){
 }
 // Step 5: lightweight combat prototype; goblins only live in the camp.
 const goblins=[
- {x:300,y:235,hp:50,lastAttack:-1},{x:820,y:235,hp:50,lastAttack:-1},
- {x:790,y:560,hp:50,lastAttack:-1}
+ {x:490,y:215,hp:50,lastAttack:-1},{x:720,y:340,hp:50,lastAttack:-1},
+ {x:510,y:510,hp:50,lastAttack:-1}
 ];
 function drawGoblins(){
  if(panel!==21)return;
@@ -878,6 +878,22 @@ const forestPanels=new Set([3,8,9,13,14,15,16,17,18,21]);
 // leaves the character walking through trees. These masks follow the major
 // tree/rock masses while keeping the trail openings and armor searches open.
 const forestFoliageShapes={
+ 16:[
+  [[0,0],[1120,0],[1120,260],[990,280],[820,300],[670,330],[520,350],[390,380],[240,445],[110,520],[0,565]],
+  [[0,690],[65,655],[140,620],[190,580],[240,545],[290,510],[325,500],[310,720],[0,720]],
+  [[850,720],[870,660],[915,595],[990,550],[1120,525],[1120,720]]
+ ],
+ 17:[
+  [[0,0],[1120,0],[1120,220],[1010,240],[900,215],[780,195],[650,215],[520,230],[410,275],[310,310],[200,300],[100,355],[0,350]],
+  [[0,490],[115,495],[230,530],[320,590],[400,720],[0,720]],
+  [[1120,470],[1050,500],[970,570],[920,720],[1120,720]]
+ ],
+ 21:[
+  [[0,0],[410,0],[360,115],[290,170],[220,270],[150,370],[95,480],[0,520]],
+  [[720,0],[1120,0],[1120,520],[1030,480],[950,365],[875,255],[790,155]],
+  [[0,610],[160,610],[220,650],[270,720],[0,720]],
+  [[900,720],[940,640],[1000,605],[1120,610],[1120,720]]
+ ],
  8:[
   [[0,0],[690,0],[595,80],[540,145],[410,205],[305,250],[190,260],[0,275]],
   [[850,0],[1120,0],[1120,275],[1020,265],[950,220],[895,150]],
@@ -913,6 +929,10 @@ function forestFoliageBlocked(x,y){
  if(x>W-95&&passage('east',y))return false;
  if(y<95&&passage('north',x))return false;
  if(y>H-95&&passage('south',x))return false;
+ // Panel 16's painted southbound trail curves across the lower screen.
+ // Keep that entire approach open instead of narrowing it to the exit
+ // rectangle too early (which trapped the player on the path).
+ if(panel===16&&y>430&&x>340&&x<760)return false;
  // Deep corner foliage applies throughout the forest, not only to the
  // screen's outermost pixels.
  const corner=155;
