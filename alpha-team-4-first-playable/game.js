@@ -845,14 +845,59 @@ panelFifteenSwordArt.src='./art/team4_panel_15_sword.webp';
 panelFifteenNoSwordArt.src='./art/team4_panel_15_no_sword.webp';
 let swordFlash=0;
 let swordRevealPending=false;
+let unicornArrivalStart=-10;
 const unicornSwordWarning='A fine blade, brave traveler! But beware, there is a goblin camp nearby. You will need armor before you face them. The goblins have hidden pieces of leather armor along the path to their camp. Search carefully, and you may find what you need.';
 function beginSwordReveal(){
  swordFlash=1.35;
  swordRevealPending=true;
+ unicornArrivalStart=-10;
 }
 function finishSwordReveal(){
  // The unicorn appears in the clearing; the player must approach and TALK.
  swordRevealPending=false;
+ unicornArrivalStart=elapsed;
+ playUnicornArrivalChime();
+}
+function playUnicornArrivalChime(){
+ try{
+  const AudioCtx=window.AudioContext||window.webkitAudioContext;
+  if(!AudioCtx)return;
+  const ac=playUnicornArrivalChime.context||(playUnicornArrivalChime.context=new AudioCtx());
+  if(ac.state==='suspended')ac.resume().catch(()=>{});
+  const start=ac.currentTime;
+  [659.25,830.61,987.77,1318.51].forEach((freq,i)=>{
+   const osc=ac.createOscillator(),gain=ac.createGain(),at=start+i*.115;
+   osc.type='sine';osc.frequency.setValueAtTime(freq,at);
+   gain.gain.setValueAtTime(.0001,at);
+   gain.gain.exponentialRampToValueAtTime(.065,at+.025);
+   gain.gain.exponentialRampToValueAtTime(.0001,at+.85);
+   osc.connect(gain);gain.connect(ac.destination);
+   osc.start(at);osc.stop(at+.9);
+  });
+ }catch(e){}
+}
+function drawUnicornArrival(){
+ if(panel!==15||unicornArrivalStart<0)return;
+ const age=elapsed-unicornArrivalStart;
+ if(age>2.3)return;
+ const fade=Math.max(0,1-age/2.3);
+ ctx.save();ctx.translate(390,480);
+ ctx.strokeStyle='rgba(170,244,255,'+(fade*.8)+')';
+ ctx.lineWidth=3+fade*3;ctx.shadowColor='#a9f4ff';ctx.shadowBlur=22;
+ ctx.beginPath();ctx.ellipse(0,10,18+age*29,8+age*10,0,0,Math.PI*2);ctx.stroke();
+ const glow=ctx.createRadialGradient(0,-15,4,0,-15,85);
+ glow.addColorStop(0,'rgba(255,250,215,'+(fade*.5)+')');
+ glow.addColorStop(1,'rgba(190,155,255,0)');
+ ctx.fillStyle=glow;ctx.fillRect(-90,-110,180,180);
+ for(let i=0;i<22;i++){
+  const phase=i*2.39996+age*3.8,radius=9+age*22+(i%5)*5;
+  const px=Math.cos(phase)*radius,py=-15-Math.sin(phase)*radius*.55-age*35-(i%4)*9;
+  const alpha=fade*(.5+.5*Math.sin(elapsed*10+i*2));
+  ctx.save();ctx.translate(px,py);ctx.rotate(phase);
+  ctx.strokeStyle=i%3===0?'rgba(255,230,138,'+alpha+')':'rgba(206,249,255,'+alpha+')';
+  ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(-5,0);ctx.lineTo(5,0);ctx.moveTo(0,-5);ctx.lineTo(0,5);ctx.stroke();ctx.restore();
+ }
+ ctx.restore();
 }
 
 const panelSixteenArt=new Image();
@@ -924,6 +969,7 @@ function draw(){
   ctx.restore();
  }
  drawGoblins();drawHero();drawSwing();drawCombatHUD();
+ drawUnicornArrival();
  if(panel===15&&swordFlash>0){
   const progress=1-swordFlash/1.35;
   const opacity=progress<0.32?progress/0.32:Math.pow(Math.max(0,(1-progress)/0.68),2);
