@@ -204,6 +204,22 @@ panels[7].objects.push({
   copyEl.textContent='With a sweep of your sword, the thorny vines split and recoil. The southern trail is open!';
  }}]
 });
+// The two ends of the 8 ↔ 13 trail are one shared bramble barrier.
+panels[12].objects.push({
+ id:'northBrambles',name:'Thorny Brambles',x:W/2,y:65,
+ outline:brambleOutline,reach:85,solid:true,
+ isVisible:()=>!flags.has('southBramblesCleared'),
+ description:'A dense tangle of thorns seals the northern path. The vines seem to be part of the same stubborn growth blocking the trail farther north. A sharp sword might cut through them.',
+ draw(ctx){
+  ctx.save();ctx.translate(this.x,this.y);
+  ctx.translate(-W/2,-(H-65));drawSouthBrambles(ctx);
+  ctx.restore();
+ },
+ actions:[{label:'CUT BRAMBLES',primary:true,available:()=>flags.has('swordEquipped'),run:()=>{
+  flags.add('southBramblesCleared');
+  copyEl.textContent='Your sword slices through the twisted thorns. The vines shudder and retreat along the trail, clearing both ends of the passage!';
+ }}]
+});
 // Panel 14: the western trail stays sealed until this route is introduced later.
 // Reuse the Panel 8 bramble artwork, rotated across the horizontal path.
 const westBramblesY=H*0.46;
@@ -747,6 +763,8 @@ function finishSwordReveal(){
   flags.add('armorWarning');
  }
 }
+const panelThirteenArt=new Image();
+panelThirteenArt.src='./art/team4_panel_13.webp';
 const panelFourteenArt=new Image();
 panelFourteenArt.src='./art/team4_panel_14.webp';
 const panelNineArt=new Image();
@@ -771,6 +789,8 @@ function draw(){
   ctx.drawImage(panelEightArt,0,0,W,H);
  }else if(panel===9&&panelNineArt.complete&&panelNineArt.naturalWidth>0){
   ctx.drawImage(panelNineArt,0,0,W,H);
+ }else if(panel===13&&panelThirteenArt.complete&&panelThirteenArt.naturalWidth>0){
+  ctx.drawImage(panelThirteenArt,0,0,W,H);
  }else if(panel===14&&panelFourteenArt.complete&&panelFourteenArt.naturalWidth>0){
   ctx.drawImage(panelFourteenArt,0,0,W,H);
  }else if(panel===15){
@@ -861,6 +881,7 @@ function tryExit(side,axis){
  // The village gate is a clickable doorway, not an edge-of-screen exit.
  if(panel===2&&side==='east')return false;
  if(panel===8&&side==='south'&&!flags.has('southBramblesCleared'))return false;
+ if(panel===13&&side==='north'&&!flags.has('southBramblesCleared'))return false;
  if(panel===14&&side==='west')return false; // Brambles block the route for now.
  if(panel===13&&side==='east')return false; // Do not enter behind the same barrier.
  panel=exit.to;
