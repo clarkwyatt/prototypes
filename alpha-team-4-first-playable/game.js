@@ -445,12 +445,32 @@ function drawGoblins(){
  if(panel!==21)return;
  for(const g of goblins){
   ctx.save();ctx.translate(g.x,g.y);
-  if(g.hp<=0){ctx.fillStyle='#526744';ctx.beginPath();ctx.ellipse(0,8,24,10,0,0,Math.PI*2);ctx.fill();ctx.restore();continue}
+  if(g.hp<=0){
+   // Flatten the same goblin into a sideways, unconscious pose.
+   ctx.fillStyle='rgba(10,20,12,.25)';ctx.beginPath();ctx.ellipse(0,18,27,7,0,0,Math.PI*2);ctx.fill();
+   ctx.save();ctx.translate(0,10);ctx.rotate(-Math.PI/2);
+   ctx.fillStyle='#3b302c';ctx.fillRect(-17,10,13,16);ctx.fillRect(5,10,13,16);
+   ctx.fillStyle=['#7d4238','#4c6175','#755c39'][g.variant];ctx.beginPath();ctx.roundRect(-19,-19,38,37,8);ctx.fill();
+   ctx.fillStyle='#30271f';ctx.fillRect(-19,4,38,6);
+   ctx.fillStyle='#77a449';ctx.beginPath();ctx.ellipse(0,-26,20,19,0,0,Math.PI*2);ctx.fill();
+   ctx.beginPath();ctx.moveTo(-14,-32);ctx.lineTo(-32,-43);ctx.lineTo(-24,-19);ctx.moveTo(14,-32);ctx.lineTo(32,-43);ctx.lineTo(24,-19);ctx.fill();
+   ctx.strokeStyle='#273326';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(-12,-29);ctx.lineTo(-5,-25);ctx.moveTo(-5,-29);ctx.lineTo(-12,-25);ctx.moveTo(5,-29);ctx.lineTo(12,-25);ctx.moveTo(12,-29);ctx.lineTo(5,-25);ctx.stroke();
+   ctx.fillStyle='#444b4c';ctx.fillRect(-19,-45,38,8);ctx.restore();
+   for(let i=0;i<3;i++){
+    const t=elapsed*2.1+i*Math.PI*2/3;
+    const sx=Math.cos(t)*19,sy=-43+Math.sin(t)*6;
+    ctx.save();ctx.translate(sx,sy);ctx.rotate(t);
+    ctx.fillStyle='#ffe77c';ctx.beginPath();
+    for(let k=0;k<10;k++){const a=k*Math.PI/5-Math.PI/2,rad=k%2?4:9;ctx.lineTo(Math.cos(a)*rad,Math.sin(a)*rad)}
+    ctx.closePath();ctx.fill();ctx.restore();
+   }
+   ctx.restore();continue;
+  }
   const dx=hero.x-g.x,dy=hero.y-g.y;
-  const face=Math.atan2(dy,dx);
+  const face=g.attackFacing??Math.atan2(dy,dx);
   const attacking=elapsed-g.attackStart<.42;
   const progress=attacking?Math.max(0,(elapsed-g.attackStart)/.42):0;
-  const swing=attacking?Math.sin(progress*Math.PI)*2.15:0;
+  const swing=attacking?(-1.15+progress*2.7):0;
   ctx.fillStyle='rgba(10,20,12,.35)';ctx.beginPath();ctx.ellipse(0,19,23,9,0,0,Math.PI*2);ctx.fill();
   // Armored boots, patched tunic, belt, pointed ears and expressive face.
   ctx.fillStyle='#3b302c';ctx.fillRect(-17,10,13,16);ctx.fillRect(5,10,13,16);
@@ -468,9 +488,9 @@ function drawGoblins(){
   ctx.fillStyle='#aeb8b7';ctx.fillRect(-14,-49,28,4);
   // Arm and sword rotate through a visible wind-up and follow-through.
   ctx.save();ctx.translate(19,-9);
-  ctx.rotate(face+Math.PI/2+(attacking?1.2-swing:.65));
+  ctx.rotate(attacking?face+Math.PI/2+swing:-.25);
   ctx.fillStyle='#79a34d';ctx.fillRect(-5,-4,10,24);
-  ctx.translate(0,12);drawCombatSword(ctx,49,true);ctx.restore();
+  ctx.translate(0,12);drawCombatSword(ctx,37,true);ctx.restore();
   ctx.fillStyle='#412e29';ctx.fillRect(-23,-44,46,5);
   ctx.fillStyle='#dc5b4d';ctx.fillRect(-23,-44,46*(g.hp/50),5);
   ctx.restore();
@@ -497,9 +517,9 @@ function drawSwing(){
  const angle={north:-Math.PI/2,south:Math.PI/2,west:Math.PI,east:0}[facing];
  ctx.save();ctx.translate(hero.x,hero.y-12);
  ctx.rotate(angle+Math.PI/2-1.35+progress*2.7);
- ctx.translate(0,-25);drawCombatSword(ctx,66,false);
+ ctx.translate(0,-13);drawCombatSword(ctx,38,false);
  ctx.strokeStyle='rgba(205,242,255,'+(0.55*(1-Math.abs(progress-.5)*2))+')';
- ctx.lineWidth=5;ctx.beginPath();ctx.arc(0,22,78,-Math.PI*.78,-Math.PI*.2);ctx.stroke();
+ ctx.lineWidth=3;ctx.beginPath();ctx.arc(0,12,48,-Math.PI*.78,-Math.PI*.2);ctx.stroke();
  ctx.restore();
 }
 function swingSword(){
@@ -541,8 +561,13 @@ function updateGoblins(dt){
   if(attacking){
    if(!g.hitDone&&elapsed-g.attackStart>=.22){
     g.hitDone=true;
-    if(d<69&&elapsed-lastHeroHit>=.55){
+    const vx=Math.cos(g.attackFacing),vy=Math.sin(g.attackFacing);
+    const fx=hero.x-g.x,fy=hero.y-g.y;
+    const forward=fx*vx+fy*vy,sideways=Math.abs(fx*vy-fy*vx);
+    if(forward>0&&forward<76&&sideways<38&&elapsed-lastHeroHit>=.55){
      lastHeroHit=elapsed;heroHP=Math.max(0,heroHP-10);
+     const knock=30,tx=clamp(hero.x+vx*knock,25,W-25),ty=clamp(hero.y+vy*knock,60,H-25);
+     if(!blocked(tx,ty)){hero.x=tx;hero.y=ty;}
      if(heroHP===0){knockout();return}
     }
    }
@@ -556,6 +581,7 @@ function updateGoblins(dt){
    if(!forestFoliageBlocked(nx,ny)){g.x=nx;g.y=ny;}
   }else if(elapsed-g.lastAttack>=1.15){
    g.lastAttack=elapsed;g.attackStart=elapsed;g.hitDone=false;
+   g.attackFacing=Math.atan2(hero.y-g.y,hero.x-g.x);
   }
  }
 }
