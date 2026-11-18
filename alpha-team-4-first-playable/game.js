@@ -422,19 +422,57 @@ for(const piece of armorPieces){
 }
 // Step 5: lightweight combat prototype; goblins only live in the camp.
 const goblins=[
- {x:490,y:215,hp:50,lastAttack:-1},{x:720,y:340,hp:50,lastAttack:-1},
- {x:510,y:510,hp:50,lastAttack:-1}
+ {x:490,y:215,hp:50,lastAttack:-1,attackStart:-10,hitDone:false,variant:0},
+ {x:720,y:340,hp:50,lastAttack:-1,attackStart:-10,hitDone:false,variant:1},
+ {x:510,y:510,hp:50,lastAttack:-1,attackStart:-10,hitDone:false,variant:2}
 ];
+// Reusable, fully drawn sword with blade, crossguard, grip and pommel.
+// Tip points toward local negative Y; rotate the whole weapon to swing.
+function drawCombatSword(c,length=53,enemy=false){
+ c.save();
+ c.fillStyle=enemy?'#6c4330':'#9a6d2d';
+ c.strokeStyle='#2a2830';c.lineWidth=2;
+ c.beginPath();c.roundRect(-4,-3,8,23,2);c.fill();c.stroke();
+ c.fillStyle=enemy?'#a1a7ad':'#f1bd43';
+ c.beginPath();c.roundRect(-15,-6,30,7,2);c.fill();c.stroke();
+ c.fillStyle=enemy?'#b8c1c7':'#eaf8ff';
+ c.beginPath();c.moveTo(-7,-7);c.lineTo(-6,-length+13);c.lineTo(0,-length);c.lineTo(6,-length+13);c.lineTo(7,-7);c.closePath();c.fill();c.stroke();
+ c.strokeStyle=enemy?'#e5edf0':'#ffffff';c.lineWidth=2;c.beginPath();c.moveTo(-2,-11);c.lineTo(-1,-length+12);c.stroke();
+ c.fillStyle=enemy?'#747e87':'#f6d36b';c.beginPath();c.arc(0,20,5,0,Math.PI*2);c.fill();c.stroke();
+ c.restore();
+}
 function drawGoblins(){
  if(panel!==21)return;
  for(const g of goblins){
   ctx.save();ctx.translate(g.x,g.y);
   if(g.hp<=0){ctx.fillStyle='#526744';ctx.beginPath();ctx.ellipse(0,8,24,10,0,0,Math.PI*2);ctx.fill();ctx.restore();continue}
-  ctx.fillStyle='#658b42';ctx.beginPath();ctx.ellipse(0,0,18,24,0,0,Math.PI*2);ctx.fill();
-  ctx.beginPath();ctx.moveTo(-12,-16);ctx.lineTo(-24,-30);ctx.lineTo(-5,-22);ctx.moveTo(12,-16);ctx.lineTo(24,-30);ctx.lineTo(5,-22);ctx.fill();
-  ctx.fillStyle='#222';ctx.fillRect(-9,-8,4,4);ctx.fillRect(5,-8,4,4);
-  ctx.fillStyle='#4a322c';ctx.fillRect(-22,-40,44,5);
-  ctx.fillStyle='#b94e45';ctx.fillRect(-22,-40,44*(g.hp/50),5);
+  const dx=hero.x-g.x,dy=hero.y-g.y;
+  const face=Math.atan2(dy,dx);
+  const attacking=elapsed-g.attackStart<.42;
+  const progress=attacking?Math.max(0,(elapsed-g.attackStart)/.42):0;
+  const swing=attacking?Math.sin(progress*Math.PI)*2.15:0;
+  ctx.fillStyle='rgba(10,20,12,.35)';ctx.beginPath();ctx.ellipse(0,19,23,9,0,0,Math.PI*2);ctx.fill();
+  // Armored boots, patched tunic, belt, pointed ears and expressive face.
+  ctx.fillStyle='#3b302c';ctx.fillRect(-17,10,13,16);ctx.fillRect(5,10,13,16);
+  ctx.fillStyle=['#7d4238','#4c6175','#755c39'][g.variant];
+  ctx.beginPath();ctx.roundRect(-19,-19,38,37,8);ctx.fill();
+  ctx.fillStyle='#30271f';ctx.fillRect(-19,4,38,6);
+  ctx.fillStyle='#b99b55';ctx.fillRect(-5,2,10,10);
+  ctx.fillStyle='#77a449';ctx.beginPath();ctx.ellipse(0,-26,20,19,0,0,Math.PI*2);ctx.fill();
+  ctx.beginPath();ctx.moveTo(-14,-32);ctx.lineTo(-32,-43);ctx.lineTo(-24,-19);ctx.moveTo(14,-32);ctx.lineTo(32,-43);ctx.lineTo(24,-19);ctx.fill();
+  ctx.fillStyle='#273326';ctx.beginPath();ctx.moveTo(-13,-31);ctx.lineTo(-4,-28);ctx.lineTo(-12,-25);ctx.moveTo(13,-31);ctx.lineTo(4,-28);ctx.lineTo(12,-25);ctx.fill();
+  ctx.fillStyle='#f0d778';ctx.fillRect(-11,-29,5,4);ctx.fillRect(6,-29,5,4);
+  ctx.fillStyle='#37251d';ctx.beginPath();ctx.ellipse(0,-17,9,4,0,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#fff2d9';ctx.fillRect(-5,-17,3,4);ctx.fillRect(3,-17,3,4);
+  ctx.fillStyle='#444b4c';ctx.beginPath();ctx.moveTo(-21,-36);ctx.lineTo(-13,-51);ctx.lineTo(13,-51);ctx.lineTo(22,-36);ctx.closePath();ctx.fill();
+  ctx.fillStyle='#aeb8b7';ctx.fillRect(-14,-49,28,4);
+  // Arm and sword rotate through a visible wind-up and follow-through.
+  ctx.save();ctx.translate(19,-9);
+  ctx.rotate(face+Math.PI/2+(attacking?1.2-swing:.65));
+  ctx.fillStyle='#79a34d';ctx.fillRect(-5,-4,10,24);
+  ctx.translate(0,12);drawCombatSword(ctx,49,true);ctx.restore();
+  ctx.fillStyle='#412e29';ctx.fillRect(-23,-44,46,5);
+  ctx.fillStyle='#dc5b4d';ctx.fillRect(-23,-44,46*(g.hp/50),5);
   ctx.restore();
  }
 }
@@ -445,14 +483,18 @@ function drawCombatHUD(){
 }
 function drawSwing(){
  if(!flags.has('swordEquipped')||elapsed>swingUntil)return;
- const v={north:[0,-1],south:[0,1],west:[-1,0],east:[1,0]}[facing];
- ctx.save();ctx.strokeStyle='#e9f6ff';ctx.lineWidth=8;ctx.lineCap='round';
- ctx.beginPath();ctx.moveTo(hero.x+v[0]*17,hero.y+v[1]*17);
- ctx.lineTo(hero.x+v[0]*65,hero.y+v[1]*65);ctx.stroke();ctx.restore();
+ const progress=1-(swingUntil-elapsed)/.32;
+ const angle={north:-Math.PI/2,south:Math.PI/2,west:Math.PI,east:0}[facing];
+ ctx.save();ctx.translate(hero.x,hero.y-12);
+ ctx.rotate(angle+Math.PI/2-1.35+progress*2.7);
+ ctx.translate(0,-25);drawCombatSword(ctx,66,false);
+ ctx.strokeStyle='rgba(205,242,255,'+(0.55*(1-Math.abs(progress-.5)*2))+')';
+ ctx.lineWidth=5;ctx.beginPath();ctx.arc(0,22,78,-Math.PI*.78,-Math.PI*.2);ctx.stroke();
+ ctx.restore();
 }
 function swingSword(){
  if(treehouseIntro||activeObject||knockedOut||!flags.has('swordEquipped')||elapsed-lastSwing<.35)return;
- lastSwing=elapsed;swingUntil=elapsed+.2;
+ lastSwing=elapsed;swingUntil=elapsed+.32;
  if(panel!==21)return;
  const v={north:[0,-1],south:[0,1],west:[-1,0],east:[1,0]}[facing];
  for(const g of goblins){
@@ -484,14 +526,26 @@ function updateGoblins(dt){
  for(const g of goblins){
   if(g.hp<=0)continue;
   const dx=hero.x-g.x,dy=hero.y-g.y,d=Math.hypot(dx,dy);
-  if(d>190)returnGoblinIdle(g);
-  else if(d>43){
-   const step=Math.min(75*dt,d-43);
-   g.x=clamp(g.x+dx/d*step,25,W-25);
-   g.y=clamp(g.y+dy/d*step,60,H-25);
-  }else if(elapsed-g.lastAttack>=1.05&&elapsed-lastHeroHit>=.55){
-   g.lastAttack=elapsed;lastHeroHit=elapsed;heroHP=Math.max(0,heroHP-10);
-   if(heroHP===0){knockout();return}
+  const attacking=elapsed-g.attackStart<.42;
+  // Damage lands during the sword's forward swing, not on approach.
+  if(attacking){
+   if(!g.hitDone&&elapsed-g.attackStart>=.22){
+    g.hitDone=true;
+    if(d<69&&elapsed-lastHeroHit>=.55){
+     lastHeroHit=elapsed;heroHP=Math.max(0,heroHP-10);
+     if(heroHP===0){knockout();return}
+    }
+   }
+   continue;
+  }
+  if(d>190)continue;
+  if(d>62){
+   const step=Math.min(75*dt,d-62);
+   const nx=clamp(g.x+dx/d*step,25,W-25),ny=clamp(g.y+dy/d*step,60,H-25);
+   // Avoid walking through painted foliage and camp walls.
+   if(!forestFoliageBlocked(nx,ny)){g.x=nx;g.y=ny;}
+  }else if(elapsed-g.lastAttack>=1.15){
+   g.lastAttack=elapsed;g.attackStart=elapsed;g.hitDone=false;
   }
  }
 }
