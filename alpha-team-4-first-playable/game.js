@@ -29,7 +29,7 @@ function treehouseFloorBlocked(x,y){
   if(x<25&&fy<62)return true;
   if(x<24&&fy>57&&fy<83)return true; // chests and stacked crates
   // Desk beneath the window, stool and writing supplies.
-  if(x>39&&x<72&&fy>34&&fy<55)return true;
+  if(x>39&&x<72&&fy>36&&fy<49)return true;
   if(x>49&&x<60&&fy>47&&fy<59)return true; // stool
   // Tall locked wardrobe and right-hand scroll shelves.
   if(x>72&&fy<59)return true;
@@ -874,6 +874,12 @@ for(let i=2;i<=5;i++){
 }
 // House 4: the visible storage furniture is a drawer cabinet, NOT a chest.
 // Do not assign its emerald until the user chooses a hiding place.
+// House 5: highlight the visible writing desk, not an imaginary chest.
+houseFeatures[5].push({
+ name:'Cartographer’s Desk',x:39,y:35,w:32,h:15,
+ shape:'inset(0 round 4%)',
+ text:'A cartographer’s writing desk covered with maps, books and travel notes.'
+});
 houseFeatures[4].push({
  name:'Workshop Drawers',x:64,y:39,w:15,h:22,
  shape:'polygon(0 0,100% 0,100% 100%,0 100%)',
@@ -886,6 +892,7 @@ function currentInteriorFeatures(){
  if(!interiorHouse)return features.filter(f=>['Travel Chest','Books and Potions'].includes(f.name));
  if(interiorHouse===1)return features.filter(f=>f.name!=='Anchor Rug'); // Rug is decorative, not interactive.
  if(interiorHouse===4)return features.filter(f=>f.name==='Workshop Drawers');
+ if(interiorHouse===5)return features.filter(f=>f.name==='Cartographer’s Desk');
  return features.filter(f=>f.name==='Treasure Chest');
 }
 function isEmeraldStorage(feature){
@@ -915,7 +922,7 @@ function updateTreehouseFeatures(room){
   const left=feature.x*width/100,right=(feature.x+feature.w)*width/100;
   const top=feature.y*height/100,bottom=(feature.y+feature.h)*height/100;
   const dx=Math.max(left-px,0,px-right),dy=Math.max(top-py,0,py-bottom);
-  const close=(interiorHouse>=1&&interiorHouse<=4)?Math.hypot(dx,dy)<=35:
+  const close=(interiorHouse>=1&&interiorHouse<=5)?Math.hypot(dx,dy)<=35:
     Math.hypot((roomHero.x-feature.x-feature.w/2)*1.25,roomHero.y-feature.y-feature.h/2)<17;
   el.style.pointerEvents=close?'auto':'none';
   el.style.opacity=close?String(.78+.22*Math.sin(elapsed*5)):'0';
