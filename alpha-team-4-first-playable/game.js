@@ -819,7 +819,7 @@ panelFifteenSwordArt.src='./art/team4_panel_15_sword.webp';
 panelFifteenNoSwordArt.src='./art/team4_panel_15_no_sword.webp';
 let swordFlash=0;
 let swordRevealPending=false;
-const unicornSwordWarning='A fine blade, brave traveler! But you will need armor before facing the goblins. They have been known to hide spare pieces of leather armor in places along the path to their camp. Search carefully, and you may find what you need.';
+const unicornSwordWarning='A fine blade, brave traveler! But beware, there is a goblin camp nearby. You will need armor before you face them. The goblins have hidden pieces of leather armor along the path to their camp. Search carefully, and you may find what you need.';
 function beginSwordReveal(){
  swordFlash=1.35;
  swordRevealPending=true;
