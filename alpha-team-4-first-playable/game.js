@@ -767,6 +767,8 @@ const panelSixteenArt=new Image();
 panelSixteenArt.src='./art/team4_panel_16.webp';
 const panelSeventeenArt=new Image();
 panelSeventeenArt.src='./art/team4_panel_17.webp';
+const panelTwentyOneArt=new Image();
+panelTwentyOneArt.src='./art/team4_panel_21.webp';
 const panelEighteenArt=new Image();
 panelEighteenArt.src='./art/team4_panel_18.webp';
 const panelThirteenArt=new Image();
@@ -801,6 +803,8 @@ function draw(){
   ctx.drawImage(panelSixteenArt,0,0,W,H);
  }else if(panel===17&&panelSeventeenArt.complete&&panelSeventeenArt.naturalWidth>0){
   ctx.drawImage(panelSeventeenArt,0,0,W,H);
+ }else if(panel===21&&panelTwentyOneArt.complete&&panelTwentyOneArt.naturalWidth>0){
+  ctx.drawImage(panelTwentyOneArt,0,0,W,H);
  }else if(panel===18&&panelEighteenArt.complete&&panelEighteenArt.naturalWidth>0){
   ctx.drawImage(panelEighteenArt,0,0,W,H);
  }else if(panel===14&&panelFourteenArt.complete&&panelFourteenArt.naturalWidth>0){
@@ -864,12 +868,35 @@ function panelTwoBlocked(x,y){
  if(!quest.gateOpen&&hitsOutline({x:982,y:266,outline:gateOutline},x,y,0))return true;
  return false;
 }
+// Forest scenery: solid outer foliage, with openings only at approved exits.
+// Keep a walkable approach to every hidden armor search hotspot. This protects
+// the painted forest boundaries without putting invisible walls across trails.
+const forestPanels=new Set([3,8,9,13,14,15,16,17,18,21]);
+function forestFoliageBlocked(x,y){
+ if(!forestPanels.has(panel))return false;
+ const edge=48;
+ const exits=panels[panel-1].exits;
+ const passage=(side,coordinate)=>{
+  const e=exits[side];
+  return e&&Math.abs(coordinate-e.at)<=e.halfWidth+12;
+ };
+ const armor=typeof armorPieces!=='undefined'?armorPieces.find(p=>p.panel===panel):null;
+ // The foliage immediately around armor remains reachable for searching.
+ const nearArmor=armor&&Math.hypot(x-armor.x,y-armor.y)<105;
+ if(nearArmor)return false;
+ if(x<edge&&!passage('west',y))return true;
+ if(x>W-edge&&!passage('east',y))return true;
+ if(y<edge&&!passage('north',x))return true;
+ if(y>H-edge&&!passage('south',x))return true;
+ return false;
+}
 function blocked(x,y){
  const radius=12;
  const sample=[[0,0],[-radius,0],[radius,0],[0,-radius],[0,radius]];
  return sample.some(([dx,dy])=>
   (panel===1&&panelOneBlocked(x+dx,y+dy))||
   (panel===2&&panelTwoBlocked(x+dx,y+dy))||
+  forestFoliageBlocked(x+dx,y+dy)||
   visibleObjects().some(o=>o.solid&&hitsOutline(o,x+dx,y+dy,0))
  );
 }
