@@ -161,6 +161,35 @@ const mapLinks=[
 ];
 for(const [id,side] of mapLinks)connect(id,side,side==='north'||side==='south'?W/2:H/2,PATH_EXIT_HALF_WIDTH);
 
+// A thicket blocks the southern path from Panel 8 until cut with the sword.
+const brambleOutline=new Path2D('M -93 24 L -88 -22 L -58 -40 L -20 -25 L 17 -43 L 57 -25 L 90 -19 L 95 24 Z');
+function drawSouthBrambles(ctx){
+ ctx.save();ctx.translate(W/2,H-65);
+ ctx.lineCap='round';ctx.lineJoin='round';
+ const branches=[[-91,17,-44,-32],[-70,-29,-10,19],[-35,23,20,-39],[0,-38,46,23],[26,18,91,-21],[59,-31,89,20],[-90,-14,92,9]];
+ for(let i=0;i<branches.length;i++){
+  const [x1,y1,x2,y2]=branches[i];
+  ctx.strokeStyle=i%2?'#422d24':'#62402a';ctx.lineWidth=9;
+  ctx.beginPath();ctx.moveTo(x1,y1);ctx.quadraticCurveTo((x1+x2)/2,(y1+y2)/2-11,x2,y2);ctx.stroke();
+  ctx.fillStyle='#d9c9a2';
+  for(let t=.18;t<.95;t+=.25){
+   const x=x1+(x2-x1)*t,y=y1+(y2-y1)*t-11*Math.sin(Math.PI*t);
+   ctx.beginPath();ctx.moveTo(x,y-9);ctx.lineTo(x-5,y+2);ctx.lineTo(x+5,y+2);ctx.closePath();ctx.fill();
+  }
+ }
+ ctx.restore();
+}
+panels[7].objects.push({
+ id:'southBrambles',name:'Thorny Brambles',x:W/2,y:H-65,
+ outline:brambleOutline,reach:75,solid:true,
+ isVisible:()=>!flags.has('southBramblesCleared'),
+ description:'A wall of cruel, tangled thorns seals the southern trail. Bare hands cannot break these iron-hard vines. A keen blade may be the only way through.',
+ draw(ctx){drawSouthBrambles(ctx)},
+ actions:[{label:'CUT BRAMBLES',primary:true,available:()=>flags.has('swordEquipped'),run:()=>{
+  flags.add('southBramblesCleared');
+  copyEl.textContent='With a sweep of your sword, the thorny vines split and recoil. The southern trail is open!';
+ }}]
+});
 // Panel 1 art: the treehouse doorway is part of the painted background.
 // Keep its interactive outline separate from the image and never repaint it.
 const DOOR_REACH=48;
@@ -663,6 +692,8 @@ panelOneArt.src='./art/team4_panel_01.webp';
 const panelTwoLockedArt=new Image(),panelTwoUnlockedArt=new Image();
 panelTwoLockedArt.src='./art/team4_panel_02_locked.webp';
 panelTwoUnlockedArt.src='./art/team4_panel_02_unlocked.webp';
+const panelEightArt=new Image();
+panelEightArt.src='./art/team4_panel_08.webp';
 const panelThreeArt=new Image();
 panelThreeArt.src='./art/team4_panel_03.webp';
 const panelTwoArtReady=()=>{
@@ -677,6 +708,8 @@ function draw(){
   ctx.drawImage(quest.gateOpen?panelTwoUnlockedArt:panelTwoLockedArt,0,0,W,H);
  }else if(panel===3&&panelThreeArt.complete&&panelThreeArt.naturalWidth>0){
   ctx.drawImage(panelThreeArt,0,0,W,H);
+ }else if(panel===8&&panelEightArt.complete&&panelEightArt.naturalWidth>0){
+  ctx.drawImage(panelEightArt,0,0,W,H);
  }else{
   drawGrass();drawPath();
   if(panel===1)drawTreehouse();
@@ -752,6 +785,7 @@ function tryExit(side,axis){
  if(!exit||Math.abs(axis-exit.at)>exit.halfWidth||!exit.canExit())return false;
  // The village gate is a clickable doorway, not an edge-of-screen exit.
  if(panel===2&&side==='east')return false;
+ if(panel===8&&side==='south'&&!flags.has('southBramblesCleared'))return false;
  panel=exit.to;
  if(side==='west')hero.x=bounds.right-6;
  if(side==='east')hero.x=bounds.left+6;
