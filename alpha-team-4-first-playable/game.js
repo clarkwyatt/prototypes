@@ -109,7 +109,7 @@ for(let y=-42;y<50;y+=21){
 const house=(x,y,index)=>({
  id:'house'+index,name:'Village House',x:houseDoorPositions[index-1][0],y:houseDoorPositions[index-1][1],
  outline:new Path2D('M -19 29 L -19 -17 Q -19 -38 0 -38 Q 19 -38 19 -17 L 19 29 Z'),solid:false,reach:DOOR_REACH,
- description:'A little village house with a wooden door.',
+ description:'A village house. Inside is a chest that may contain an emerald.',
  draw(ctx){if(!panelTwoArtReady())drawHouse(ctx,x,y)},
  actions:[{label:'OPEN',primary:true,run:()=>enterHouse(index)}],
  emeraldAction:[{label:'SEARCH',primary:true,available:()=>!flags.has('emerald'+index),run:()=>{
@@ -122,12 +122,12 @@ const house=(x,y,index)=>({
 panels[1].objects.push(...housePositions.map(([x,y],i)=>house(x,y,i+1)));
 panels[1].objects.push({
  id:'villager',name:'Villager',kind:'npc',x:855,y:470,outline:villagerOutline,reach:100,
- description:'A villager waiting near the houses.',
- dialogue:'Can you search the houses and bring me five emeralds? I will give you the gate key.',
+ description:'A villager who needs five emeralds from the houses.',
+ dialogue:'Can you open the chest in each house and bring me five emeralds? I will give you the gate key.',
  draw(ctx){drawVillager(ctx,this.x,this.y)},
  actions:[{label:'TALK',primary:true,run:()=>{
   if(quest.gateKey||quest.gateOpen){copyEl.textContent='Good luck on your adventure!';return}
-  if(!quest.started){quest.started=true;setQuest('Find 5 Emeralds (0/5)');copyEl.textContent='Please find five emeralds hidden in the village houses.';return}
+  if(!quest.started){quest.started=true;setQuest('Find 5 Emeralds (0/5)');copyEl.textContent='Please open the chest in each of the five houses to find an emerald.';return}
   if(quest.emeralds<5){copyEl.textContent='You have '+quest.emeralds+' of the five emeralds.';return}
   quest.gateKey=true;for(const name of [...inventory])if(name.endsWith(' / 5 Emeralds'))removeItem(name);addItem('Gate Key');setQuest('Unlock the Village Gate');copyEl.textContent='Thank you! Here is the key to the gate.';
  }}]
@@ -589,7 +589,33 @@ function draw(){
  }
  drawGoblins();drawHero();drawSwing();drawCombatHUD();
 }
-function blocked(x,y){return (panel===1&&panelOneBlocked(x,y))||visibleObjects().some(o=>o.solid&&hitsOutline(o,x,y,12))}
+function panelTwoBlocked(x,y){
+ // Solid outer perimeter, except the actual west/east path openings.
+ const margin=26,opening=Math.abs(y-H/2)<=PATH_EXIT_HALF_WIDTH-14;
+ if(y<margin||y>H-margin)return true;
+ if((x<margin||x>W-margin)&&!opening)return true;
+ // Buildings are painted into Panel 2's background; the doorway hotspots
+ // are non-solid, so explicitly block the visible building footprints.
+ // Each footprint has a roof and wall area; a clear approach remains at its door.
+ const footprints=[
+  {x:190,y:150,w:138,h:138},{x:438,y:150,w:138,h:138},
+  {x:665,y:150,w:138,h:138},{x:229,y:474,w:138,h:138},
+  {x:600,y:474,w:138,h:138}
+ ];
+ for(const h of footprints){
+  if(x>h.x-h.w/2-12&&x<h.x+h.w/2+12&&y>h.y-h.h/2-12&&y<h.y+h.h/2+12)return true;
+ }
+ return false;
+}
+function blocked(x,y){
+ const radius=12;
+ const sample=[[0,0],[-radius,0],[radius,0],[0,-radius],[0,radius]];
+ return sample.some(([dx,dy])=>
+  (panel===1&&panelOneBlocked(x+dx,y+dy))||
+  (panel===2&&panelTwoBlocked(x+dx,y+dy))||
+  visibleObjects().some(o=>o.solid&&hitsOutline(o,x+dx,y+dy,0))
+ );
+}
 // Global spawn safety: no transition or doorway may place the hero inside
 // collision. Search nearby walkable ground before accepting a spawn.
 function safeSpawn(x,y){
@@ -725,15 +751,25 @@ const houseFeatures={
  4:[{name:'Village Keepsakes',x:12,y:24,w:19,h:25,shape:'inset(0 round 12%)',text:'Carefully arranged mementos from journeys near and far. One almost seems to hum with a forgotten melody.'},{name:'Family Table',x:30,y:44,w:22,h:20,shape:'ellipse(48% 45% at 50% 50%)',text:'An inviting place for supper and stories. The best tales always seem to grow a little grander by candlelight.'},{name:'Restful Bed',x:73,y:39,w:22,h:29,shape:'inset(0 round 15%)',text:'A peaceful corner, ready for dreams of secret passages and enchanted forests.'}],
  5:[{name:'Village Keepsakes',x:12,y:24,w:19,h:25,shape:'inset(0 round 12%)',text:'These well-loved possessions have traveled through generations, carrying more memories than any map could hold.'},{name:'Family Table',x:30,y:44,w:22,h:20,shape:'ellipse(48% 45% at 50% 50%)',text:'The table has seen birthdays, celebrations, and a hundred ordinary days made wonderful by good company.'},{name:'Restful Bed',x:73,y:39,w:22,h:29,shape:'inset(0 round 15%)',text:'A soft quilt promises a good night’s sleep—and perhaps a dream about tomorrow’s great adventure.'}]
 };
+// Each village house has one chest. These are separate clickable storage objects,
+// with one emerald each; the collected state persists after leaving the house.
+for(let i=2;i<=5;i++){
+ houseFeatures[i].push({
+  name:'Treasure Chest',x:54,y:32,w:13,h:13,
+  shape:'inset(0 round 13%)',
+  text:'A small wooden chest with a brass latch.'
+ });
+}
+houseFeatures[1].find(f=>f.name==='Treasure Chest').text='A sturdy wooden chest with iron bands and a worn brass latch.';
 function currentInteriorFeatures(){
  // Selective highlights: doors handled separately, quest storage first.
  const features=interiorHouse?(houseFeatures[interiorHouse]||[]):treehouseFeatures;
  if(!interiorHouse)return features.filter(f=>['Travel Chest','Books and Potions'].includes(f.name));
  if(interiorHouse===1)return features.filter(f=>['Treasure Chest','Captain’s Locker'].includes(f.name));
- return features.filter(f=>f.name==='Village Keepsakes');
+ return features.filter(f=>f.name==='Treasure Chest');
 }
 function isEmeraldStorage(feature){
- return interiorHouse>0&&['Treasure Chest','Village Keepsakes'].includes(feature.name);
+ return interiorHouse>0&&feature.name==='Treasure Chest';
 }
 function showInteriorDescription(feature){
  if(activeObject)return;
@@ -741,9 +777,9 @@ function showInteriorDescription(feature){
  if(isEmeraldStorage(feature)&&quest.started){
   if(!flags.has('emerald'+interiorHouse)){
    collectHouseEmerald();
-   description+=' Tucked safely inside, a brilliant emerald catches the light. You carefully add it to your collection.';
+   description+=' Inside the chest, you find one sparkling emerald and add it to your inventory.';
   }else{
-   description+=' You have already recovered the emerald hidden here.';
+   description+=' The chest is empty. You already collected its emerald.';
   }
  }
  activeObject={name:feature.name};titleEl.textContent=feature.name;
