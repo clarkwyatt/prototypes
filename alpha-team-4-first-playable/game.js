@@ -266,6 +266,7 @@ panels[1].objects.push({
   if(!quest.started){quest.started=true;setQuest('Find 5 Emeralds ('+quest.emeralds+'/5)');copyEl.textContent='Five green stars once protected this village. Their keepers hid them among treasured belongings. Search carefully, and bring the stones to me. Only then may the ancient gate be unsealed.';return}
   if(quest.emeralds<5){copyEl.textContent='I sense '+quest.emeralds+' of the five green stars in your keeping. The others still slumber somewhere in the village. Seek what our people have hidden away.';return}
   quest.gateKey=true;for(const name of [...inventory])if(name.endsWith(' / 5 Emeralds'))removeItem(name);addItem('Gate Key');setQuest('Unlock the Village Gate');copyEl.textContent='The five stars shine as one again! You have restored an ancient promise. Take this key, brave traveler, and let the road beyond our walls be yours.';
+   appendItemReward('Gate Key');
  }}]
 });
 panels[1].objects.push({
@@ -369,7 +370,8 @@ for(const piece of armorPieces){
    updateEquipment();
    const count=armorPieces.filter(p=>flags.has('equipped'+p.name)).length;
    setQuest(count===armorPieces.length?'Explore the Goblin Camp':'Find Leather Armor ('+count+'/5)');
-   copyEl.textContent=armorDescriptions[piece.name]+'\\n\\nYOU FOUND LEATHER '+piece.name.toUpperCase()+'!';
+   copyEl.textContent=armorDescriptions[piece.name];
+   appendItemReward('Leather '+piece.name);
   }}]
  });
 }
@@ -468,9 +470,19 @@ function drawHouse(ctx,x,y){
  ctx.fillStyle='#7cbdcf';ctx.fillRect(-30,-5,15,17);ctx.fillRect(15,-5,15,17);ctx.restore();
 }
 function drawVillager(ctx,x,y){
- ctx.save();ctx.translate(x,y);ctx.fillStyle='#2e5c8c';ctx.fill(villagerOutline);ctx.clip(villagerOutline);
- ctx.fillStyle='#e9b788';ctx.beginPath();ctx.arc(0,-16,13,0,Math.PI*2);ctx.fill();
- ctx.fillStyle='#6a4932';ctx.fillRect(-12,-29,24,8);ctx.fillStyle='#4b392b';ctx.fillRect(-9,24,7,13);ctx.fillRect(3,24,7,13);ctx.restore();
+ ctx.save();ctx.translate(x,y);
+ // Elder villager: silver hair, long beard, stooped shoulders, walking staff.
+ ctx.fillStyle='#5c5148';ctx.fillRect(-11,20,8,17);ctx.fillRect(4,20,8,17);
+ ctx.fillStyle='#6d6657';ctx.beginPath();ctx.moveTo(-18,-8);ctx.lineTo(15,-8);ctx.lineTo(19,26);ctx.lineTo(-20,26);ctx.closePath();ctx.fill();
+ ctx.fillStyle='#446c5a';ctx.fillRect(-13,-6,26,29);
+ ctx.fillStyle='#c4b18b';ctx.fillRect(-17,8,6,14);ctx.fillRect(12,8,6,14);
+ ctx.fillStyle='#9a9a91';ctx.beginPath();ctx.arc(0,-18,15,0,Math.PI*2);ctx.fill();
+ ctx.fillStyle='#e4b78e';ctx.beginPath();ctx.arc(0,-15,12,0,Math.PI*2);ctx.fill();
+ ctx.fillStyle='#e2e0d2';ctx.beginPath();ctx.moveTo(-9,-8);ctx.quadraticCurveTo(0,17,9,-8);ctx.lineTo(5,7);ctx.lineTo(-5,7);ctx.closePath();ctx.fill();
+ ctx.fillStyle='#423b36';ctx.fillRect(-7,-17,3,2);ctx.fillRect(4,-17,3,2);
+ ctx.strokeStyle='#7d5938';ctx.lineWidth=4;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(22,-7);ctx.lineTo(22,38);ctx.stroke();
+ ctx.fillStyle='#d1ad6d';ctx.beginPath();ctx.arc(22,-8,4,0,Math.PI*2);ctx.fill();
+ ctx.restore();
 }
 function drawGate(ctx,x,y){ctx.save();ctx.translate(x,y);ctx.fillStyle='#6c4931';ctx.fill(gateOutline);for(let j=-55;j<55;j+=21){ctx.fillStyle='#a8774a';ctx.fillRect(-17,j,34,13)}ctx.restore()}
 function drawPath(){
@@ -533,6 +545,12 @@ layer.addEventListener('keydown',e=>{
  }
 });
 // Match A Village Tale: action choices are replaced by the dialogue card's close button.
+function appendItemReward(item){
+ const reveal=document.createElement('div');
+ reveal.textContent='YOU GOT '+item.toUpperCase()+'!';
+ Object.assign(reveal.style,{marginTop:'14px',fontWeight:'900',fontSize:'1.12em',letterSpacing:'.03em',color:'#147c4a'});
+ copyEl.appendChild(reveal);
+}
 function showDialogueCard(message){
  copyEl.textContent=message;
  actionsEl.replaceChildren();
@@ -702,6 +720,7 @@ function finishSwordReveal(){
   activeObject=visitor;
   titleEl.textContent='Unicorn';
   showDialogueCard(unicornSwordWarning);
+  appendItemReward('Sword');
   flags.add('armorWarning');
  }
 }
@@ -1041,10 +1060,7 @@ function showInteriorDescription(feature){
  activeObject={name:feature.name};titleEl.textContent=feature.name;
  showDialogueCard(description);
  if(found){
-  const reveal=document.createElement('div');
-  reveal.textContent='YOU FOUND AN EMERALD!';
-  Object.assign(reveal.style,{marginTop:'14px',fontWeight:'900',fontSize:'1.12em',letterSpacing:'.03em',color:'#147c4a'});
-  copyEl.appendChild(reveal);
+  appendItemReward('an Emerald');
  }
 }
 function updateTreehouseFeatures(room){
