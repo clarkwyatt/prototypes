@@ -166,6 +166,14 @@ const mapLinks=[
  [24,'east']   // 24 ↔ 25
 ];
 for(const [id,side] of mapLinks)connect(id,side,side==='north'||side==='south'?W/2:H/2,PATH_EXIT_HALF_WIDTH);
+// Panel 9's organic path exits south right of center. Match Panel 14's
+// north entry to the same seam coordinate so both directions are traversable.
+const forestSeamX=W*0.595;
+for(const [id,side] of [[9,'south'],[14,'north']]){
+ const exit=panels[id-1].exits[side];
+ if(exit){exit.at=forestSeamX;exit.halfWidth=105;}
+}
+
 
 // A thicket blocks the southern path from Panel 8 until cut with the sword.
 const brambleOutline=new Path2D('M -93 24 L -88 -22 L -58 -40 L -20 -25 L 17 -43 L 57 -25 L 90 -19 L 95 24 Z');
