@@ -234,10 +234,11 @@ panels[1].objects.push({
  }}]
 });
 panels[1].objects.push({
- id:'gate',name:'Village Gate',x:982,y:266,outline:gateOutline,solid:true,reach:90,isVisible:()=>!quest.gateOpen,
- description:'A locked wooden gate blocks the way east.',
+ id:'gate',name:'Village Gate',x:982,y:266,outline:gateOutline,solid:false,reach:90,
+ description:'The ancient village gate stands open, revealing the road into the forest.',
  draw(ctx){/* Gate is already painted into the locked/unlocked background. */},
- actions:[{label:'OPEN',primary:true,run:()=>{
+ actions:[{label:quest.gateOpen?'ENTER':'OPEN',primary:true,run:()=>{
+ if(quest.gateOpen){closePopup();panel=3;placeHeroSafely(bounds.left+45,H/2);return;}
  if(!quest.gateKey){copyEl.textContent='The gate is locked. A villager might have the key.';return}
  quest.gateOpen=true;quest.gateKey=false;removeItem('Gate Key');setQuest('Explore Beyond the Village');closePopup();
  }}]
@@ -745,6 +746,8 @@ function placeHeroSafely(x,y){const p=safeSpawn(x,y);hero.x=p.x;hero.y=p.y;}
 function tryExit(side,axis){
  const exit=panels[panel-1].exits[side];
  if(!exit||Math.abs(axis-exit.at)>exit.halfWidth||!exit.canExit())return false;
+ // The village gate is a clickable doorway, not an edge-of-screen exit.
+ if(panel===2&&side==='east')return false;
  panel=exit.to;
  if(side==='west')hero.x=bounds.right-6;
  if(side==='east')hero.x=bounds.left+6;
@@ -806,6 +809,9 @@ canvas.addEventListener('click',e=>{
  const object=visibleObjects().reverse().find(o=>hitsOutline(o,x,y));
  if(object?.id?.startsWith('house')&&nearby(object)){
   enterHouse(Number(object.id.slice(5)));return;
+ }
+ if(object?.id==='gate'&&quest.gateOpen&&nearby(object)){
+  panel=3;placeHeroSafely(bounds.left+45,H/2);return;
  }
  if(object?.id==='treehouseDoor'&&nearby(object)){
   showTreehouse();return;
