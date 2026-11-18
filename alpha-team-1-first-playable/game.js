@@ -753,8 +753,33 @@
       }
     }catch(e){console.warn("Guard dog bark unavailable",e);}
   }
+  // Trackpad-friendly pickup: collect unplaced meat by walking close to it.
+  // Keep one piece at a time, and never collect bait already placed for dogs.
+  function collectNearbyMeat(){
+    if(panel!==18||carrying||caught||dialogOpen)return;
+    const unit=Math.min(width,height);
+    for(const m of meat){
+      if(m.used||m.placed)continue;
+      const distance=Math.hypot((m.x-hero.x)*width,(m.y-hero.y)*height);
+      if(distance>unit*.075)continue;
+      // Avoid reaching across a solid hedge segment.
+      const hx=hero.x*width,hy=hero.y*height,mx=m.x*width,my=m.y*height;
+      const cross=(ux,uy,vx,vy)=>ux*vy-uy*vx;
+      const obstructed=mazeHedges.some(([a,b])=>{
+        const ax=a[0]*width,ay=a[1]*height,bx=b[0]*width,by=b[1]*height;
+        const rx=mx-hx,ry=my-hy,sx=bx-ax,sy=by-ay;
+        const denom=cross(rx,ry,sx,sy);
+        if(Math.abs(denom)<.0001)return false;
+        const t=cross(ax-hx,ay-hy,sx,sy)/denom;
+        const u=cross(ax-hx,ay-hy,rx,ry)/denom;
+        return t>.02&&t<.98&&u>=0&&u<=1;
+      });
+      if(!obstructed){m.used=true;carrying=true;break;}
+    }
+  }
   function updateDogs(dt){
     if(panel!==18||caught||dialogOpen)return;
+    collectNearbyMeat();
     mazeClock+=dt;
     for(const d of dogs){
       if(d.mode==="asleep")continue;
