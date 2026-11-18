@@ -876,6 +876,11 @@ for(let i=2;i<=5;i++){
 // Do not assign its emerald until the user chooses a hiding place.
 // House 5: highlight the visible writing desk, not an imaginary chest.
 houseFeatures[5].push({
+ name:'Right Storage Chest',x:75,y:64,w:12,h:16,
+ shape:'inset(0 round 5%)',
+ text:'A sturdy iron-banded storage chest beside the cartographer’s map table.'
+});
+houseFeatures[5].push({
  name:'Cartographer’s Desk',x:39,y:35,w:32,h:15,
  shape:'inset(0 round 4%)',
  text:'A cartographer’s writing desk covered with maps, books and travel notes.'
@@ -897,16 +902,16 @@ function currentInteriorFeatures(){
  if(!interiorHouse)return features.filter(f=>['Travel Chest','Books and Potions'].includes(f.name));
  if(interiorHouse===1)return features.filter(f=>f.name!=='Anchor Rug'); // Rug is decorative, not interactive.
  if(interiorHouse===4)return features.filter(f=>['Workshop Drawers','Wooden Storage Box'].includes(f.name));
- if(interiorHouse===5)return features.filter(f=>f.name==='Cartographer’s Desk');
+ if(interiorHouse===5)return features.filter(f=>['Cartographer’s Desk','Right Storage Chest'].includes(f.name));
  return features.filter(f=>f.name==='Treasure Chest');
 }
 function isEmeraldStorage(feature){
- return interiorHouse>0&&(feature.name==='Treasure Chest'||(interiorHouse===4&&feature.name==='Wooden Storage Box'));
+ return interiorHouse>0&&(feature.name==='Treasure Chest'||(interiorHouse===4&&feature.name==='Wooden Storage Box')||(interiorHouse===5&&feature.name==='Right Storage Chest'));
 }
 function showInteriorDescription(feature){
  if(activeObject)return;
  let description=feature.text;
- if(isEmeraldStorage(feature)&&(quest.started||interiorHouse===1||interiorHouse===2||interiorHouse===3||interiorHouse===4)){
+ if(isEmeraldStorage(feature)&&(quest.started||interiorHouse===1||interiorHouse===2||interiorHouse===3||interiorHouse===4||interiorHouse===5)){
   if(!flags.has('emerald'+interiorHouse)){
    collectHouseEmerald();
    description+=' Inside, you find one sparkling emerald and add it to your inventory.';
