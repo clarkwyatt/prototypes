@@ -692,6 +692,8 @@ panelOneArt.src='./art/team4_panel_01.webp';
 const panelTwoLockedArt=new Image(),panelTwoUnlockedArt=new Image();
 panelTwoLockedArt.src='./art/team4_panel_02_locked.webp';
 panelTwoUnlockedArt.src='./art/team4_panel_02_unlocked.webp';
+const panelNineArt=new Image();
+panelNineArt.src='./art/team4_panel_09.webp';
 const panelEightArt=new Image();
 panelEightArt.src='./art/team4_panel_08.webp';
 const panelThreeArt=new Image();
@@ -710,6 +712,8 @@ function draw(){
   ctx.drawImage(panelThreeArt,0,0,W,H);
  }else if(panel===8&&panelEightArt.complete&&panelEightArt.naturalWidth>0){
   ctx.drawImage(panelEightArt,0,0,W,H);
+ }else if(panel===9&&panelNineArt.complete&&panelNineArt.naturalWidth>0){
+  ctx.drawImage(panelNineArt,0,0,W,H);
  }else{
   drawGrass();drawPath();
   if(panel===1)drawTreehouse();
