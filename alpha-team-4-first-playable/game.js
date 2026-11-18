@@ -116,9 +116,15 @@ function treehouseFloorBlocked(x,y){
   if(x>39&&x<61&&y>64)return true;
   return false;
  }
- if(x>treehouseDoorBounds.left&&x<treehouseDoorBounds.right&&y>65)return true;
- if(x<43&&y>35&&y<64)return true;
- if(x>69&&y>31&&y<69)return true;
+ // Starting treehouse: preserve the clear floor to the left of the table.
+ // All coordinates follow the full painted room, with feet at y+4.
+ const fy=y+4;
+ if(x<7||x>94||fy<29||fy>91)return true;
+ if(x>39&&x<61&&fy>72)return true; // arched exit door
+ if(x>17&&x<39&&fy>35&&fy<62)return true; // round table and stools
+ if(x<18&&fy>64&&fy<86)return true; // left storage chest and scrolls
+ if(x>68&&x<90&&fy>32&&fy<70)return true; // bed and footlocker
+ if(x>79&&fy>69&&fy<87)return true; // berry basket and travel chest
  return false;
 }
 const inventory=new Set(),flags=new Set();
@@ -918,12 +924,15 @@ document.querySelector('#debug-go').addEventListener('click',()=>{
 setQuest('Explore Village');updateInventory();requestAnimationFrame(tick);
 // Interior interactables use the same EXAMINE -> Got it! dialogue treatment.
 const treehouseFeatures=[
- {name:'Old Oak Table',x:25,y:43,w:19,h:19,shape:'ellipse(48% 45% at 50% 50%)',text:'The old oak table bears the scratches of a hundred suppers and a thousand imagined adventures. Even the smallest crumbs seem to hold a story.'},
- {name:'Cozy Bed',x:70,y:34,w:19,h:29,shape:'polygon(14% 0%,84% 0%,100% 16%,100% 90%,84% 100%,4% 100%,0% 15%)',text:'A quilt as blue as the evening sky lies neatly tucked beneath a soft pillow. Many heroic quests have begun here, though most ended with five more minutes of sleep.'},
- {name:'Sunlit Window',x:43,y:12,w:17,h:19,shape:'inset(0 round 9%)',text:'Sunlight spills through the window, turning the leaves outside into flecks of gold. Somewhere beyond these branches, the wide world is waiting.'},
- {name:'Books and Potions',x:67,y:13,w:21,h:13,shape:'polygon(0 28%,100% 28%,100% 100%,0 100%)',text:'Dusty volumes sit beside bottles of shimmering blue. One book is titled The Curious Art of Finding Trouble. Its pages look suspiciously well-read.'},
- {name:'Travel Chest',x:8,y:65,w:14,h:18,shape:'polygon(8% 0%,92% 0%,100% 16%,100% 100%,0 100%,0 16%)',text:'An old wooden chest, its brass corners dulled by time. It once carried treasures from distant places; now it guards memories worth even more.'},
- {name:'Woven Rug',x:42,y:43,w:20,h:20,shape:'ellipse(49% 48% at 50% 50%)',text:'A handwoven rug patterned like a tiny woodland kingdom. As a child, you imagined its winding vines were roads to places no map could name.'}
+ {name:'Adventure Table',x:18,y:36,w:20,h:24,shape:'ellipse(48% 46% at 50% 50%)',text:'A glowing lantern, a crisp red apple, and a little leather-bound book sit on the old oak table. The book is titled Adventures I Will Have Someday. Most of its pages are still blank.'},
+ {name:'Blue Quilt Bed',x:69,y:29,w:22,h:37,shape:'polygon(12% 0,88% 0,100% 16%,100% 94%,82% 100%,8% 100%,0 17%)',text:'Your favorite blue quilt is stitched with golden leaves. Beneath the pillow lies a wooden toy sword, once mighty enough to defeat entire armies of imaginary goblins.'},
+ {name:'Sunlit Window',x:43,y:11,w:17,h:20,shape:'inset(0 round 9%)',text:'Morning sunlight dances through the leaves outside. The forest looks peaceful from here, though something about the distant shadows makes you wonder what lies beyond the village.'},
+ {name:'Books and Potions',x:65,y:12,w:24,h:13,shape:'polygon(0 25%,100% 25%,100% 100%,0 100%)',text:'A shelf holds curious spellbooks, sparkling crystals, and tiny bottles of mysterious liquids. One book, The Art of Talking to Unicorns, has a page folded down.'},
+ {name:'Travel Chest',x:7,y:64,w:12,h:21,shape:'polygon(8% 0,92% 0,100% 17%,100% 100%,0 100%,0 17%)',text:'A worn travel chest is packed with maps, twine, and a compass that sometimes points toward things you wish for instead of north. It has never led you anywhere ordinary.'},
+ {name:'Family Banner',x:18,y:13,w:12,h:19,shape:'polygon(8% 0,92% 0,92% 80%,50% 100%,8% 80%)',text:'The blue banner bears the golden tree of your family. According to an old tale, its roots reach farther than any road, and its branches shelter every brave traveler.'},
+ {name:'Hanging Lantern',x:11,y:13,w:8,h:18,shape:'ellipse(43% 48% at 50% 50%)',text:'This enchanted lantern never seems to run out of light. Grandfather claims a tiny star fell into it long ago. You have never been entirely sure he was joking.'},
+ {name:'Berry Basket',x:79,y:70,w:12,h:15,shape:'ellipse(48% 48% at 50% 50%)',text:'A basket overflows with sweet forest berries and bright red mushrooms. You remember being warned not to eat the mushrooms, especially the ones that seem to wink at you.'},
+ {name:'Bedside Keepsake Chest',x:72,y:59,w:16,h:11,shape:'inset(0 round 13%)',text:'A small chest tucked beneath the bed holds polished stones, childhood treasures, and a note that reads: A brave heart is worth more than a golden crown.'}
 ];
 // Per-house inspectable scenery. Positions are percentages of each interior image.
 const houseFeatures={
@@ -1004,7 +1013,7 @@ houseFeatures[1].find(f=>f.name==='Treasure Chest').text='A sturdy wooden chest 
 function currentInteriorFeatures(){
  // Selective highlights: doors handled separately, quest storage first.
  const features=interiorHouse?(houseFeatures[interiorHouse]||[]):treehouseFeatures;
- if(!interiorHouse)return features.filter(f=>['Travel Chest','Books and Potions'].includes(f.name));
+ if(!interiorHouse)return features;
  if(interiorHouse===1)return features.filter(f=>f.name!=='Anchor Rug');
  const questFeatures=interiorHouse===4?['Workshop Drawers','Wooden Storage Box']:interiorHouse===5?['Cartographer’s Desk','Right Storage Chest']:['Treasure Chest'];
  return features.filter(f=>questFeatures.includes(f.name)||examinationFeatures[interiorHouse].includes(f));
