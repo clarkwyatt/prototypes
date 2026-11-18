@@ -1068,7 +1068,13 @@ function forestFoliageBlocked(x,y){
  // Panel 16's painted southbound trail curves across the lower screen.
  // Keep that entire approach open instead of narrowing it to the exit
  // rectangle too early (which trapped the player on the path).
- if(panel===16&&y>430&&x>340&&x<760)return false;
+ if(panel===16&&y>390){
+  // Follow the painted lower bend: the trail is farther left before
+  // curving back toward the south exit. Allow room for the hero's radius.
+  const t=Math.max(0,Math.min(1,(y-390)/300));
+  const left=225+135*t,right=515+195*t;
+  if(x>left&&x<right)return false;
+ }
  // Deep corner foliage applies throughout the forest, not only to the
  // screen's outermost pixels.
  const corner=155;
