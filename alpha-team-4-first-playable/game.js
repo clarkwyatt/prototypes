@@ -223,14 +223,14 @@ const house=(x,y,index)=>({
 panels[1].objects.push(...housePositions.map(([x,y],i)=>house(x,y,i+1)));
 panels[1].objects.push({
  id:'villager',name:'Villager',kind:'npc',x:855,y:470,outline:villagerOutline,reach:100,
- description:'A villager who needs five emeralds from the houses.',
- dialogue:'Can you open the chest in each house and bring me five emeralds? I will give you the gate key.',
+ description:'An elder keeps watch over the sealed village gate, his expression heavy with an old secret.',
+ dialogue:'Long ago, five green stars were entrusted to the keepers of this village. Their light has faded from memory, yet the old gate remembers. Seek the scattered stones where our people guard their dearest possessions. Bring their light together, and I shall open the road beyond.',
  draw(ctx){drawVillager(ctx,this.x,this.y)},
  actions:[{label:'TALK',primary:true,run:()=>{
-  if(quest.gateKey||quest.gateOpen){copyEl.textContent='Good luck on your adventure!';return}
-  if(!quest.started){quest.started=true;setQuest('Find 5 Emeralds ('+quest.emeralds+'/5)');copyEl.textContent='Please open the chest in each of the five houses to find an emerald.';return}
-  if(quest.emeralds<5){copyEl.textContent='You have '+quest.emeralds+' of the five emeralds.';return}
-  quest.gateKey=true;for(const name of [...inventory])if(name.endsWith(' / 5 Emeralds'))removeItem(name);addItem('Gate Key');setQuest('Unlock the Village Gate');copyEl.textContent='Thank you! Here is the key to the gate.';
+  if(quest.gateKey||quest.gateOpen){copyEl.textContent='The road is yours now, brave traveler. May the old stars watch over your steps.';return}
+  if(!quest.started){quest.started=true;setQuest('Find 5 Emeralds ('+quest.emeralds+'/5)');copyEl.textContent='Five green stars once protected this village. Their keepers hid them among treasured belongings. Search carefully, and bring the stones to me. Only then may the ancient gate be unsealed.';return}
+  if(quest.emeralds<5){copyEl.textContent='I sense '+quest.emeralds+' of the five green stars in your keeping. The others still slumber somewhere in the village. Seek what our people have hidden away.';return}
+  quest.gateKey=true;for(const name of [...inventory])if(name.endsWith(' / 5 Emeralds'))removeItem(name);addItem('Gate Key');setQuest('Unlock the Village Gate');copyEl.textContent='The five stars shine as one again! You have restored an ancient promise. Take this key, brave traveler, and let the road beyond our walls be yours.';
  }}]
 });
 panels[1].objects.push({
@@ -256,12 +256,12 @@ function drawUnicorn(ctx,x,y){
 panels[2].objects.push({
  id:'unicorn',name:'Unicorn',kind:'npc',x:775,y:490,outline:unicornOutline,reach:100,
  description:'A beautiful unicorn stands beside the path.',
- dialogue:'Be careful, young traveler. Monsters roam beyond the village. You should not explore without a weapon. I have heard of a sword hidden deep in the forest.',
+ dialogue:'Hush, wanderer. Beyond these trees, shadows have begun to stir. Do not face them empty-handed. Deep within the forest lies a blade forgotten by time. Seek it, and you may yet walk these paths unharmed.',
  draw(ctx){drawUnicorn(ctx,this.x,this.y)},
  actions:[{label:'TALK',primary:true,run:()=>{
   flags.add('unicornWarning');
   setQuest('Find the Sword');
-  copyEl.textContent='Be careful, young traveler. Monsters roam beyond the village. You should not explore without a weapon. I have heard of a sword hidden deep in the forest.';
+  copyEl.textContent='Hush, wanderer. Beyond these trees, shadows have begun to stir. Do not face them empty-handed. Deep within the forest lies a blade forgotten by time. Seek it, and you may yet walk these paths unharmed.';
  }}]
 });
 // Step 4 foundation: find and equip the sword; combat will be added later.
@@ -284,7 +284,7 @@ panels[14].objects.push({
  actions:[{label:'TALK',primary:true,run:()=>{
   flags.add('armorWarning');
   setQuest('Find Leather Armor');
-  copyEl.textContent='Well done finding the sword! But beware: there is a goblin camp nearby. You had better look for some armor along the way before facing those goblins.';
+  copyEl.textContent='So, the forgotten blade has chosen you. Yet steel alone will not turn aside every claw. Goblins gather beneath the dark boughs ahead. Seek the scattered pieces of leather armor before you challenge their camp.';
  }}]
 });
 panels[14].objects.push({
