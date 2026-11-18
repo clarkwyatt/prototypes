@@ -297,7 +297,7 @@ const house=(x,y,index)=>({
   if(!quest.started){copyEl.textContent='A cozy room with shelves and a small chest.';actionsEl.replaceChildren();return}
   flags.add('emerald'+index);quest.emeralds++;for(const name of [...inventory])if(name.endsWith(' / 5 Emeralds'))removeItem(name);addItem(quest.emeralds+' / 5 Emeralds');
   copyEl.textContent='You search the house and find an emerald!';actionsEl.replaceChildren();
-  setQuest(quest.emeralds<5?'Find 5 Emeralds ('+quest.emeralds+'/5)':'Bring 5 Emeralds to the Villager');
+  setQuest(quest.emeralds<5?'Find 5 Emeralds in the Houses ('+quest.emeralds+'/5)':'Bring 5 Emeralds to the Villager');
  }}]
 });
 panels[1].objects.push(...housePositions.map(([x,y],i)=>house(x,y,i+1)));
@@ -308,7 +308,7 @@ panels[1].objects.push({
  draw(ctx){drawVillager(ctx,this.x,this.y)},
  actions:[{label:'TALK',primary:true,run:()=>{
   if(quest.gateKey||quest.gateOpen){copyEl.textContent='The road is yours now, brave traveler. May the old stars watch over your steps.';return}
-  if(!quest.started){quest.started=true;setQuest('Find 5 Emeralds ('+quest.emeralds+'/5)');copyEl.textContent='Five green stars once protected this village. Their keepers hid them among treasured belongings. Search carefully, and bring the stones to me. Only then may the ancient gate be unsealed.';return}
+  if(!quest.started){quest.started=true;setQuest('Find 5 Emeralds in the Houses ('+quest.emeralds+'/5)');copyEl.textContent='Five green stars once protected this village. Their keepers hid them among treasured belongings. Search carefully, and bring the stones to me. Only then may the ancient gate be unsealed.';return}
   if(quest.emeralds<5){copyEl.textContent='I sense '+quest.emeralds+' of the five green stars in your keeping. The others still slumber somewhere in the village. Seek what our people have hidden away.';return}
   quest.gateKey=true;for(const name of [...inventory])if(name.endsWith(' / 5 Emeralds'))removeItem(name);addItem('Gate Key');setQuest('Unlock the Village Gate');copyEl.textContent='The five stars shine as one again! You have restored an ancient promise. Take this key, brave traveler, and let the road beyond our walls be yours.';
    appendItemReward('a Gate Key');
@@ -777,7 +777,7 @@ function collectHouseEmerald(){
  flags.add('emerald'+interiorHouse);quest.emeralds++;
  for(const name of [...inventory])if(name.endsWith(' / 5 Emeralds'))removeItem(name);
  addItem(quest.emeralds+' / 5 Emeralds');
- setQuest(quest.emeralds<5?'Find 5 Emeralds ('+quest.emeralds+'/5)':'Bring 5 Emeralds to the Villager');
+ setQuest(quest.emeralds<5?'Find 5 Emeralds in the Houses ('+quest.emeralds+'/5)':'Bring 5 Emeralds to the Villager');
 }
 function exitHouse(){
  const destination=houseExitPosition;
