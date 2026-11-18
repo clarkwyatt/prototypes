@@ -222,7 +222,7 @@ const house=(x,y,index)=>({
 });
 panels[1].objects.push(...housePositions.map(([x,y],i)=>house(x,y,i+1)));
 panels[1].objects.push({
- id:'villager',name:'Villager',kind:'npc',x:855,y:470,outline:villagerOutline,reach:100,
+ id:'villager',name:'Villager',kind:'npc',x:108,y:276,outline:villagerOutline,reach:100,
  description:'An elder keeps watch over the sealed village gate, his expression heavy with an old secret.',
  dialogue:'Long ago, five green stars were entrusted to the keepers of this village. Their light has faded from memory, yet the old gate remembers. Seek the scattered stones where our people guard their dearest possessions. Bring their light together, and I shall open the road beyond.',
  draw(ctx){drawVillager(ctx,this.x,this.y)},
