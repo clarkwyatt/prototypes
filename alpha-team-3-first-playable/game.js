@@ -25,29 +25,80 @@
     [24,19],[19,14],[14,9],[9,4],[4,5],[5,10],
     [10,15],[15,20],[20,25],[11,16]
   ];
-  const ROAD_WIDTH = 260;
-  const center = [WORLD_W / 2, WORLD_H / 2];
-  const edges = { east:[WORLD_W, WORLD_H/2], west:[0,WORLD_H/2],
-                  north:[WORLD_W/2,0], south:[WORLD_W/2,WORLD_H] };
+  // Rough roads traced from the Guide's second map (not final-art collision).
+  // Edge positions are shared by both neighboring panels so transitions align.
+  const ROAD_WIDTH = 420;
+  const edgePosition = {
+    "1-6":.24,"6-11":.24,"11-12":.78,"12-7":.32,
+    "7-8":.62,"8-13":.48,"13-18":.56,"18-17":.36,
+    "17-16":.72,"16-21":.35,"21-22":.72,"22-23":.54,
+    "23-24":.52,"24-19":.42,"19-14":.31,"14-9":.34,
+    "9-4":.28,"4-5":.55,"5-10":.85,"10-15":.69,
+    "15-20":.68,"20-25":.58,"11-16":.24
+  };
+  const reverseDirection = {east:"west",west:"east",north:"south",south:"north"};
+  const edgePoint = (direction, fraction) => ({
+    east:[WORLD_W, WORLD_H*fraction], west:[0,WORLD_H*fraction],
+    north:[WORLD_W*fraction,0], south:[WORLD_W*fraction,WORLD_H]
+  })[direction];
   for (const [a,b] of connections) {
-    const diff = b-a;
-    const dir = diff === 1 ? "east" : diff === -1 ? "west" :
-                diff === 5 ? "south" : diff === -5 ? "north" : null;
-    if (!dir || (Math.abs(diff) === 1 && Math.floor((a-1)/5) !== Math.floor((b-1)/5))) {
-      throw Error("Invalid Team 3 panel connection: " + a + " / " + b);
-    }
-    const reverse = {east:"west",west:"east",north:"south",south:"north"}[dir];
-    panels[a-1].exits[dir] = {panel:b};
-    panels[b-1].exits[reverse] = {panel:a};
-    panels[a-1].roads.push([center,edges[dir]]);
-    panels[b-1].roads.push([center,edges[reverse]]);
+    const diff=b-a;
+    const direction=diff===1?"east":diff===-1?"west":diff===5?"south":diff===-5?"north":null;
+    if (!direction || (Math.abs(diff)===1 && Math.floor((a-1)/5)!==Math.floor((b-1)/5)))
+      throw Error("Invalid Team 3 panel connection: "+a+" / "+b);
+    const reverse=reverseDirection[direction];
+    const fraction=edgePosition[a+"-"+b] ?? edgePosition[b+"-"+a];
+    panels[a-1].exits[direction]={panel:b, fraction};
+    panels[b-1].exits[reverse]={panel:a, fraction};
   }
+  // Curved centerline control points in panel-local proportions. Every endpoint
+  // is taken from the shared exit definition; no extra connections are created.
+  const bends = {
+    1:[[.55,.45],[.40,.65]],
+    6:[[.48,.22],[.37,.51],[.35,.78]],
+    7:[[.30,.55],[.52,.37]],
+    8:[[.31,.40],[.50,.55]],
+    9:[[.28,.25],[.36,.65]],
+    10:[[.69,.30],[.68,.62]],
+    11:[[.24,.43],[.43,.65],[.62,.66]],
+    12:[[.25,.58],[.35,.38]],
+    13:[[.48,.27],[.48,.54],[.56,.76]],
+    14:[[.34,.35],[.43,.65]],
+    15:[[.69,.35],[.68,.65]],
+    16:[[.35,.28],[.48,.45],[.65,.48]],
+    17:[[.38,.48],[.58,.46]],
+    18:[[.56,.35],[.48,.55],[.36,.58]],
+    19:[[.34,.26],[.31,.55]],
+    20:[[.68,.28],[.58,.70]],
+    21:[[.35,.45],[.55,.68]],
+    22:[[.30,.55],[.54,.54]],
+    23:[[.30,.52],[.52,.51]],
+    24:[[.35,.52],[.42,.38]],
+    25:[[.58,.30],[.53,.58],[.60,.76]]
+  };
+  function buildRoads(panel) {
+    const ports=Object.entries(panel.exits).map(([direction,exit])=>edgePoint(direction,exit.fraction));
+    if (!ports.length) return [];
+    const points=(bends[panel.id]||[[.5,.5]]).map(p=>[p[0]*WORLD_W,p[1]*WORLD_H]);
+    // Connect each entrance to the shared curved interior route.
+    // Multiple exits share the same walkable region at junctions.
+    const lines=[];
+    for (const port of ports) {
+      const nearest=points.reduce((best,p,i)=>Math.hypot(p[0]-port[0],p[1]-port[1])<Math.hypot(points[best][0]-port[0],points[best][1]-port[1])?i:best,0);
+      const route=port[0]===0||port[1]===0?[port,...points.slice(nearest)]:[...points.slice(0,nearest+1),port];
+      for(let i=1;i<route.length;i++) lines.push([route[i-1],route[i]]);
+    }
+    // Connect the entire interior spine, including when ports join at different points.
+    for(let i=1;i<points.length;i++) lines.push([points[i-1],points[i]]);
+    return lines;
+  }
+  for (const panel of panels) panel.roads=buildRoads(panel);
   function onRoad(x,y,panel=currentPanel()) {
-    const clearance = ROAD_WIDTH/2 - 22;
-    return panel.roads.some(([a,b]) => {
-      const vx=b[0]-a[0], vy=b[1]-a[1];
+    const clearance=ROAD_WIDTH/2-24;
+    return panel.roads.some(([a,b])=>{
+      const vx=b[0]-a[0],vy=b[1]-a[1];
       const t=Math.max(0,Math.min(1,((x-a[0])*vx+(y-a[1])*vy)/(vx*vx+vy*vy)));
-      return Math.hypot(x-a[0]-t*vx,y-a[1]-t*vy) <= clearance;
+      return Math.hypot(x-a[0]-t*vx,y-a[1]-t*vy)<=clearance;
     });
   }
   let lastTime = performance.now();
@@ -87,7 +138,7 @@
   }
   function transition(direction, along) {
     const exit = currentPanel().exits[direction];
-    if (!exit || Math.abs(along - (direction === "east" || direction === "west" ? WORLD_H/2 : WORLD_W/2)) > ROAD_WIDTH/2-24) return false;
+    if (!exit || Math.abs(along - (direction === "east" || direction === "west" ? WORLD_H*exit.fraction : WORLD_W*exit.fraction)) > ROAD_WIDTH/2-24) return false;
     const old = gameState.panel, ox=hero.x, oy=hero.y;
     gameState.panel=exit.panel;
     if (direction==="east") {hero.x=32;hero.y=along;}
@@ -248,8 +299,9 @@
     const target = Number(debugSelect.value);
     if (!Number.isInteger(target) || target < 1 || target > 25) return;
     gameState.panel = target;
-    hero.x = WORLD_W / 2;
-    hero.y = WORLD_H / 2;
+    const safe = currentPanel().roads[0]?.[0] || [WORLD_W / 2, WORLD_H / 2];
+    hero.x = safe[0] === 0 ? 32 : safe[0] === WORLD_W ? WORLD_W-32 : safe[0];
+    hero.y = safe[1] === 0 ? 32 : safe[1] === WORLD_H ? WORLD_H-32 : safe[1];
     keys.clear();
     closePopup();
     debugPanel.hidden = true;
