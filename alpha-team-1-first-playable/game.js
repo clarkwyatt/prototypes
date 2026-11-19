@@ -591,6 +591,23 @@
       const x=(e.clientX-bounds.left)/bounds.width,y=(e.clientY-bounds.top)/bounds.height;
       if(!carrying){
         const unit=Math.min(width,height);
+        // Click a previously placed piece to recover it before a dog eats it.
+        // Prioritize this over ordinary meat pickup; placed bait is never auto-collected.
+        const placed=meat.find(m=>m.placed&&!m.used&&
+          Math.hypot((m.x-x)*width,(m.y-y)*height)<=unit*.09&&
+          Math.hypot((m.x-hero.x)*width,(m.y-hero.y)*height)<=unit*.19);
+        if(placed){
+          // Cancel any dog investigation tied to this bait.
+          for(const d of dogs){
+            if(d.bait===placed&&d.mode==="investigate"){
+              d.bait=null;d.target=null;d.mode="watch";d.timer=0;
+            }
+          }
+          if(!dogs.some(d=>d.bait===placed&&d.mode==="eating")){
+            placed.used=true;placed.claimed=false;carrying=true;
+          }
+          return;
+        }
         // Give all four meat pickups a forgiving click target and reach.
         // Require a clear approach so meat cannot be grabbed through hedges.
         const m=meat.find(m=>{
