@@ -16,7 +16,40 @@
   const modalCopy = document.querySelector("#modal-copy");
   const modalButtons = document.querySelector("#modal-buttons");
   const gameState = { panel: 1, inventory: [], quest: "", world: {}, encounters: {} };
-  const panels = Array.from({ length: 25 }, (_, i) => ({ id: i + 1, exits: {}, objects: [], solids: [] }));
+  const panels = Array.from({ length: 25 }, (_, i) => ({ id: i + 1, exits: {}, objects: [], solids: [], roads: [] }));
+  // Connections follow the students' story route. Tiny sliver crossings on the paper
+  // map are moved to clear, centered openings so every screen is playable.
+  // The loops through 21-24 and the northern branch to 5 are deliberately retained.
+  const connections = [
+    [1,2],[2,7],[7,6],[6,11],[11,12],[12,17],[17,18],
+    [18,13],[13,8],[8,9],[9,14],[14,19],[19,24],
+    [24,23],[23,22],[22,21],[14,15],[15,10],[10,5],[15,20],[20,25]
+  ];
+  const ROAD_WIDTH = 240;
+  const center = [WORLD_W / 2, WORLD_H / 2];
+  const edges = { east:[WORLD_W, WORLD_H/2], west:[0,WORLD_H/2],
+                  north:[WORLD_W/2,0], south:[WORLD_W/2,WORLD_H] };
+  for (const [a,b] of connections) {
+    const diff = b-a;
+    const dir = diff === 1 ? "east" : diff === -1 ? "west" :
+                diff === 5 ? "south" : diff === -5 ? "north" : null;
+    if (!dir || (Math.abs(diff) === 1 && Math.floor((a-1)/5) !== Math.floor((b-1)/5))) {
+      throw Error("Invalid Team 3 panel connection: " + a + " / " + b);
+    }
+    const reverse = {east:"west",west:"east",north:"south",south:"north"}[dir];
+    panels[a-1].exits[dir] = {panel:b};
+    panels[b-1].exits[reverse] = {panel:a};
+    panels[a-1].roads.push([center,edges[dir]]);
+    panels[b-1].roads.push([center,edges[reverse]]);
+  }
+  function onRoad(x,y,panel=currentPanel()) {
+    const clearance = ROAD_WIDTH/2 - 22;
+    return panel.roads.some(([a,b]) => {
+      const vx=b[0]-a[0], vy=b[1]-a[1];
+      const t=Math.max(0,Math.min(1,((x-a[0])*vx+(y-a[1])*vy)/(vx*vx+vy*vy)));
+      return Math.hypot(x-a[0]-t*vx,y-a[1]-t*vy) <= clearance;
+    });
+  }
   let lastTime = performance.now();
   let activeObject = null;
   let grassPattern = null;
@@ -44,29 +77,32 @@
     grassPattern = ctx.createPattern(tile, "repeat");
   }
   function currentPanel() { return panels[gameState.panel - 1]; }
-  function isSolid(x, y) {
+  function isSolid(x,y) {
     const radius = 24;
-    if (x < radius || x > WORLD_W - radius || y < radius || y > WORLD_H - radius) return true;
-    return currentPanel().solids.some(s => x + radius > s.x && x - radius < s.x + s.w && y + radius > s.y && y - radius < s.y + s.h);
+    if (x < radius || x > WORLD_W-radius || y < radius || y > WORLD_H-radius) return true;
+    if (!onRoad(x,y)) return true;
+    return currentPanel().solids.some(s => x+radius>s.x && x-radius<s.x+s.w && y+radius>s.y && y-radius<s.y+s.h);
   }
-  function moveToPanel(direction) {
+  function transition(direction, along) {
     const exit = currentPanel().exits[direction];
-    if (!exit) return false;
-    const previousPanel = gameState.panel;
-    const previousX = hero.x, previousY = hero.y;
-    gameState.panel = exit.panel;
-    hero.x = exit.x; hero.y = exit.y;
-    if (isSolid(hero.x, hero.y)) {
-      gameState.panel = previousPanel; hero.x = previousX; hero.y = previousY;
-      return false;
-    }
+    if (!exit || Math.abs(along - (direction === "east" || direction === "west" ? WORLD_H/2 : WORLD_W/2)) > ROAD_WIDTH/2-24) return false;
+    const old = gameState.panel, ox=hero.x, oy=hero.y;
+    gameState.panel=exit.panel;
+    if (direction==="east") {hero.x=32;hero.y=along;}
+    if (direction==="west") {hero.x=WORLD_W-32;hero.y=along;}
+    if (direction==="north") {hero.x=along;hero.y=WORLD_H-32;}
+    if (direction==="south") {hero.x=along;hero.y=32;}
+    if (isSolid(hero.x,hero.y)) {gameState.panel=old;hero.x=ox;hero.y=oy;return false;}
     return true;
   }
-  function move(dx, dy) {
-    const nx = hero.x + dx, ny = hero.y + dy;
-    if (!isSolid(nx, hero.y)) hero.x = nx;
-    if (!isSolid(hero.x, ny)) hero.y = ny;
-    // Panel exits are intentionally empty until the students' level map is provided.
+  function move(dx,dy) {
+    const nx=hero.x+dx, ny=hero.y+dy;
+    if (nx > WORLD_W-24 && transition("east",hero.y)) return;
+    if (nx < 24 && transition("west",hero.y)) return;
+    if (ny > WORLD_H-24 && transition("south",hero.x)) return;
+    if (ny < 24 && transition("north",hero.x)) return;
+    if (!isSolid(nx,hero.y)) hero.x=nx;
+    if (!isSolid(hero.x,ny)) hero.y=ny;
   }
   function visibleObjects() {
     return currentPanel().objects.filter(o => !o.hidden && (!o.visibleWhen || o.visibleWhen(gameState)));
@@ -137,6 +173,13 @@
     ctx.setTransform(canvas.width / WORLD_W, 0, 0, canvas.height / WORLD_H, 0, 0);
     if (!grassPattern) makeGrassPattern();
     ctx.fillStyle = grassPattern; ctx.fillRect(0, 0, WORLD_W, WORLD_H);
+    // A sandy, walkable corridor. The grass outside the road is impassable.
+    ctx.lineCap="round";ctx.lineJoin="round";
+    for (const [a,b] of currentPanel().roads) {
+      ctx.beginPath();ctx.moveTo(...a);ctx.lineTo(...b);
+      ctx.strokeStyle="#ad8b5e";ctx.lineWidth=ROAD_WIDTH+16;ctx.stroke();
+      ctx.strokeStyle="#dfc394";ctx.lineWidth=ROAD_WIDTH;ctx.stroke();
+    }
     const now = performance.now();
     for (const o of visibleObjects()) {
       if (!near(o) || !o.highlight) continue;
