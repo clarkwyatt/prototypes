@@ -101,10 +101,12 @@
     return [0,1].map(i=>u*u*u*a[i]+3*u*u*t*b[i]+3*u*t*t*c[i]+t*t*t*d[i]);
   }
   const panelOneWaypoints = [
-    [[330,185],[470,135],[690,265],[1170,455]],
-    [[1170,455],[1440,545],[1560,480],[WORLD_W+110,480]],
-    [[WORLD_W+110,480],[1450,690],[1060,710],[816,780]],
-    [[816,780],[780,860],[816,930],[816,WORLD_H]]
+    // House -> eastward upper road -> broad right-hand U-turn.
+    [[330,265],[650,245],[1030,270],[1190,360]],
+    [[1190,360],[1430,470],[1410,635],[1200,710]],
+    // Return west across the lower screen, then bend south to Panel 06.
+    [[1200,710],[1030,780],[800,815],[735,855]],
+    [[735,855],[720,920],[775,960],[816,960]]
   ];
   const panelOnePoints=[];
   for (const [a,b,c,d] of panelOneWaypoints) {
@@ -114,7 +116,7 @@
   for(let i=1;i<panelOnePoints.length;i++) panels[0].roads.push([panelOnePoints[i-1],panelOnePoints[i]]);
 
   function onRoad(x,y,panel=currentPanel()) {
-    const clearance=ROAD_WIDTH/2-24;
+    const clearance=(panel.id===1 ? 250 : ROAD_WIDTH)/2-24;
     return panel.roads.some(([a,b])=>{
       const vx=b[0]-a[0],vy=b[1]-a[1];
       const t=Math.max(0,Math.min(1,((x-a[0])*vx+(y-a[1])*vy)/(vx*vx+vy*vy)));
@@ -252,7 +254,8 @@
     ctx.lineCap="round";ctx.lineJoin="round";
     // Stroke all outer edges first, then all sand. This prevents the brown
     // outlines of overlapping segments from appearing inside the road.
-    for (const [color,width] of [["#ad8b5e",ROAD_WIDTH+16],["#dfc394",ROAD_WIDTH]]) {
+    const roadWidth=currentPanel().id===1 ? 250 : ROAD_WIDTH;
+    for (const [color,width] of [["#ad8b5e",roadWidth+16],["#dfc394",roadWidth]]) {
       ctx.strokeStyle=color;ctx.lineWidth=width;
       for (const [a,b] of currentPanel().roads) {
         ctx.beginPath();ctx.moveTo(...a);ctx.lineTo(...b);ctx.stroke();
