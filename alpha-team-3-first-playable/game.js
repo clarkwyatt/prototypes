@@ -3,7 +3,7 @@
   const canvas = document.querySelector("#world");
   const ctx = canvas.getContext("2d");
   const keys = new Set();
-  const hero = { x: 920, y: 480, speed: 235 };
+  const hero = { x: 816, y: 480, speed: 235 };
   const heroSize = 120;
   const WORLD_W = 1632, WORLD_H = 960;
   const heroImage = new Image();
@@ -17,13 +17,13 @@
   const modalButtons = document.querySelector("#modal-buttons");
   const gameState = { panel: 1, inventory: [], quest: "", world: {}, encounters: {} };
   const panels = Array.from({ length: 25 }, (_, i) => ({ id: i + 1, exits: {}, objects: [], solids: [], roads: [] }));
-  // Revised Guide map: connected winding roads, including the lower return loop.
-  // No added shortcuts or diagonal screen transitions.
+  // Connections traced from the Guide's revised paper map.
+  // Panels 2 and 3 have NO roads. Panel 1 exits SOUTH into 6.
   const connections = [
-    [1,2],[2,7],[7,6],[6,11],[11,12],[12,13],
-    [13,8],[8,9],[9,4],[4,5],[5,10],[10,15],[15,20],[20,25],
-    [11,16],[16,17],[17,18],[18,13],
-    [16,21],[21,22],[22,23],[23,24],[24,19],[19,14],[14,9]
+    [1,6],[6,11],[11,12],[12,7],[7,8],[8,13],[13,18],
+    [18,17],[17,16],[16,21],[21,22],[22,23],[23,24],
+    [24,19],[19,14],[14,9],[9,4],[4,5],[5,10],
+    [10,15],[15,20],[20,25],[11,16]
   ];
   const ROAD_WIDTH = 260;
   const center = [WORLD_W / 2, WORLD_H / 2];
@@ -248,9 +248,7 @@
     const target = Number(debugSelect.value);
     if (!Number.isInteger(target) || target < 1 || target > 25) return;
     gameState.panel = target;
-    // Start a little inside a walkable road so the hero can move both ways.
-    hero.x = currentPanel().exits.east ? WORLD_W / 2 + 105 :
-             currentPanel().exits.west ? WORLD_W / 2 - 105 : WORLD_W / 2;
+    hero.x = WORLD_W / 2;
     hero.y = WORLD_H / 2;
     keys.clear();
     closePopup();
