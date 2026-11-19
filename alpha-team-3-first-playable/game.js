@@ -3,7 +3,7 @@
   const canvas = document.querySelector("#world");
   const ctx = canvas.getContext("2d");
   const keys = new Set();
-  const hero = { x: 816, y: 480, speed: 235 };
+  const hero = { x: 355, y: 265, speed: 235 };
   const heroSize = 120;
   const WORLD_W = 1632, WORLD_H = 960;
   const heroImage = new Image();
