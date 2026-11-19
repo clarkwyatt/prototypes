@@ -55,9 +55,11 @@
   let grassPattern = null;
 
   function resize() {
-    const dpr = Math.min(devicePixelRatio || 1, 2);
-    canvas.width = Math.round(canvas.clientWidth * dpr);
-    canvas.height = Math.round(canvas.clientHeight * dpr);
+    // Keep the world at its native resolution even in smaller embeds.
+    // Previously the canvas was rasterized at viewport size and then stretched.
+    const scale = Math.max(1, Math.min(window.devicePixelRatio || 1, 2));
+    canvas.width = Math.round(WORLD_W * scale);
+    canvas.height = Math.round(WORLD_H * scale);
     draw();
   }
   function makeGrassPattern() {
@@ -101,6 +103,8 @@
     if (nx < 24 && transition("west",hero.y)) return;
     if (ny > WORLD_H-24 && transition("south",hero.x)) return;
     if (ny < 24 && transition("north",hero.x)) return;
+    // A screen may begin with a one-way-looking corridor; both movement axes
+    // remain available, and the road itself (not the sprite art) sets collision.
     if (!isSolid(nx,hero.y)) hero.x=nx;
     if (!isSolid(hero.x,ny)) hero.y=ny;
   }
