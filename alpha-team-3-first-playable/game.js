@@ -23,7 +23,7 @@
     [1,6],[6,11],[11,12],[12,7],[7,8],[8,13],[13,18],
     [18,17],[17,16],[16,21],[21,22],[22,23],[23,24],
     [24,19],[19,14],[14,9],[9,4],[4,5],[5,10],
-    [10,15],[15,20],[20,25],[11,16]
+    [10,15],[15,20],[20,25]
   ];
   // Rough roads traced from the Guide's second map (not final-art collision).
   // Edge positions are shared by both neighboring panels so transitions align.
@@ -34,7 +34,7 @@
     "17-16":.72,"16-21":.35,"21-22":.72,"22-23":.54,
     "23-24":.52,"24-19":.42,"19-14":.31,"14-9":.34,
     "9-4":.28,"4-5":.55,"5-10":.85,"10-15":.69,
-    "15-20":.68,"20-25":.58,"11-16":.24
+    "15-20":.68,"20-25":.58
   };
   const reverseDirection = {east:"west",west:"east",north:"south",south:"north"};
   const edgePoint = (direction, fraction) => ({
