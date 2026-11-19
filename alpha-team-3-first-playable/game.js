@@ -29,7 +29,7 @@
   // Edge positions are shared by both neighboring panels so transitions align.
   const ROAD_WIDTH = 420;
   const edgePosition = {
-    "1-6":.24,"6-11":.24,"11-12":.78,"12-7":.32,
+    "1-6":.50,"6-11":.24,"11-12":.78,"12-7":.32,
     "7-8":.62,"8-13":.48,"13-18":.56,"18-17":.36,
     "17-16":.72,"16-21":.35,"21-22":.72,"22-23":.54,
     "23-24":.52,"24-19":.42,"19-14":.31,"14-9":.34,
@@ -54,8 +54,8 @@
   // Curved centerline control points in panel-local proportions. Every endpoint
   // is taken from the shared exit definition; no extra connections are created.
   const bends = {
-    1:[[.55,.45],[.40,.65]],
-    6:[[.48,.22],[.37,.51],[.35,.78]],
+    1:[[.31,.19],[.44,.26],[.59,.40],[.58,.56],[.43,.74],[.24,.88]],
+    6:[[.50,.20],[.42,.43],[.34,.67],[.24,.85]],
     7:[[.30,.55],[.52,.37]],
     8:[[.31,.40],[.50,.55]],
     9:[[.28,.25],[.36,.65]],
@@ -234,6 +234,19 @@
       ctx.beginPath();ctx.moveTo(...a);ctx.lineTo(...b);
       ctx.strokeStyle="#ad8b5e";ctx.lineWidth=ROAD_WIDTH+16;ctx.stroke();
       ctx.strokeStyle="#dfc394";ctx.lineWidth=ROAD_WIDTH;ctx.stroke();
+    }
+    // Temporary Bunny Knight home marker. Final panel art will replace this.
+    if (gameState.panel === 1) {
+      ctx.save();
+      ctx.translate(320, 135);
+      ctx.fillStyle="#8d6546"; ctx.fillRect(-83,-18,166,116);
+      ctx.fillStyle="#f1d7a3"; ctx.fillRect(-72,-9,144,96);
+      ctx.fillStyle="#a74f3d";
+      ctx.beginPath(); ctx.moveTo(-103,-18);ctx.lineTo(0,-106);ctx.lineTo(103,-18);ctx.closePath();ctx.fill();
+      ctx.strokeStyle="#6b3f30";ctx.lineWidth=7;ctx.stroke();
+      ctx.fillStyle="#72513c";ctx.fillRect(-22,35,44,52);
+      ctx.fillStyle="#d8eddb";ctx.fillRect(-58,13,28,27);ctx.fillRect(30,13,28,27);
+      ctx.restore();
     }
     const now = performance.now();
     for (const o of visibleObjects()) {
