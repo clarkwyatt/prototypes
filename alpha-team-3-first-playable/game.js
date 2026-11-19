@@ -93,6 +93,26 @@
     return lines;
   }
   for (const panel of panels) panel.roads=buildRoads(panel);
+  // Panel 01 is a single winding route, not a collection of overlapping
+  // center-to-edge spokes. Sample one smooth cubic centerline for rendering
+  // and collision. It brushes the east edge but has NO east exit.
+  function cubic(a,b,c,d,t) {
+    const u=1-t;
+    return [0,1].map(i=>u*u*u*a[i]+3*u*u*t*b[i]+3*u*t*t*c[i]+t*t*t*d[i]);
+  }
+  const panelOneWaypoints = [
+    [[330,185],[470,135],[690,265],[1170,455]],
+    [[1170,455],[1440,545],[1560,480],[WORLD_W+110,480]],
+    [[WORLD_W+110,480],[1450,690],[1060,710],[816,780]],
+    [[816,780],[780,860],[816,930],[816,WORLD_H]]
+  ];
+  const panelOnePoints=[];
+  for (const [a,b,c,d] of panelOneWaypoints) {
+    for(let j=0;j<=24;j++) panelOnePoints.push(cubic(a,b,c,d,j/24));
+  }
+  panels[0].roads=[];
+  for(let i=1;i<panelOnePoints.length;i++) panels[0].roads.push([panelOnePoints[i-1],panelOnePoints[i]]);
+
   function onRoad(x,y,panel=currentPanel()) {
     const clearance=ROAD_WIDTH/2-24;
     return panel.roads.some(([a,b])=>{
@@ -230,10 +250,13 @@
     ctx.fillStyle = grassPattern; ctx.fillRect(0, 0, WORLD_W, WORLD_H);
     // A sandy, walkable corridor. The grass outside the road is impassable.
     ctx.lineCap="round";ctx.lineJoin="round";
-    for (const [a,b] of currentPanel().roads) {
-      ctx.beginPath();ctx.moveTo(...a);ctx.lineTo(...b);
-      ctx.strokeStyle="#ad8b5e";ctx.lineWidth=ROAD_WIDTH+16;ctx.stroke();
-      ctx.strokeStyle="#dfc394";ctx.lineWidth=ROAD_WIDTH;ctx.stroke();
+    // Stroke all outer edges first, then all sand. This prevents the brown
+    // outlines of overlapping segments from appearing inside the road.
+    for (const [color,width] of [["#ad8b5e",ROAD_WIDTH+16],["#dfc394",ROAD_WIDTH]]) {
+      ctx.strokeStyle=color;ctx.lineWidth=width;
+      for (const [a,b] of currentPanel().roads) {
+        ctx.beginPath();ctx.moveTo(...a);ctx.lineTo(...b);ctx.stroke();
+      }
     }
     // Temporary Bunny Knight home marker. Final panel art will replace this.
     if (gameState.panel === 1) {
