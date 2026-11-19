@@ -3,7 +3,7 @@
   const canvas = document.querySelector("#world");
   const ctx = canvas.getContext("2d");
   const keys = new Set();
-  const hero = { x: 816, y: 480, speed: 235 };
+  const hero = { x: 920, y: 480, speed: 235 };
   const heroSize = 120;
   const WORLD_W = 1632, WORLD_H = 960;
   const heroImage = new Image();
@@ -237,7 +237,9 @@
     const target = Number(debugSelect.value);
     if (!Number.isInteger(target) || target < 1 || target > 25) return;
     gameState.panel = target;
-    hero.x = WORLD_W / 2;
+    // Start a little inside a walkable road so the hero can move both ways.
+    hero.x = currentPanel().exits.east ? WORLD_W / 2 + 105 :
+             currentPanel().exits.west ? WORLD_W / 2 - 105 : WORLD_W / 2;
     hero.y = WORLD_H / 2;
     keys.clear();
     closePopup();
