@@ -217,6 +217,17 @@
     requestAnimationFrame(update);
   }
   // Guide-only teleport menu: choose any screen without changing quest or inventory.
+  // The embedded page may cache an older index.html. Build the debug controls
+  // from the game script itself when the HTML has not updated yet.
+  if (!document.querySelector("#debug-toggle")) {
+    const style = document.createElement("style");
+    style.textContent = ".debug{position:absolute;left:14px;bottom:14px;z-index:10;font:800 12px system-ui;color:#31483c}.debug-toggle,.debug-go{border:2px solid #e7d7ad;background:#fff9eb;color:#28704f;border-radius:10px;padding:8px 12px;font-weight:900;cursor:pointer}.debug-panel{position:absolute;bottom:42px;left:0;width:215px;padding:12px;border:2px solid #e7d7ad;border-radius:13px;background:#fff9eb;box-shadow:0 8px 24px #18352566}.debug-panel[hidden]{display:none}.debug-panel label{display:block;margin-bottom:6px}.debug-panel select{width:100%;padding:7px;margin-bottom:9px;border:1px solid #bca979;border-radius:8px;background:white}.debug-panel .debug-go{width:100%;background:#3d9b68;color:white}.debug-commit{display:block;margin-top:9px;font-size:11px;overflow-wrap:anywhere}.controls{left:110px!important}";
+    document.head.appendChild(style);
+    const wrapper = document.createElement("div");
+    wrapper.className = "debug";
+    wrapper.innerHTML = '<button id="debug-toggle" class="debug-toggle" type="button" aria-expanded="false">DEBUG</button><div id="debug-panel" class="debug-panel" hidden><label for="debug-select">Panel</label><select id="debug-select"></select><button id="debug-go" class="debug-go" type="button">GO</button><span id="debug-commit" class="debug-commit">Commit: Checking…</span></div>';
+    document.querySelector("#game").appendChild(wrapper);
+  }
   const debugToggle = document.querySelector("#debug-toggle");
   const debugPanel = document.querySelector("#debug-panel");
   const debugSelect = document.querySelector("#debug-select");
