@@ -17,15 +17,15 @@
   const modalButtons = document.querySelector("#modal-buttons");
   const gameState = { panel: 1, inventory: [], quest: "", world: {}, encounters: {} };
   const panels = Array.from({ length: 25 }, (_, i) => ({ id: i + 1, exits: {}, objects: [], solids: [], roads: [] }));
-  // Connections follow the students' story route. Tiny sliver crossings on the paper
-  // map are moved to clear, centered openings so every screen is playable.
-  // The loops through 21-24 and the northern branch to 5 are deliberately retained.
+  // Revised Guide map: connected winding roads, including the lower return loop.
+  // No added shortcuts or diagonal screen transitions.
   const connections = [
-    [1,2],[2,7],[7,6],[6,11],[11,12],[12,17],[17,18],
-    [18,13],[13,8],[8,9],[9,14],[14,19],[19,24],
-    [24,23],[23,22],[22,21],[14,15],[15,10],[10,5],[15,20],[20,25]
+    [1,2],[2,7],[7,6],[6,11],[11,12],[12,13],
+    [13,8],[8,9],[9,4],[4,5],[5,10],[10,15],[15,20],[20,25],
+    [11,16],[16,17],[17,18],[18,13],
+    [16,21],[21,22],[22,23],[23,24],[24,19],[19,14],[14,9]
   ];
-  const ROAD_WIDTH = 240;
+  const ROAD_WIDTH = 260;
   const center = [WORLD_W / 2, WORLD_H / 2];
   const edges = { east:[WORLD_W, WORLD_H/2], west:[0,WORLD_H/2],
                   north:[WORLD_W/2,0], south:[WORLD_W/2,WORLD_H] };
