@@ -212,6 +212,44 @@
     draw();
     requestAnimationFrame(update);
   }
+  // Guide-only teleport menu: choose any screen without changing quest or inventory.
+  const debugToggle = document.querySelector("#debug-toggle");
+  const debugPanel = document.querySelector("#debug-panel");
+  const debugSelect = document.querySelector("#debug-select");
+  const debugCommit = document.querySelector("#debug-commit");
+  for (let i = 1; i <= 25; i++) {
+    const option = document.createElement("option");
+    option.value = String(i);
+    option.textContent = "Panel " + String(i).padStart(2, "0");
+    debugSelect.appendChild(option);
+  }
+  debugSelect.value = String(gameState.panel);
+  debugToggle.addEventListener("click", () => {
+    debugPanel.hidden = !debugPanel.hidden;
+    debugToggle.setAttribute("aria-expanded", String(!debugPanel.hidden));
+    debugSelect.value = String(gameState.panel);
+  });
+  document.querySelector("#debug-go").addEventListener("click", () => {
+    const target = Number(debugSelect.value);
+    if (!Number.isInteger(target) || target < 1 || target > 25) return;
+    gameState.panel = target;
+    hero.x = WORLD_W / 2;
+    hero.y = WORLD_H / 2;
+    keys.clear();
+    closePopup();
+    debugPanel.hidden = true;
+    debugToggle.setAttribute("aria-expanded", "false");
+    draw();
+  });
+  // Show the actual latest Team 3 source commit rather than a stale hardcoded number.
+  // GitHub's public API is used only to read the commit; gameplay works if unavailable.
+  fetch("https://api.github.com/repos/clarkwyatt/prototypes/commits?path=alpha-team-3-first-playable%2Fgame.js&per_page=1", {cache:"no-store"})
+    .then(response => { if (!response.ok) throw Error("Commit lookup unavailable"); return response.json(); })
+    .then(commits => {
+      const sha = commits[0]?.sha;
+      debugCommit.textContent = sha ? "Commit: " + sha.slice(0, 7) : "Commit: Unavailable";
+    })
+    .catch(() => { debugCommit.textContent = "Commit: Unavailable"; });
   window.addEventListener("resize", resize);
   refreshUI();
   resize();
